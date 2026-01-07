@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Tailwind v4で未定義のmax-widthクラス */
+.max-w-7xl {
+  max-width: 80rem; /* 1280px */
+}
+.max-w-8xl {
+  max-width: 88rem; /* 1408px */
+}
+
+/* 担当者別カード背景色（濃くして区別しやすく） */
+.card-bg-blue {
+  background-color: #bfdbfe;  /* 青: 青柳 */
+}
+.card-bg-pink {
+  background-color: #fbcfe8;  /* ピンク: 河合 */
+}
+.card-bg-yellow {
+  background-color: #fef08a;  /* 黄色: 中尾 */
+}
+.card-bg-green {
+  background-color: #bbf7d0;  /* 緑: 清水（明るい緑） */
+}
+.card-bg-cyan {
+  background-color: #a5f3fc;  /* 水色: 川崎（明るいシアン） */
+}
+.card-bg-purple {
+  background-color: #e9d5ff;  /* 紫: 下脇田 */
+}
+.card-bg-orange {
+  background-color: #fed7aa;  /* オレンジ: 紺谷 */
+}
+.card-bg-gray {
+  background-color: #d1d5db;  /* グレー: 渡邉 */
+}
+.card-bg-default {
+  background-color: #f3f4f6;
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+  .card-bg-blue {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  .card-bg-pink {
+    background-color: rgba(236, 72, 153, 0.3);
+  }
+  .card-bg-yellow {
+    background-color: rgba(234, 179, 8, 0.3);
+  }
+  .card-bg-green {
+    background-color: rgba(34, 197, 94, 0.3);
+  }
+  .card-bg-cyan {
+    background-color: rgba(6, 182, 212, 0.3);
+  }
+  .card-bg-purple {
+    background-color: rgba(168, 85, 247, 0.3);
+  }
+  .card-bg-orange {
+    background-color: rgba(249, 115, 22, 0.3);
+  }
+  .card-bg-gray {
+    background-color: rgba(107, 114, 128, 0.3);
+  }
+  .card-bg-default {
+    background-color: rgba(55, 65, 81, 0.3);
+  }
+}

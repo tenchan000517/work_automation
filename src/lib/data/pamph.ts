@@ -1,0 +1,51 @@
+import type { Product } from "./index";
+
+export const pamph: Product = {
+  id: "pamph",
+  name: "パンフ",
+  taskCount: 3,
+  description: "構成、デザイン、校正",
+  tasks: [
+    {
+      no: "30",
+      category: "構成設計",
+      name: "ページ構成",
+      assignee: "河合",
+      nextAssignee: "河合",
+      tools: "スプレッドシート",
+      deliverable: "構成案",
+      checkpoint: "情報過多",
+      hasManual: true,
+      issues: "ヒアリングシート・基本構成のテンプレート",
+    },
+    {
+      no: "31",
+      category: "デザイン制作",
+      name: "誌面デザイン",
+      assignee: "河合",
+      nextAssignee: "河合, 中尾文香",
+      tools: "Canva",
+      deliverable: "デザイン",
+      checkpoint: "トンマナ",
+      hasManual: true,
+      issues: "テンプレート",
+    },
+    {
+      no: "32",
+      category: "校正",
+      name: "誤字脱字チェック",
+      assignee: "河合, 青柳",
+      nextAssignee: "河合",
+      tools: "PDF",
+      deliverable: "修正稿",
+      checkpoint: "表記統一",
+      hasManual: true,
+      issues: "チェックシート作成",
+    },
+  ],
+  issues: [
+    "ヒアリングシート・基本構成のテンプレート",
+    "テンプレート",
+    "チェックシート作成",
+  ],
+};

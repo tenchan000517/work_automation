@@ -1,0 +1,51 @@
+import type { Product } from "./index";
+
+export const logo: Product = {
+  id: "logo",
+  name: "ロゴ",
+  taskCount: 3,
+  description: "コンセプト、作成、データ整理",
+  tasks: [
+    {
+      no: "33",
+      category: "コンセプト設計",
+      name: "ヒアリング整理",
+      assignee: "河合, 青柳",
+      nextAssignee: "河合",
+      tools: "スプレッドシート",
+      deliverable: "コンセプト",
+      checkpoint: "理念反映",
+      hasManual: true,
+      issues: "ヒアリングシート・パターンオーダー\nロゴ下に文字　ロゴ横に文字",
+    },
+    {
+      no: "34",
+      category: "ロゴ作成",
+      name: "デザイン案作成",
+      assignee: "河合",
+      nextAssignee: "河合, 中尾文香",
+      tools: "Canva",
+      deliverable: "ロゴ案",
+      checkpoint: "汎用性",
+      hasManual: true,
+      issues: "AI",
+    },
+    {
+      no: "35",
+      category: "データ整理",
+      name: "データ書き出し",
+      assignee: "河合",
+      nextAssignee: "河合",
+      tools: "Canva",
+      deliverable: "ロゴデータ",
+      checkpoint: "形式",
+      hasManual: true,
+      issues: "",
+    },
+  ],
+  issues: [
+    "ヒアリングシート・パターンオーダー",
+    "ロゴ下に文字　ロゴ横に文字",
+    "AI",
+  ],
+};
