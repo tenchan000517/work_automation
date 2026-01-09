@@ -138,14 +138,53 @@ interface FlowStepLink {
   // === 入力フィールド付きテンプレート機能 ===
   hasInputField?: boolean;        // 入力フィールド表示
   inputSectionTitle?: string;     // アコーディオンタイトル
-  inputLabel?: string;            // 入力欄ラベル
-  inputPlaceholder?: string;      // プレースホルダー
+  inputLabel?: string;            // 入力欄ラベル（単一入力時、後方互換用）
+  inputPlaceholder?: string;      // プレースホルダー（単一入力時、後方互換用）
   inputNote?: string;             // 注意書き
-  template?: string;              // テンプレート（{{input}}が置換される）
+  template?: string;              // テンプレート（{{input}}や{{id}}が置換される）
+
+  // === 複数入力フィールド対応（推奨） ===
+  inputFields?: InputFieldConfig[];  // 複数入力フィールドの設定
 }
 ```
 
-### 3.5 ImageItem（画像）
+### 3.5 InputFieldConfig（入力フィールド設定）
+
+複数の入力フィールドを定義するための型。`inputFields`を指定すると、`inputLabel`/`inputPlaceholder`より優先される。
+
+```typescript
+interface InputFieldConfig {
+  id: string;              // プレースホルダーID（例: "company" → {{company}}で参照）
+  label: string;           // 表示ラベル（例: "企業名"）
+  placeholder?: string;    // プレースホルダー（例: "株式会社○○"）
+  defaultValue?: string;   // デフォルト値（例: "@河合 cc:@青柳"）
+  type?: 'text' | 'textarea';  // 入力タイプ（デフォルト: text）
+  rows?: number;           // textareaの場合の行数
+}
+```
+
+**使用例:**
+```typescript
+links: [{
+  label: "投稿フォーマット",
+  type: "popup",
+  hasInputField: true,
+  inputSectionTitle: "ワークス投稿フォーマット",
+  inputNote: "各項目を入力してください",
+  inputFields: [
+    { id: "mention", label: "宛先", placeholder: "@河合 cc:@青柳", defaultValue: "@河合 cc:@青柳" },
+    { id: "company", label: "企業名", placeholder: "株式会社○○" },
+    { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" }
+  ],
+  template: `{{mention}}
+初回打ち合わせの日程が確定しました。
+
+【企業名】{{company}}
+【日時】{{datetime}}`
+}]
+```
+
+### 3.6 ImageItem（画像）
 
 ```typescript
 // 2つの形式がある
@@ -199,27 +238,45 @@ images: ["/images/xxx.png", "/images/yyy.png"]
 - 補足の場合: `【補足】説明`
 - 初回のみの場合: `【初回のみ】説明`
 
-### 4.3 例文・担当者名はGAS連携
+### 4.3 例文・担当者名はハードコードしない
 
 **ルール: descriptionに担当者名をハードコードしない**
 
 ```typescript
-// 間違い（旧形式）
+// NG（旧形式）- 担当者名ハードコード
 description: `@河合 cc:@青柳
 株式会社○○様の初回打ち合わせについて...`
 
-// 正しい（新形式）
-// → hasInputField付きpopupでコピー可能にする
-// → GASダイアログで設定シートから担当者を動的読み込み
+// NG（単一入力の旧形式）- 担当者変更時に修正が必要
 links: [{
   label: "投稿フォーマット",
   type: "popup",
   hasInputField: true,
   inputLabel: "企業名を入力",
-  template: `@{{制作担当}} cc:@{{CC}}
+  template: `@河合 cc:@青柳
 株式会社{{input}}様の初回打ち合わせについて...`
 }]
+
+// OK（推奨形式）- 複数入力フィールドで担当者もフィールド化
+links: [{
+  label: "投稿フォーマット",
+  type: "popup",
+  hasInputField: true,
+  inputSectionTitle: "ワークス投稿フォーマット",
+  inputNote: "各項目を入力してください",
+  inputFields: [
+    { id: "mention", label: "宛先", placeholder: "@河合 cc:@青柳", defaultValue: "@河合 cc:@青柳" },
+    { id: "company", label: "企業名", placeholder: "株式会社○○" }
+  ],
+  template: `{{mention}}
+{{company}}様の初回打ち合わせについて...`
+}]
 ```
+
+**複数入力フィールドの利点:**
+- 担当者名をデフォルト値として設定し、必要に応じて変更可能
+- 各入力フィールドを個別に管理でき、テンプレートの柔軟性が向上
+- textarea対応で議事録などの長文入力にも対応
 
 **プレースホルダー一覧（setupSheets.jsで定義）:**
 | プレースホルダー | 説明 |
@@ -285,7 +342,7 @@ relatedLinks: [
 
 ### 6.3 詳細化の目安
 
-```
+```typescript
 【最小構成】
 flowSteps: [
   { label: "ステップ名" }
@@ -300,7 +357,23 @@ flowSteps: [
   }
 ]
 
-【詳細構成】
+【詳細構成（単一入力）】- 後方互換、簡易なケース
+flowSteps: [
+  {
+    label: "ステップ名",
+    description: "詳細説明",
+    links: [{
+      label: "フォーマット",
+      type: "popup",
+      hasInputField: true,
+      inputLabel: "企業名を入力",
+      inputPlaceholder: "株式会社○○",
+      template: "株式会社{{input}}様..."
+    }]
+  }
+]
+
+【詳細構成（複数入力）】- 推奨、柔軟性が高い
 flowSteps: [
   {
     label: "ステップ名",
@@ -313,7 +386,38 @@ flowSteps: [
       label: "フォーマット",
       type: "popup",
       hasInputField: true,
-      template: "..."
+      inputSectionTitle: "投稿フォーマット",
+      inputNote: "各項目を入力してください",
+      inputFields: [
+        { id: "mention", label: "宛先", defaultValue: "@河合 cc:@青柳" },
+        { id: "company", label: "企業名", placeholder: "株式会社○○" },
+        { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" }
+      ],
+      template: `{{mention}}
+{{company}}様の件
+【日時】{{datetime}}`
+    }]
+  }
+]
+
+【詳細構成（長文入力）】- 議事録などに使用
+flowSteps: [
+  {
+    label: "議事録共有",
+    links: [{
+      label: "投稿フォーマット",
+      type: "popup",
+      hasInputField: true,
+      inputFields: [
+        { id: "company", label: "企業名", placeholder: "株式会社○○" },
+        { id: "minutes", label: "議事録", placeholder: "AIが出力した議事録を貼り付け...", type: "textarea", rows: 10 }
+      ],
+      template: `@ALL
+{{company}}様 初回打ち合わせの議事録を共有します。
+
+{{minutes}}
+
+ご確認お願いします。`
     }]
   }
 ]
@@ -450,3 +554,4 @@ setupSheets.js
 | 日付 | 内容 |
 |------|------|
 | 2026-01-10 | 初版作成 |
+| 2026-01-10 | 複数入力フィールド対応（InputFieldConfig）を追加 |
