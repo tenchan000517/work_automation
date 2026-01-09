@@ -246,33 +246,23 @@ export function ContentModal({ isOpen, onClose, title, content, images, embedded
             )}
           </div>
 
-          {/* 埋め込みリンク/ボタン */}
-          {hasEmbeddedLinks && (
+          {/* 埋め込みリンク（リンク系のみ表示、フォーマット系popupは非表示） */}
+          {hasEmbeddedLinks && embeddedLinks.some(link => link.type === 'link' && link.url) && (
             <div className={(hasContent || hasImages) ? "mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700" : ""}>
               <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
                 関連ツール
               </h3>
               <div className="flex flex-wrap gap-2">
-                {embeddedLinks.map((link, index) => (
-                  link.type === 'link' && link.url ? (
-                    <a
-                      key={index}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                    >
-                      🔗 {link.label}
-                    </a>
-                  ) : (
-                    <button
-                      key={index}
-                      onClick={() => setEmbeddedPopup({ label: link.label, content: link.content || '' })}
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
-                    >
-                      📋 {link.label}
-                    </button>
-                  )
+                {embeddedLinks.filter(link => link.type === 'link' && link.url).map((link, index) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                  >
+                    🔗 {link.label}
+                  </a>
                 ))}
               </div>
             </div>
