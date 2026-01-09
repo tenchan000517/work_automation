@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Task, RelatedLink, getAssigneeColor, getPriorityAssigneeColor } from "@/lib/data";
+import { Task, ImageItem, RelatedLink, getAssigneeColor, getPriorityAssigneeColor } from "@/lib/data";
 import { ContentModal } from "./ContentModal";
 
 interface TaskCardProps {
   task: Task;
   productId: string;
   nextTaskName?: string;  // 動的に渡される次の業務名
+  allTasks?: Task[];      // 全タスク（relatedTaskNoから担当者を動的に取得するため）
 }
 
 // 担当者を個別のバッジに分割して表示するコンポーネント
@@ -32,17 +33,69 @@ function AssigneeBadges({ assignees }: { assignees: string }) {
   );
 }
 
-export function TaskCard({ task, productId, nextTaskName }: TaskCardProps) {
+// ContentModal用の埋め込みリンク型
+interface EmbeddedLink {
+  label: string;
+  content?: string;
+  url?: string;
+  type: 'popup' | 'link';
+}
+
+export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardProps) {
+  // relatedTaskNoから担当者名を取得するヘルパー関数
+  // excludeSelf=trueの場合、現在の業務担当者を除く
+  const getRelatedAssignee = (taskNo: string | undefined, excludeSelf?: boolean): string | null => {
+    if (!taskNo || !allTasks) return null;
+    const relatedTask = allTasks.find(t => t.no === taskNo);
+    if (!relatedTask?.assignee) return null;
+
+    if (excludeSelf) {
+      // 現在の業務担当者を除く
+      const currentAssignees = task.assignee.split(/[,、]\s*/).map(n => n.trim());
+      const relatedAssignees = relatedTask.assignee.split(/[,、]\s*/).map(n => n.trim());
+      const filtered = relatedAssignees.filter(name => !currentAssignees.includes(name));
+      return filtered.length > 0 ? filtered.join(', ') : null;
+    }
+
+    return relatedTask.assignee;
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
+  const [modalImages, setModalImages] = useState<ImageItem[] | undefined>(undefined);
+  const [modalEmbeddedLinks, setModalEmbeddedLinks] = useState<EmbeddedLink[] | undefined>(undefined);
+  const [modalHasInputField, setModalHasInputField] = useState(false);
+  const [modalInputSectionTitle, setModalInputSectionTitle] = useState<string | undefined>(undefined);
+  const [modalInputLabel, setModalInputLabel] = useState<string | undefined>(undefined);
+  const [modalInputPlaceholder, setModalInputPlaceholder] = useState<string | undefined>(undefined);
+  const [modalInputNote, setModalInputNote] = useState<string | undefined>(undefined);
+  const [modalTemplate, setModalTemplate] = useState<string | undefined>(undefined);
 
   // カード背景色を優先度の高い担当者の色から取得
   const cardColor = getPriorityAssigneeColor(task.assignee);
 
-  const openModal = (title: string, content: string) => {
+  const openModal = (
+    title: string,
+    content?: string,
+    images?: ImageItem[],
+    embeddedLinks?: EmbeddedLink[],
+    hasInputField?: boolean,
+    inputSectionTitle?: string,
+    inputLabel?: string,
+    inputPlaceholder?: string,
+    inputNote?: string,
+    template?: string
+  ) => {
     setModalTitle(title);
-    setModalContent(content);
+    setModalContent(content || "");
+    setModalImages(images);
+    setModalEmbeddedLinks(embeddedLinks);
+    setModalHasInputField(hasInputField || false);
+    setModalInputSectionTitle(inputSectionTitle);
+    setModalInputLabel(inputLabel);
+    setModalInputPlaceholder(inputPlaceholder);
+    setModalInputNote(inputNote);
+    setModalTemplate(template);
     setModalOpen(true);
   };
 
@@ -53,8 +106,51 @@ export function TaskCard({ task, productId, nextTaskName }: TaskCardProps) {
     task.overallFlow ||
     task.format ||
     task.detailedFlow ||
+    task.nottaManual ||
     task.relatedSheetUrl ||
     (task.relatedLinks && task.relatedLinks.length > 0);
+
+  const hasFlowSteps = task.flowSteps && task.flowSteps.length > 0;
+
+  // フローステップのカテゴリを判定してCSSクラスを返す
+  const getFlowStepClass = (label: string): string => {
+    const lowerLabel = label.toLowerCase();
+
+    // 共有・送信系（オレンジ）
+    if (lowerLabel.includes('共有') || lowerLabel.includes('送信') || lowerLabel.includes('送付') || lowerLabel.includes('メンション') || lowerLabel.includes('報告') || lowerLabel.includes('提出') || lowerLabel.includes('リマインド')) {
+      return 'flow-step-share';
+    }
+    // 確認・チェック系（緑）
+    if (lowerLabel.includes('確認') || lowerLabel.includes('チェック') || lowerLabel.includes('取得') || lowerLabel.includes('抽出') || lowerLabel.includes('ダウンロード')) {
+      return 'flow-step-check';
+    }
+    // 作成・入力系（青）
+    if (lowerLabel.includes('作成') || lowerLabel.includes('記入') || lowerLabel.includes('入力') || lowerLabel.includes('ライティング') || lowerLabel.includes('編集') || lowerLabel.includes('追加') || lowerLabel.includes('準備') || lowerLabel.includes('書き出し') || lowerLabel.includes('格納')) {
+      return 'flow-step-create';
+    }
+    // 打合せ・連絡・実施系（ピンク）
+    if (lowerLabel.includes('打合せ') || lowerLabel.includes('連絡') || lowerLabel.includes('実施') || lowerLabel.includes('fb') || lowerLabel.includes('mtg') || lowerLabel.includes('調整') || lowerLabel.includes('面接')) {
+      return 'flow-step-meeting';
+    }
+    // ツール操作系（紫）- ワークス、エンゲージ、Powerdirector等
+    if (lowerLabel.includes('ワークス') || lowerLabel.includes('エンゲージ') || lowerLabel.includes('pairsona') || lowerLabel.includes('powerdirector') || lowerLabel.includes('ドライブ') || lowerLabel.includes('youtube') || lowerLabel.includes('notta') || lowerLabel.includes('スプレッドシート')) {
+      return 'flow-step-tool';
+    }
+    // 撮影系（シアン）
+    if (lowerLabel.includes('撮影')) {
+      return 'flow-step-shoot';
+    }
+    // 承認・完了系（黄色）
+    if (lowerLabel.includes('承認') || lowerLabel.includes('完了') || lowerLabel.includes('確定') || lowerLabel.includes('解決') || lowerLabel.includes('修正') || lowerLabel.includes('対応')) {
+      return 'flow-step-approve';
+    }
+    // 提示・候補系（ライトブルー）
+    if (lowerLabel.includes('提示') || lowerLabel.includes('候補')) {
+      return 'flow-step-suggest';
+    }
+    // デフォルト（グレー）
+    return 'flow-step-default';
+  };
 
   // リンクタイプに応じたスタイルを返す
   const getLinkStyle = (type: RelatedLink['type']) => {
@@ -142,15 +238,90 @@ export function TaskCard({ task, productId, nextTaskName }: TaskCardProps) {
             )}
           </div>
 
-          {/* Issues */}
-          {task.issues && (
+          {/* フローステップ */}
+          {task.flowSteps && task.flowSteps.length > 0 && (
             <div className="mt-4 pt-3 border-t border-zinc-400 dark:border-zinc-600">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                備考・課題感
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                フロー
               </p>
-              <p className="text-sm text-yellow-700 dark:text-yellow-400 whitespace-pre-line">
-                {task.issues}
-              </p>
+              <div className="flex flex-wrap items-stretch gap-2">
+                {task.flowSteps.map((step, index) => {
+                  const hasStepDetail = step.description || (step.images && step.images.length > 0);
+                  // step.linksをEmbeddedLink形式に変換
+                  const embeddedLinks: EmbeddedLink[] | undefined = step.links?.map(link => ({
+                    label: link.label,
+                    content: link.content,
+                    url: link.url,
+                    type: link.type
+                  }));
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      {/* ステップボックス */}
+                      <div className={`border rounded-lg px-3 py-2 min-w-[140px] min-h-[70px] flex flex-col justify-between ${getFlowStepClass(step.label)} relative`}>
+                        {/* インフォアイコン（詳細がある場合のみ表示） */}
+                        {hasStepDetail && (
+                          <button
+                            onClick={() => openModal(step.label, step.description, step.images, embeddedLinks)}
+                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-md transition-colors"
+                            title="詳細を表示"
+                          >
+                            i
+                          </button>
+                        )}
+                        <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium leading-tight">
+                          {step.label}
+                          {step.relatedTaskNo && getRelatedAssignee(step.relatedTaskNo, step.excludeSelf) && (
+                            <span className="ml-1 text-blue-600 dark:text-blue-400">
+                              （{getRelatedAssignee(step.relatedTaskNo, step.excludeSelf)}）
+                            </span>
+                          )}
+                        </p>
+                        {/* ステップ内のリンク/ボタン（常にスペースを確保・中央揃え） */}
+                        <div className="flex flex-wrap gap-1 mt-2 min-h-[24px] justify-center">
+                          {step.links && step.links.length > 0 ? (
+                            step.links.map((link, linkIndex) => (
+                              link.type === 'link' && link.url ? (
+                                <a
+                                  key={linkIndex}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flow-step-link-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
+                                >
+                                  📄 {link.label}
+                                </a>
+                              ) : (
+                                <button
+                                  key={linkIndex}
+                                  onClick={() => openModal(
+                                    link.label,
+                                    link.content,
+                                    link.images,
+                                    undefined,
+                                    link.hasInputField,
+                                    link.inputSectionTitle,
+                                    link.inputLabel,
+                                    link.inputPlaceholder,
+                                    link.inputNote,
+                                    link.template
+                                  )}
+                                  className="flow-step-popup-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
+                                >
+                                  📋 {link.label}
+                                </button>
+                              )
+                            ))
+                          ) : null}
+                        </div>
+                      </div>
+                      {/* 矢印（最後のステップ以外） */}
+                      {index < task.flowSteps!.length - 1 && (
+                        <span className="text-zinc-400 dark:text-zinc-500 text-xl font-bold">→</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -224,6 +395,18 @@ export function TaskCard({ task, productId, nextTaskName }: TaskCardProps) {
                   </button>
                 )}
 
+                {/* NOTTAマニュアル - 別タブで開く */}
+                {task.nottaManual && (
+                  <a
+                    href="/manuals/notta"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"
+                  >
+                    NOTTAマニュアル
+                  </a>
+                )}
+
                 {/* 関連リンク - 複数URL対応 */}
                 {task.relatedLinks && task.relatedLinks.length > 0 ? (
                   task.relatedLinks.map((link, index) => (
@@ -262,6 +445,14 @@ export function TaskCard({ task, productId, nextTaskName }: TaskCardProps) {
         onClose={() => setModalOpen(false)}
         title={modalTitle}
         content={modalContent}
+        images={modalImages}
+        embeddedLinks={modalEmbeddedLinks}
+        hasInputField={modalHasInputField}
+        inputSectionTitle={modalInputSectionTitle}
+        inputLabel={modalInputLabel}
+        inputPlaceholder={modalInputPlaceholder}
+        inputNote={modalInputNote}
+        template={modalTemplate}
       />
     </>
   );

@@ -92,3 +92,150 @@ body {
     background-color: rgba(55, 65, 81, 0.3);
   }
 }
+
+/* コピーボタンのスタイル */
+.copy-btn-default {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+.copy-btn-default:hover {
+  background-color: #2563eb;
+}
+.copy-btn-success {
+  background-color: #22c55e;
+  color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .copy-btn-default {
+    background-color: #2563eb;
+  }
+  .copy-btn-default:hover {
+    background-color: #3b82f6;
+  }
+  .copy-btn-success {
+    background-color: #16a34a;
+  }
+}
+
+/* フローステップ内のボタン（リンク・ポップアップ）*/
+.flow-step-link-btn {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+}
+.flow-step-link-btn:hover {
+  background-color: #2563eb;
+}
+.flow-step-popup-btn {
+  background-color: #f59e0b;
+  color: #ffffff;
+  border: 1px solid #d97706;
+}
+.flow-step-popup-btn:hover {
+  background-color: #d97706;
+}
+
+@media (prefers-color-scheme: dark) {
+  .flow-step-link-btn {
+    background-color: #2563eb;
+    border-color: #3b82f6;
+  }
+  .flow-step-link-btn:hover {
+    background-color: #3b82f6;
+  }
+  .flow-step-popup-btn {
+    background-color: #d97706;
+    border-color: #f59e0b;
+  }
+  .flow-step-popup-btn:hover {
+    background-color: #f59e0b;
+  }
+}
+
+/* フローステップのカテゴリ別背景色 */
+.flow-step-share {
+  /* 共有・送信系（オレンジ） */
+  background-color: #ffedd5;
+  border-color: #fdba74;
+}
+.flow-step-check {
+  /* 確認・チェック系（緑） */
+  background-color: #dcfce7;
+  border-color: #86efac;
+}
+.flow-step-create {
+  /* 作成・入力系（青） */
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+.flow-step-meeting {
+  /* 打合せ・連絡系（ピンク） */
+  background-color: #fce7f3;
+  border-color: #f9a8d4;
+}
+.flow-step-tool {
+  /* ツール操作系（紫） */
+  background-color: #f3e8ff;
+  border-color: #d8b4fe;
+}
+.flow-step-shoot {
+  /* 撮影系（シアン） */
+  background-color: #cffafe;
+  border-color: #67e8f9;
+}
+.flow-step-approve {
+  /* 承認・完了系（黄色） */
+  background-color: #fef9c3;
+  border-color: #fde047;
+}
+.flow-step-suggest {
+  /* 提示・候補系（ライトブルー） */
+  background-color: #e0f2fe;
+  border-color: #7dd3fc;
+}
+.flow-step-default {
+  /* デフォルト（グレー） */
+  background-color: #f4f4f5;
+  border-color: #d4d4d8;
+}
+
+/* フローステップ ダークモード */
+@media (prefers-color-scheme: dark) {
+  .flow-step-share {
+    background-color: rgba(249, 115, 22, 0.2);
+    border-color: rgba(251, 146, 60, 0.5);
+  }
+  .flow-step-check {
+    background-color: rgba(34, 197, 94, 0.2);
+    border-color: rgba(74, 222, 128, 0.5);
+  }
+  .flow-step-create {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: rgba(96, 165, 250, 0.5);
+  }
+  .flow-step-meeting {
+    background-color: rgba(236, 72, 153, 0.2);
+    border-color: rgba(244, 114, 182, 0.5);
+  }
+  .flow-step-tool {
+    background-color: rgba(168, 85, 247, 0.2);
+    border-color: rgba(192, 132, 252, 0.5);
+  }
+  .flow-step-shoot {
+    background-color: rgba(6, 182, 212, 0.2);
+    border-color: rgba(34, 211, 238, 0.5);
+  }
+  .flow-step-approve {
+    background-color: rgba(234, 179, 8, 0.2);
+    border-color: rgba(250, 204, 21, 0.5);
+  }
+  .flow-step-suggest {
+    background-color: rgba(14, 165, 233, 0.2);
+    border-color: rgba(56, 189, 248, 0.5);
+  }
+  .flow-step-default {
+    background-color: rgba(63, 63, 70, 0.5);
+    border-color: rgba(113, 113, 122, 0.5);
+  }
+}

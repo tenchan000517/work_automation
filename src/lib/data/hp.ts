@@ -11,7 +11,7 @@ export const hp: Product = {
       category: "構成設計",
       name: "テンプレート選定",
       assignee: "河合",
-      nextAssignee: "河合",
+      nextAssignee: "川崎",  // 次: No.18 素材撮影
       tools: "SANKOU",
       deliverable: "構成案",
       checkpoint: "導線",
@@ -22,18 +22,26 @@ export const hp: Product = {
       ],
       simulation: `大輝ワークス立ち上げ　企業基本情報の共有フォーマット
 受注者が初回打ち合わせ日程共有
-ZOOM初回打ち合わせ企業：担当・大輝・青柳・河合
+ZOOM初回打ち合わせ企業：担当・渡邉・河合
 HP制作ヒアリング：ヒアリングシートを基にヒアリングの実施
-撮影日程の調整：青柳・川崎
+撮影日程の調整：川崎
 議事録のワークスグループ共有
 河合撮影データの共有フォルダ作成`,
+      flowSteps: [
+        { label: "ワークス立ち上げ・企業基本情報の共有フォーマット" },
+        { label: "受注者が初回打ち合わせ日程共有" },
+        { label: "ZOOM初回打ち合わせ：ヒアリングシートを基にヒアリングの実施" },
+        { label: "撮影日程の調整" },
+        { label: "議事録のワークスグループ共有" },
+        { label: "撮影データの共有フォルダ作成" },
+      ],
     },
     {
       no: "18",
       category: "素材撮影",
       name: "素材撮影",
-      assignee: "青柳",
-      nextAssignee: "川崎",
+      assignee: "川崎",
+      nextAssignee: "河合, 中尾文香",  // 次: No.14 デザイン作成
       tools: "カメラ",
       deliverable: "写真・動画素材",
       checkpoint: "画角・音声",
@@ -45,6 +53,12 @@ HP制作ヒアリング：ヒアリングシートを基にヒアリングの実
 撮影データチェック
 撮影者が撮影データの納品：共有ドライブの指定フォルダ内に指定のファイル名で格納
 河合がローカルフォルダにデータダウンロード`,
+      flowSteps: [
+        { label: "撮影" },
+        { label: "撮影データチェック" },
+        { label: "撮影データの納品：共有ドライブの指定フォルダ内に指定のファイル名で格納" },
+        { label: "河合がローカルフォルダにデータダウンロード" },
+      ],
       manualDraft: `素材撮影マニュアル（HP制作向け）
 
 ================================================================================
@@ -186,8 +200,8 @@ https://youtu.be/om72hp6WxjE`,
       no: "14",
       category: "デザイン",
       name: "デザイン作成",
-      assignee: "河合",
-      nextAssignee: "河合, 中尾文香",
+      assignee: "河合, 中尾文香",
+      nextAssignee: "河合",  // 次: No.15 コーディング
       tools: "Canva",
       deliverable: "デザイン",
       checkpoint: "UI",
@@ -197,14 +211,21 @@ https://youtu.be/om72hp6WxjE`,
 HP制作テンプレートを基に画像、文章をはめ込む
 作成したHPデザインをチェックリストを用いてチェックする
 各セクションごとにデータをダウンロードし指定したグーグルドライブにセクションごとのファイル名で格納する
-格納が完了したら、企業グループで青柳宛に報告する`,
+格納が完了したら、企業グループで報告する`,
+      flowSteps: [
+        { label: "Canvaに企業名フォルダを作成しページごとにファイル作成する" },
+        { label: "HP制作テンプレートを基に画像、文章をはめ込む" },
+        { label: "作成したHPデザインをチェックリストを用いてチェックする" },
+        { label: "各セクションごとにデータをダウンロードし指定したグーグルドライブにセクションごとのファイル名で格納する" },
+        { label: "格納が完了したら、企業グループで報告する" },
+      ],
     },
     {
       no: "15",
       category: "実装",
       name: "コーディング",
-      assignee: "青柳",
-      nextAssignee: "河合",
+      assignee: "河合",
+      nextAssignee: "河合",  // 次: No.21 企業担当へ確認依頼
       tools: "VSコード・Claude",
       deliverable: "Webサイト",
       checkpoint: "表示崩れ",
@@ -216,7 +237,7 @@ HP制作テンプレートを基に画像、文章をはめ込む
       category: "作成原稿の確認",
       name: "企業担当へ確認依頼",
       assignee: "河合",
-      nextAssignee: "河合",
+      nextAssignee: "河合",  // 次: No.22 キックオフMTG
       tools: "メール",
       deliverable: "HPリンク",
       checkpoint: "チェックリストと相違ないか",
@@ -226,13 +247,19 @@ HP制作テンプレートを基に画像、文章をはめ込む
 修正箇所の有無の確認
 修正箇所の修正対応
 キックオフの日程調整`,
+      flowSteps: [
+        { label: "先方へHPデザインの確認" },
+        { label: "修正箇所の有無の確認" },
+        { label: "修正箇所の修正対応" },
+        { label: "キックオフの日程調整" },
+      ],
     },
     {
       no: "22",
       category: "キックオフMTG",
       name: "今後の担当者の共有とスケジュール共有",
       assignee: "河合",
-      nextAssignee: "河合",
+      nextAssignee: "-",  // 次: No.23 HPの内容更新（担当なし）
       tools: "メール",
       deliverable: "打合せ議事録",
       checkpoint: "ネクスト内容の認識合わせ",
@@ -240,13 +267,16 @@ HP制作テンプレートを基に画像、文章をはめ込む
       issues: "納品打合せマニュアル",
       memo: "打合せマニュアル・議事録テンプレ",
       simulation: "今後の運用担当者と次回FB日程の調整",
+      flowSteps: [
+        { label: "今後の運用担当者と次回FB日程の調整" },
+      ],
     },
     {
       no: "23",
       category: "HPの内容更新",
       name: "HPのブログ機能の更新及びSEO最適化",
       assignee: "-",
-      nextAssignee: "-",
+      nextAssignee: "河合",  // 次: No.16 月次FB打合せ
       tools: "-",
       deliverable: "-",
       checkpoint: "-",
@@ -254,6 +284,9 @@ HP制作テンプレートを基に画像、文章をはめ込む
       issues: "HP運用マニュアル",
       memo: "HP運用マニュアル",
       simulation: "HP運用マニュアルを基に運用プラン毎の運用を実施",
+      flowSteps: [
+        { label: "HP運用マニュアルを基に運用プラン毎の運用を実施" },
+      ],
       manualDraft: `HP運用マニュアル
 
 ※このマニュアルは、経験や勘に頼らず、誰が見ても同じ行動ができることを目的に作成しています。
@@ -429,8 +462,8 @@ HP運用は特別な知識は不要です。
       no: "16",
       category: "月次FB",
       name: "月次FB打合せ",
-      assignee: "青柳",
-      nextAssignee: "河合",
+      assignee: "河合",
+      nextAssignee: "",  // 最終業務
       tools: "資料テンプレ",
       deliverable: "FB資料",
       checkpoint: "指標理解",
@@ -440,6 +473,11 @@ HP運用は特別な知識は不要です。
       simulation: `FBマニュアルをもとにFBの実施
 次回打合せ日程の決定
 議事録のテンプレートを企業グループに共有`,
+      flowSteps: [
+        { label: "FBマニュアルをもとにFBの実施" },
+        { label: "次回打合せ日程の決定" },
+        { label: "議事録のテンプレートを企業グループに共有" },
+      ],
       manualDraft: `月次FBマニュアル（HP制作）
 
 ================================================================================

@@ -99,8 +99,11 @@ export interface Task {
   overallFlow?: string;
   format?: string;
   detailedFlow?: string;
+  nottaManual?: string;     // NOTTAマニュアル
   relatedSheetUrl?: string; // 後方互換性のため残す（非推奨）
   relatedLinks?: RelatedLink[]; // 新しい複数URL対応フィールド
+  // 業務フローステップ（UIで横並びボックス表示）
+  flowSteps?: FlowStep[];
 }
 
 // 関連リンクの型定義
@@ -108,6 +111,43 @@ export interface RelatedLink {
   label: string; // 表示名（例：「ヒアリングシート」「Pairsona」）
   url: string;
   type: 'sheet' | 'drive' | 'site' | 'other'; // sheet=スプレッドシート, drive=Googleドライブ, site=外部サイト, other=その他
+}
+
+// キャプション付き画像の型
+export interface ImageWithCaption {
+  url: string;
+  caption?: string;  // 画像の上に表示する短いタイトル
+}
+
+// 画像は文字列（URLのみ）またはキャプション付きオブジェクト
+export type ImageItem = string | ImageWithCaption;
+
+// フローステップ内のリンク/ポップアップ
+export interface FlowStepLink {
+  label: string;           // "フォーマット"
+  url?: string;            // リンクの場合のURL
+  content?: string;        // ポップアップの場合のコンテンツ
+  type: 'link' | 'popup';  // リンクか、ポップアップか
+  images?: ImageItem[];    // ポップアップで表示する参考画像（キャプション付き可）
+  // 入力フィールド付きテンプレート機能
+  hasInputField?: boolean;     // trueの場合、入力フィールドを表示
+  inputSectionTitle?: string;  // セクションタイトル（例：「ワークス投稿作成」）
+  inputLabel?: string;         // ラベル（例：「ここに文字起こしを貼り付け」）
+  inputPlaceholder?: string;   // プレースホルダー
+  inputNote?: string;          // 注意書き
+  template?: string;           // テンプレート（{{input}}の部分に入力内容が挿入される）
+}
+
+// フローステップの型定義
+export interface FlowStep {
+  label: string;           // "LINEWORKSで企業グループを作成"
+  links?: FlowStepLink[];  // このステップで使うリンク/ポップアップ（任意）
+  // 詳細情報（インフォアイコンで表示）
+  description?: string;    // このステップの詳細説明
+  images?: ImageItem[];    // 説明用の画像（キャプション付き可）
+  // 関連タスク（担当者を動的に表示）
+  relatedTaskNo?: string;  // 関連タスクのNo（例: "3"）→ そのタスクのassigneeをラベルに表示
+  excludeSelf?: boolean;   // trueの場合、現在の業務担当者を除いて表示
 }
 
 export interface Product {

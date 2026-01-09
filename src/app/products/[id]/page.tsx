@@ -51,24 +51,37 @@ export default async function ProductPage({
           </div>
         </section>
 
-        {/* 課題・改善ポイント */}
-        {product.issues && product.issues.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
-              課題感・改善ポイント
-            </h2>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <ul className="space-y-2 text-sm text-yellow-800 dark:text-yellow-200">
-                {product.issues.map((issue, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-yellow-500 flex-shrink-0">!</span>
-                    <span>{issue}</span>
-                  </li>
+        {/* 課題・改善ポイント（業務別） */}
+        {(() => {
+          // 各業務のissuesを集計
+          const tasksWithIssues = product.tasks.filter(task => task.issues && task.issues.trim());
+          if (tasksWithIssues.length === 0) return null;
+
+          return (
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+                課題感・改善ポイント一覧
+              </h2>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 space-y-4">
+                {tasksWithIssues.map((task, taskIndex) => (
+                  <div key={taskIndex}>
+                    <p className="font-medium text-yellow-900 dark:text-yellow-100 mb-2">
+                      No.{task.no} {task.name}
+                    </p>
+                    <ul className="space-y-1 text-sm text-yellow-800 dark:text-yellow-200 ml-4">
+                      {task.issues.split('\n').filter(line => line.trim()).map((issue, issueIndex) => (
+                        <li key={issueIndex} className="flex items-start gap-2">
+                          <span className="text-yellow-500 flex-shrink-0">•</span>
+                          <span>{issue.trim()}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
-            </div>
-          </section>
-        )}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 業務一覧テーブル */}
         <section>
@@ -162,6 +175,7 @@ export default async function ProductPage({
                     task={task}
                     productId={product.id}
                     nextTaskName={nextTask?.name}
+                    allTasks={product.tasks}
                   />
                 );
               })}

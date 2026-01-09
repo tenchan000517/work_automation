@@ -10,8 +10,8 @@ export const pv: Product = {
       no: "27",
       category: "構成設計",
       name: "参考PV選定",
-      assignee: "青柳",
-      nextAssignee: "河合",
+      assignee: "河合",
+      nextAssignee: "川崎, 下脇田",  // 次: No.28 現地撮影
       tools: "スプレッドシート",
       deliverable: "構成案",
       checkpoint: "メッセージ",
@@ -19,18 +19,26 @@ export const pv: Product = {
       issues: "ヒアリングシート・基本構成のテンプレート",
       simulation: `大輝ワークス立ち上げ　企業基本情報の共有フォーマット
 受注者が初回打ち合わせ日程共有
-ZOOM初回打ち合わせ企業：担当・大輝・青柳・河合・川崎
+ZOOM初回打ち合わせ企業：担当・渡邉・河合・川崎
 PV構成ヒアリング：ヒアリングシート
-撮影日程の調整：青柳・川崎
+撮影日程の調整：川崎
 議事録のワークスグループ共有
 河合撮影データの共有フォルダ作成`,
+      flowSteps: [
+        { label: "ワークス立ち上げ・企業基本情報の共有フォーマット" },
+        { label: "受注者が初回打ち合わせ日程共有" },
+        { label: "ZOOM初回打ち合わせ：PV構成ヒアリング" },
+        { label: "撮影日程の調整" },
+        { label: "議事録のワークスグループ共有" },
+        { label: "撮影データの共有フォルダ作成" },
+      ],
     },
     {
       no: "28",
       category: "映像撮影",
       name: "現地撮影",
-      assignee: "青柳",
-      nextAssignee: "川崎, 下脇田",
+      assignee: "川崎, 下脇田",
+      nextAssignee: "清水樹",  // 次: No.29 編集・BGM
       tools: "カメラ",
       deliverable: "映像素材",
       checkpoint: "音声",
@@ -40,6 +48,12 @@ PV構成ヒアリング：ヒアリングシート
 撮影データチェック
 撮影者が撮影データの納品：共有ドライブの指定フォルダ内に指定のファイル名で格納
 清水樹がローカルフォルダにデータダウンロードしドライブに元データ格納`,
+      flowSteps: [
+        { label: "撮影" },
+        { label: "撮影データチェック" },
+        { label: "撮影データの納品：共有ドライブの指定フォルダ内に指定のファイル名で格納" },
+        { label: "清水樹がローカルフォルダにデータダウンロードしドライブに元データ格納" },
+      ],
       manualDraft: `PV撮影マニュアル
 
 ================================================================================
@@ -175,7 +189,7 @@ https://youtu.be/om72hp6WxjE`,
       category: "動画編集",
       name: "編集・BGM",
       assignee: "清水樹",
-      nextAssignee: "清水樹",
+      nextAssignee: "川崎",  // 次: No.38 企業担当へ確認依頼
       tools: "PremierePro・Powerdirector",
       deliverable: "PV",
       checkpoint: "尺",
@@ -183,13 +197,17 @@ https://youtu.be/om72hp6WxjE`,
       issues: "編集のテンプレート・マニュアル　チェックリストテンプレ",
       simulation: `マニュアルを基に編集作業の実施
 編集チェックリストを基に成果物の確認`,
+      flowSteps: [
+        { label: "マニュアルを基に編集作業の実施" },
+        { label: "編集チェックリストを基に成果物の確認" },
+      ],
     },
     {
       no: "38",
       category: "作成成果物の確認",
       name: "企業担当へ確認依頼",
-      assignee: "青柳",
-      nextAssignee: "川崎",
+      assignee: "川崎",
+      nextAssignee: "河合, 下脇田, 川崎",  // 次: No.39 納品後の連絡先の共有
       tools: "メール",
       deliverable: "成果物リンク",
       checkpoint: "チェックリストと相違ないか",
@@ -199,13 +217,19 @@ https://youtu.be/om72hp6WxjE`,
 修正箇所の有無の確認
 修正箇所の修正対応
 最終打ち合わせの日程調整`,
+      flowSteps: [
+        { label: "先方へPVの確認" },
+        { label: "修正箇所の有無の確認" },
+        { label: "修正箇所の修正対応" },
+        { label: "最終打ち合わせの日程調整" },
+      ],
     },
     {
       no: "39",
       category: "最終打ち合わせ",
       name: "納品後の連絡先の共有",
-      assignee: "青柳",
-      nextAssignee: "河合, 下脇田, 川崎",
+      assignee: "河合, 下脇田, 川崎",
+      nextAssignee: "",  // 最終業務
       tools: "ZOOM",
       deliverable: "PVデータ",
       checkpoint: "納品後担当者の認識合わせ",
@@ -214,6 +238,10 @@ https://youtu.be/om72hp6WxjE`,
       memo: "最終打ち合わせマニュアル",
       simulation: `マニュアルを基に打合せの実施
 今後の連絡先の共有`,
+      flowSteps: [
+        { label: "マニュアルを基に打合せの実施" },
+        { label: "今後の連絡先の共有" },
+      ],
     },
   ],
   issues: [

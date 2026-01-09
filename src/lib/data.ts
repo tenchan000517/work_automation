@@ -11,4 +11,8 @@ export {
   type Task,
   type Product,
   type RelatedLink,
+  type FlowStep,
+  type FlowStepLink,
+  type ImageItem,
+  type ImageWithCaption,
 } from "./data/index";

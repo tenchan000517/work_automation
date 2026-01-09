@@ -49,3 +49,5 @@ credentials/
 # local development notes
 *.local.md
 notes.txt
+
+.vercel

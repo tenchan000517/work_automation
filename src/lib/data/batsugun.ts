@@ -1,4 +1,4 @@
-import type { Product } from "./index";
+import type { Product, FlowStep } from "./index";
 
 export const batsugun: Product = {
   id: "batsugun",
@@ -10,8 +10,8 @@ export const batsugun: Product = {
       no: "8",
       category: "運用設計",
       name: "投稿方針設計",
-      assignee: "青柳",
-      nextAssignee: "河合",
+      assignee: "河合",
+      nextAssignee: "川崎",  // 次: No.9 撮影
       tools: "バツグン運用関連",
       deliverable: "運用方針",
       checkpoint: "目的一致",
@@ -64,7 +64,7 @@ LINE WORKS「プロモート承認」グループへ
 
 【⑵ 社内承認フロー】
 毎週金曜日 18時までに
-青柳が笠本・清水から承認を取得し、
+担当者が笠本・清水から承認を取得し、
 LINE WORKS「プロモート承認」グループにて
 承認／否認の可否を共有する。
 
@@ -86,7 +86,7 @@ LINE WORKS「プロモート承認」グループにて
 
 予算金額は、
 必ず事前にLINE WORKS企業グループへ報告し、
-青柳・笠本・清水の承認を得たうえで実施する
+笠本・清水の承認を得たうえで実施する
 
 ※承認前の予算確定・広告実施は禁止とする。
 
@@ -122,13 +122,19 @@ LINE WORKS「プロモート承認」グループにて
 ① 企業名：
 ② 動画タイトル：
 ③ 否認の理由：`,
+      flowSteps: [
+        { label: "ヒアリングシートを基に運用方針を設計" },
+        { label: "投稿頻度・プロモート本数を決定" },
+        { label: "顧客と運用方針を確認・合意" },
+        { label: "運用方針をワークスで共有" },
+      ],
     },
     {
       no: "9",
       category: "ショート動画",
       name: "撮影",
-      assignee: "青柳",
-      nextAssignee: "川崎",
+      assignee: "川崎",
+      nextAssignee: "清水樹",  // 次: No.10 編集
       tools: "スマホ",
       deliverable: "動画素材",
       checkpoint: "画角",
@@ -414,37 +420,56 @@ https://youtu.be/om72hp6WxjE`,
 □ ひとり立ちOK
 □ 条件付きOK（再確認項目：＿＿＿）
 □ 再教育必要`,
+      flowSteps: [
+        { label: "撮影準備（機材・設定確認）" },
+        { label: "縦動画（9:16）・HD・60FPSで撮影" },
+        { label: "撮影データチェック（チェックリスト確認）" },
+        { label: "撮影データを共有ドライブに指定ファイル名で格納" },
+      ],
     },
     {
       no: "10",
       category: "ショート動画",
       name: "編集",
       assignee: "清水樹",
-      nextAssignee: "清水樹",
+      nextAssignee: "河合",  // 次: No.11 月次レポート作成
       tools: "Powerdirector",
       deliverable: "投稿動画",
       checkpoint: "ブランド統一",
       hasManual: true,
       issues: "",
+      flowSteps: [
+        { label: "共有ドライブから撮影データをダウンロード" },
+        { label: "Powerdirectorで縦型（9:16）プロジェクト作成" },
+        { label: "カット編集・テロップ入れ・BGM追加" },
+        { label: "チェックリストで確認後、書き出し" },
+        { label: "編集データを指定フォルダに格納" },
+      ],
     },
     {
       no: "11",
       category: "数値分析",
       name: "月次レポート作成",
-      assignee: "青柳",
-      nextAssignee: "河合",
+      assignee: "河合",
+      nextAssignee: "河合",  // 次: No.12 月次FB打合せ
       tools: "Canva",
       deliverable: "レポート",
       checkpoint: "数値正確性",
       hasManual: true,
       issues: "FB資料のフォーマットが必要",
+      flowSteps: [
+        { label: "月間の数値データを収集（再生数・いいね率・視聴維持率等）" },
+        { label: "前月との比較データを作成" },
+        { label: "Canvaでレポートを作成" },
+        { label: "上司に提出・承認を得る" },
+      ],
     },
     {
       no: "12",
       category: "月次FB",
       name: "月次FB打合せ",
-      assignee: "青柳",
-      nextAssignee: "河合",
+      assignee: "河合",
+      nextAssignee: "",  // 最終業務
       tools: "資料テンプレ",
       deliverable: "FB資料",
       checkpoint: "指標理解",
@@ -561,6 +586,13 @@ FB日:
 1. FB打ち合わせ終了後に記入
 2. 記入完了後、FBグループに共有
 3. ネクスト日程は必ず確定させてから報告`,
+      flowSteps: [
+        { label: "実施3稼働日前までにFB資料作成・上司承認" },
+        { label: "実施1稼働日前に企業担当者へ前日確認" },
+        { label: "FBの実施（本音ヒアリング→数値開示）" },
+        { label: "FB報告テンプレートで議事録作成" },
+        { label: "FBグループに報告・ネクスト日程確定" },
+      ],
     },
   ],
   issues: [
