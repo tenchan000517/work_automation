@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Task, ImageItem, RelatedLink, getAssigneeColor, getPriorityAssigneeColor } from "@/lib/data";
+import { Task, ImageItem, RelatedLink, getAssigneeColor, getPriorityAssigneeColor, InputFieldConfig } from "@/lib/data";
 import { ContentModal } from "./ContentModal";
 
 interface TaskCardProps {
@@ -70,6 +70,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
   const [modalInputPlaceholder, setModalInputPlaceholder] = useState<string | undefined>(undefined);
   const [modalInputNote, setModalInputNote] = useState<string | undefined>(undefined);
   const [modalTemplate, setModalTemplate] = useState<string | undefined>(undefined);
+  const [modalInputFields, setModalInputFields] = useState<InputFieldConfig[] | undefined>(undefined);
 
   // カード背景色を優先度の高い担当者の色から取得
   const cardColor = getPriorityAssigneeColor(task.assignee);
@@ -84,7 +85,8 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
     inputLabel?: string,
     inputPlaceholder?: string,
     inputNote?: string,
-    template?: string
+    template?: string,
+    inputFields?: InputFieldConfig[]
   ) => {
     setModalTitle(title);
     setModalContent(content || "");
@@ -96,6 +98,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
     setModalInputPlaceholder(inputPlaceholder);
     setModalInputNote(inputNote);
     setModalTemplate(template);
+    setModalInputFields(inputFields);
     setModalOpen(true);
   };
 
@@ -303,7 +306,8 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                                     link.inputLabel,
                                     link.inputPlaceholder,
                                     link.inputNote,
-                                    link.template
+                                    link.template,
+                                    link.inputFields
                                   )}
                                   className="flow-step-popup-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
                                 >
@@ -453,6 +457,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
         inputPlaceholder={modalInputPlaceholder}
         inputNote={modalInputNote}
         template={modalTemplate}
+        inputFields={modalInputFields}
       />
     </>
   );

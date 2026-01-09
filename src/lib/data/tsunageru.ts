@@ -138,12 +138,14 @@ export const tsunageru: Product = {
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "投稿フォーマット",
-              inputLabel: "企業名を入力（例：株式会社山田運送）",
-              inputPlaceholder: "株式会社○○",
-              inputNote: "担当者名は適宜修正してください",
-              template: `@河合 @中尾文香 cc:@青柳
+              inputNote: "担当者名・企業名を入力してください",
+              inputFields: [
+                { id: "mention", label: "宛先", placeholder: "@河合 @中尾文香 cc:@青柳", defaultValue: "@河合 @中尾文香 cc:@青柳" },
+                { id: "company", label: "企業名", placeholder: "株式会社○○" }
+              ],
+              template: `{{mention}}
 新規受注です。
-{{input}}様、ツナゲル12ヶ月契約。
+{{company}}様、ツナゲル12ヶ月契約。
 初回打ち合わせは来週中に調整予定です。
 詳細は上記フォーマットをご確認ください。`
             }
@@ -271,15 +273,19 @@ https://forms.gle/gXE12JNfsN9JGiPJA
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "ワークス投稿フォーマット",
-              inputLabel: "企業名を入力（例：株式会社山田運送）",
-              inputPlaceholder: "株式会社○○",
-              inputNote: "日時・Meet URLは手動で入力してください",
-              template: `@河合 cc:@青柳
+              inputNote: "各項目を入力してください",
+              inputFields: [
+                { id: "mention", label: "宛先", placeholder: "@河合 cc:@青柳", defaultValue: "@河合 cc:@青柳" },
+                { id: "company", label: "企業名", placeholder: "株式会社○○" },
+                { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" },
+                { id: "meetUrl", label: "Meet URL", placeholder: "https://meet.google.com/xxx-xxxx-xxx" }
+              ],
+              template: `{{mention}}
 初回打ち合わせの日程が確定しました。
 
-【企業名】{{input}}
-【日時】○月○日（○）○○:○○〜
-【Meet URL】
+【企業名】{{company}}
+【日時】{{datetime}}
+【Meet URL】{{meetUrl}}
 
 カレンダー登録済みです。
 確認したらリアクションお願いします。`
@@ -463,15 +469,18 @@ https://forms.gle/gXE12JNfsN9JGiPJA
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "撮影日程確認フォーマット",
-              inputLabel: "企業名を入力（例：株式会社山田運送）",
-              inputPlaceholder: "株式会社○○",
-              inputNote: "初回打ち合わせ日程は手動で入力してください",
-              template: `@川崎
-{{input}}様の撮影について相談です。
+              inputNote: "各項目を入力してください",
+              inputFields: [
+                { id: "mention", label: "宛先（撮影担当）", placeholder: "@川崎", defaultValue: "@川崎" },
+                { id: "company", label: "企業名", placeholder: "株式会社○○" },
+                { id: "mtgDate", label: "初回打ち合わせ日", placeholder: "○月○日（○）" }
+              ],
+              template: `{{mention}}
+{{company}}様の撮影について相談です。
 
-初回打ち合わせ：○月○日（○）予定
+初回打ち合わせ：{{mtgDate}}予定
 打ち合わせで先方に撮影候補日を提示したいので、
-○月○日以降で撮影可能な日程を5候補ほど教えてください。
+打ち合わせ日以降で撮影可能な日程を5候補ほど教えてください。
 
 よろしくお願いします。`
             }
@@ -493,14 +502,18 @@ https://forms.gle/gXE12JNfsN9JGiPJA
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "リマインドフォーマット",
-              inputLabel: "企業名を入力（例：株式会社山田運送）",
-              inputPlaceholder: "株式会社○○",
-              inputNote: "日時・Meet URLは手動で入力してください",
-              template: `@渡邉 cc:@青柳
-{{input}}様の初回打ち合わせリマインドです。
+              inputNote: "各項目を入力してください",
+              inputFields: [
+                { id: "mention", label: "宛先", placeholder: "@渡邉 cc:@青柳", defaultValue: "@渡邉 cc:@青柳" },
+                { id: "company", label: "企業名", placeholder: "株式会社○○" },
+                { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" },
+                { id: "meetUrl", label: "Meet URL", placeholder: "https://meet.google.com/xxx-xxxx-xxx" }
+              ],
+              template: `{{mention}}
+{{company}}様の初回打ち合わせリマインドです。
 
-【日時】○月○日（○）○○:○○〜
-【Meet URL】
+【日時】{{datetime}}
+【Meet URL】{{meetUrl}}
 
 ヒアリングシート準備済みです。
 よろしくお願いします。`
@@ -952,20 +965,28 @@ https://drive.google.com/drive/folders/1irkdRQYFypDErVHzUHoXF3BLnyOlumMh
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "撮影連絡フォーマット",
-              inputLabel: "企業名を入力（例：株式会社山田運送）",
-              inputPlaceholder: "株式会社○○",
-              inputNote: "撮影日・場所・URLは手動で入力してください",
-              template: `@川崎 cc:@青柳
-{{input}}様の撮影についてご連絡します。
+              inputNote: "各項目を入力してください。フォルダURLはGASでコピーしたものを貼り付け。",
+              inputFields: [
+                { id: "mention", label: "宛先", placeholder: "@川崎 cc:@青柳", defaultValue: "@川崎 cc:@青柳" },
+                { id: "company", label: "企業名", placeholder: "株式会社○○" },
+                { id: "shootingDate", label: "撮影日", placeholder: "○月○日（○）○○:○○〜" },
+                { id: "location", label: "場所", placeholder: "○○株式会社 本社" },
+                { id: "address", label: "住所", placeholder: "愛知県名古屋市○○区..." },
+                { id: "interviewTarget", label: "インタビュー対象", placeholder: "代表取締役 ○○様、営業部 ○○様" },
+                { id: "notes", label: "備考", placeholder: "駐車場あり、作業着撮影希望 等" },
+                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
+              ],
+              template: `{{mention}}
+{{company}}様の撮影についてご連絡します。
 
-【撮影日】○月○日（○）○○:○○〜
-【場所】{{input}} 本社
-【住所】
-【インタビュー対象】
-【備考】
+【撮影日】{{shootingDate}}
+【場所】{{location}}
+【住所】{{address}}
+【インタビュー対象】{{interviewTarget}}
+【備考】{{notes}}
 
 📁 撮影素材アップロード先:
-（ここにGASでコピーしたURLを貼り付け）
+{{folderUrl}}
 
 撮影後、上記フォルダに素材をアップロードお願いします。
 確認したらリアクションお願いします。`
@@ -1111,13 +1132,15 @@ AIが出力した議事録をコピー
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "ワークス投稿フォーマット",
-              inputLabel: "ここに議事録を貼り付け",
-              inputPlaceholder: "AIが出力した議事録をここに貼り付けてください...",
-              inputNote: "GASを使わない場合はこちらから直接コピーできます",
+              inputNote: "企業名と議事録を入力してください。GASを使わない場合はこちらから直接コピーできます。",
+              inputFields: [
+                { id: "company", label: "企業名", placeholder: "株式会社○○" },
+                { id: "minutes", label: "議事録", placeholder: "AIが出力した議事録をここに貼り付け...", type: "textarea", rows: 10 }
+              ],
               template: `@ALL
-株式会社○○様 初回打ち合わせの議事録を共有します。
+{{company}}様 初回打ち合わせの議事録を共有します。
 
-{{input}}
+{{minutes}}
 
 ご確認お願いします。`
             }

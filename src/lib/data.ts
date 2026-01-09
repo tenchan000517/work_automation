@@ -15,4 +15,5 @@ export {
   type FlowStepLink,
   type ImageItem,
   type ImageWithCaption,
+  type InputFieldConfig,
 } from "./data/index";

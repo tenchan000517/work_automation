@@ -122,6 +122,16 @@ export interface ImageWithCaption {
 // 画像は文字列（URLのみ）またはキャプション付きオブジェクト
 export type ImageItem = string | ImageWithCaption;
 
+// 入力フィールドの設定（複数入力対応）
+export interface InputFieldConfig {
+  id: string;              // プレースホルダーID（例: "company" → {{company}}で参照）
+  label: string;           // 表示ラベル（例: "企業名"）
+  placeholder?: string;    // プレースホルダー（例: "株式会社○○"）
+  defaultValue?: string;   // デフォルト値（例: 担当者名 "@河合"）
+  type?: 'text' | 'textarea';  // 入力タイプ（デフォルト: text）
+  rows?: number;           // textareaの場合の行数
+}
+
 // フローステップ内のリンク/ポップアップ
 export interface FlowStepLink {
   label: string;           // "フォーマット"
@@ -132,10 +142,12 @@ export interface FlowStepLink {
   // 入力フィールド付きテンプレート機能
   hasInputField?: boolean;     // trueの場合、入力フィールドを表示
   inputSectionTitle?: string;  // セクションタイトル（例：「ワークス投稿作成」）
-  inputLabel?: string;         // ラベル（例：「ここに文字起こしを貼り付け」）
-  inputPlaceholder?: string;   // プレースホルダー
+  inputLabel?: string;         // ラベル（例：「ここに文字起こしを貼り付け」）（単一入力時の後方互換用）
+  inputPlaceholder?: string;   // プレースホルダー（単一入力時の後方互換用）
   inputNote?: string;          // 注意書き
-  template?: string;           // テンプレート（{{input}}の部分に入力内容が挿入される）
+  template?: string;           // テンプレート（{{input}}や{{company}}等で参照）
+  // 複数入力フィールド対応
+  inputFields?: InputFieldConfig[];  // 複数入力フィールドの設定（これがあればinputLabel等は無視）
 }
 
 // フローステップの型定義

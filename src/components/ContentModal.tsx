@@ -19,6 +19,16 @@ interface ImageWithCaption {
 // 画像は文字列またはキャプション付きオブジェクト
 type ImageItem = string | ImageWithCaption;
 
+// 入力フィールドの設定（複数入力対応）
+interface InputFieldConfig {
+  id: string;              // プレースホルダーID（例: "company" → {{company}}で参照）
+  label: string;           // 表示ラベル（例: "企業名"）
+  placeholder?: string;    // プレースホルダー（例: "株式会社○○"）
+  defaultValue?: string;   // デフォルト値（例: 担当者名 "@河合"）
+  type?: 'text' | 'textarea';  // 入力タイプ（デフォルト: text）
+  rows?: number;           // textareaの場合の行数
+}
+
 interface ContentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,21 +39,40 @@ interface ContentModalProps {
   // 入力フィールド付きテンプレート機能
   hasInputField?: boolean;
   inputSectionTitle?: string;  // セクションタイトル（例：「ワークス投稿作成」）
-  inputLabel?: string;         // ラベル（例：「ここに文字起こしを貼り付け」）
-  inputPlaceholder?: string;   // プレースホルダー
+  inputLabel?: string;         // ラベル（例：「ここに文字起こしを貼り付け」）（単一入力時の後方互換用）
+  inputPlaceholder?: string;   // プレースホルダー（単一入力時の後方互換用）
   inputNote?: string;          // 注意書き
-  template?: string;           // テンプレート（{{input}}の部分に入力内容が挿入される）
+  template?: string;           // テンプレート（{{input}}や{{company}}等で参照）
+  // 複数入力フィールド対応
+  inputFields?: InputFieldConfig[];  // 複数入力フィールドの設定（これがあればinputLabel等は無視）
 }
 
-export function ContentModal({ isOpen, onClose, title, content, images, embeddedLinks, hasInputField, inputSectionTitle, inputLabel, inputPlaceholder, inputNote, template }: ContentModalProps) {
+export function ContentModal({ isOpen, onClose, title, content, images, embeddedLinks, hasInputField, inputSectionTitle, inputLabel, inputPlaceholder, inputNote, template, inputFields }: ContentModalProps) {
   const [copied, setCopied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [embeddedPopup, setEmbeddedPopup] = useState<{ label: string; content: string } | null>(null);
   const [embeddedCopied, setEmbeddedCopied] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState("");  // 単一入力（後方互換用）
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});  // 複数入力用
   const [templateCopied, setTemplateCopied] = useState(false);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [accordionCopied, setAccordionCopied] = useState(false);
+
+  // 複数入力フィールドの初期値を設定
+  useEffect(() => {
+    if (inputFields && inputFields.length > 0) {
+      const initialValues: Record<string, string> = {};
+      inputFields.forEach(field => {
+        initialValues[field.id] = field.defaultValue || "";
+      });
+      setInputValues(initialValues);
+    }
+  }, [inputFields]);
+
+  // 複数入力フィールドの値を更新
+  const handleInputChange = (id: string, value: string) => {
+    setInputValues(prev => ({ ...prev, [id]: value }));
+  };
 
   const handleCopy = async () => {
     if (!content) return;
@@ -87,16 +116,52 @@ export function ContentModal({ isOpen, onClose, title, content, images, embedded
       setEmbeddedPopup(null);
       setEmbeddedCopied(false);
       setInputValue("");
+      // inputValuesは初期値にリセット（デフォルト値を復元）
+      if (inputFields && inputFields.length > 0) {
+        const initialValues: Record<string, string> = {};
+        inputFields.forEach(field => {
+          initialValues[field.id] = field.defaultValue || "";
+        });
+        setInputValues(initialValues);
+      } else {
+        setInputValues({});
+      }
       setTemplateCopied(false);
       setAccordionOpen(false);
       setAccordionCopied(false);
     }
-  }, [isOpen]);
+  }, [isOpen, inputFields]);
 
   // テンプレートに入力値を挿入した結果を取得
   const getFilledTemplate = () => {
-    if (!template || !inputValue.trim()) return "";
-    return template.replace("{{input}}", inputValue.trim());
+    if (!template) return "";
+
+    // 複数入力フィールドモードの場合
+    if (inputFields && inputFields.length > 0) {
+      let result = template;
+      // 各フィールドのプレースホルダーを置換
+      inputFields.forEach(field => {
+        const value = inputValues[field.id] || "";
+        const regex = new RegExp(`\\{\\{${field.id}\\}\\}`, 'g');
+        result = result.replace(regex, value);
+      });
+      return result;
+    }
+
+    // 単一入力フィールドモード（後方互換）
+    if (!inputValue.trim()) return "";
+    return template.replace(/\{\{input\}\}/g, inputValue.trim());
+  };
+
+  // 必須フィールドが全て入力されているか
+  const hasRequiredInput = () => {
+    if (inputFields && inputFields.length > 0) {
+      // デフォルト値がないフィールドのうち、少なくとも1つに入力があるか
+      const fieldsWithoutDefault = inputFields.filter(f => !f.defaultValue);
+      if (fieldsWithoutDefault.length === 0) return true; // 全てデフォルト値あり
+      return fieldsWithoutDefault.some(f => (inputValues[f.id] || "").trim() !== "");
+    }
+    return inputValue.trim() !== "";
   };
 
   // テンプレート結果をコピー
@@ -303,7 +368,20 @@ export function ContentModal({ isOpen, onClose, title, content, images, embedded
                 {accordionOpen && (
                   <div className="p-4 bg-white dark:bg-zinc-800 border-t border-zinc-300 dark:border-zinc-600">
                     <pre className="text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap font-mono leading-relaxed max-h-60 overflow-y-auto">
-                      {template.replace("{{input}}", "")}
+                      {(() => {
+                        let cleanTemplate = template || "";
+                        // 複数入力フィールドモード
+                        if (inputFields && inputFields.length > 0) {
+                          inputFields.forEach(field => {
+                            const regex = new RegExp(`\\{\\{${field.id}\\}\\}`, 'g');
+                            cleanTemplate = cleanTemplate.replace(regex, "");
+                          });
+                        } else {
+                          // 単一入力モード
+                          cleanTemplate = cleanTemplate.replace(/\{\{input\}\}/g, "");
+                        }
+                        return cleanTemplate;
+                      })()}
                     </pre>
                   </div>
                 )}
@@ -316,21 +394,51 @@ export function ContentModal({ isOpen, onClose, title, content, images, embedded
                 </p>
               )}
 
-              {/* 入力フィールド */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">
-                  {inputLabel || "ここに貼り付け"}
-                </label>
-                <textarea
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder={inputPlaceholder || "テキストをここに貼り付けてください..."}
-                  className="w-full h-40 px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
-                />
-              </div>
+              {/* 入力フィールド（複数対応） */}
+              {inputFields && inputFields.length > 0 ? (
+                <div className="space-y-4 mb-4">
+                  {inputFields.map((field) => (
+                    <div key={field.id}>
+                      <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                        {field.label}
+                      </label>
+                      {field.type === 'textarea' ? (
+                        <textarea
+                          value={inputValues[field.id] || ""}
+                          onChange={(e) => handleInputChange(field.id, e.target.value)}
+                          placeholder={field.placeholder}
+                          rows={field.rows || 4}
+                          className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={inputValues[field.id] || ""}
+                          onChange={(e) => handleInputChange(field.id, e.target.value)}
+                          placeholder={field.placeholder}
+                          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* 単一入力フィールド（後方互換） */
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">
+                    {inputLabel || "ここに貼り付け"}
+                  </label>
+                  <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder={inputPlaceholder || "テキストをここに貼り付けてください..."}
+                    className="w-full h-40 px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                  />
+                </div>
+              )}
 
               {/* プレビュー（入力があるときのみ表示） */}
-              {inputValue.trim() && (
+              {hasRequiredInput() && (
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400">
