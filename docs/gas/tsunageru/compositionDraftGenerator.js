@@ -420,10 +420,25 @@ function getCompanySheetListForComposition() {
         companyName = '';
       }
 
+      // Part③から保存済み構成案を取得
+      let savedDraftGenko = '';
+      let savedDraftDouga = '';
+      try {
+        const genkoResult = loadPart3Data(name, '構成案_原稿用');
+        if (genkoResult.success) savedDraftGenko = genkoResult.value;
+        const dougaResult = loadPart3Data(name, '構成案_動画用');
+        if (dougaResult.success) savedDraftDouga = dougaResult.value;
+      } catch (e) {
+        // ignore
+      }
+
       result.push({
         sheetName: name,
         companyName: String(companyName).trim(),
-        isActive: name === activeSheetName
+        isActive: name === activeSheetName,
+        savedDraftGenko: savedDraftGenko,
+        savedDraftDouga: savedDraftDouga,
+        hasSavedData: !!savedDraftGenko || !!savedDraftDouga
       });
     }
   }
@@ -776,15 +791,24 @@ function showConvertDialog(promptName, title, description) {
   // プレースホルダーを担当者情報で置換
   promptData.template = replacePlaceholders(promptData.template, settings);
 
-  const html = HtmlService.createHtmlOutput(createConvertDialogHTML(promptData, title, description))
+  // 企業シート一覧を取得（保存済みデータ含む）
+  const sheetList = getCompanySheetListForComposition();
+
+  // 保存キーを決定（原稿用か動画用か）
+  let saveKey = '構成案_原稿用';  // デフォルト
+  if (promptName === '撮影指示書変換') {
+    saveKey = '構成案_動画用';
+  }
+
+  const html = HtmlService.createHtmlOutput(createConvertDialogHTML(promptData, title, description, sheetList, saveKey))
     .setWidth(900)
-    .setHeight(700);
+    .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, '📤 ' + title);
 }
 
 
 // ===== 変換ダイアログHTML生成 =====
-function createConvertDialogHTML(promptData, title, description) {
+function createConvertDialogHTML(promptData, title, description, sheetList, saveKey) {
   const template = promptData.template;
   const inputLabel = promptData.inputLabel || '構成案を貼り付け';
   const inputPlaceholder = promptData.inputPlaceholder || 'AIが出力した構成案をここに貼り付けてください';
@@ -792,6 +816,9 @@ function createConvertDialogHTML(promptData, title, description) {
     .replace(/\\/g, '\\\\')
     .replace(/`/g, '\\`')
     .replace(/\$/g, '\\$');
+
+  const sheetListJson = JSON.stringify(sheetList || []);
+  const saveKeyJson = JSON.stringify(saveKey || '構成案_原稿用');
 
   return `
 <!DOCTYPE html>
@@ -802,11 +829,11 @@ function createConvertDialogHTML(promptData, title, description) {
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }
     h3 { margin: 0 0 10px 0; color: #1a73e8; }
-    .description { color: #666; margin-bottom: 20px; font-size: 14px; }
-    .section { margin-bottom: 20px; }
-    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; }
-    .input-area { width: 100%; height: 200px; font-family: monospace; font-size: 12px; resize: vertical; margin-bottom: 10px; }
-    .output-area { width: 100%; height: 250px; font-family: monospace; font-size: 12px; resize: vertical; background: #f9f9f9; }
+    .description { color: #666; margin-bottom: 15px; font-size: 14px; }
+    .section { margin-bottom: 15px; }
+    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; display: flex; align-items: center; gap: 10px; }
+    .input-area { width: 100%; height: 180px; font-family: monospace; font-size: 12px; resize: vertical; margin-bottom: 10px; }
+    .output-area { width: 100%; height: 200px; font-family: monospace; font-size: 12px; resize: vertical; background: #f9f9f9; }
     .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; margin-bottom: 10px; }
     .btn-primary { background: #1a73e8; color: white; }
     .btn-primary:hover { background: #1557b0; }
@@ -814,11 +841,12 @@ function createConvertDialogHTML(promptData, title, description) {
     .btn-secondary:hover { background: #e0e0e0; }
     .btn-success { background: #4caf50; color: white; }
     .btn-success:hover { background: #388e3c; }
-    .btn-orange { background: #ff9800; color: white; }
-    .btn-orange:hover { background: #f57c00; }
+    .btn-save { background: #ff9800; color: white; padding: 8px 16px; font-size: 13px; }
+    .btn-save:hover { background: #f57c00; }
     .status { margin-top: 10px; padding: 10px; border-radius: 4px; display: none; }
     .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
     .status.error { display: block; background: #ffebee; color: #c62828; }
+    .status.info { display: block; background: #e3f2fd; color: #1565c0; }
     .info-box { background: #e3f2fd; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; }
     .accordion { margin-bottom: 15px; }
     .accordion-header { background: #f5f5f5; padding: 10px 15px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
@@ -826,17 +854,28 @@ function createConvertDialogHTML(promptData, title, description) {
     .accordion-content { display: none; padding: 15px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; }
     .accordion-content.show { display: block; }
     pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 150px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; }
+    /* シート選択UI */
+    .sheet-select-box { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd; }
+    .sheet-select-title { font-weight: bold; margin-bottom: 8px; color: #333; font-size: 13px; }
+    .sheet-list { max-height: 100px; overflow-y: auto; }
+    .sheet-option { display: flex; align-items: center; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-bottom: 3px; font-size: 13px; }
+    .sheet-option:hover { background: #e3f2fd; }
+    .sheet-option.selected { background: #bbdefb; }
+    .sheet-option.has-data { border-left: 3px solid #ff9800; }
+    .sheet-option input[type="radio"] { margin-right: 8px; }
+    .badge { font-size: 10px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
+    .badge-active { background: #4caf50; color: white; }
+    .badge-saved { background: #ff9800; color: white; }
   </style>
 </head>
 <body>
   <h3>${title}</h3>
   <p class="description">${description}</p>
 
-  <div class="info-box">
-    <strong>使い方：</strong><br>
-    1. AIが出力した構成案を下の入力欄に貼り付け<br>
-    2. 「変換プロンプトを生成」をクリック<br>
-    3. 生成されたプロンプトをコピーしてAIに貼り付け
+  <!-- シート選択UI -->
+  <div class="sheet-select-box">
+    <div class="sheet-select-title">📄 対象企業（保存先）を選択</div>
+    <div id="sheetList" class="sheet-list"></div>
   </div>
 
   <div class="accordion">
@@ -850,7 +889,10 @@ function createConvertDialogHTML(promptData, title, description) {
   </div>
 
   <div class="section">
-    <div class="section-title">📥 ${inputLabel}</div>
+    <div class="section-title">
+      📥 ${inputLabel}
+      <button class="btn-save" onclick="saveDraft()">💾 シートに保存</button>
+    </div>
     <textarea class="input-area" id="inputArea" placeholder="${inputPlaceholder}"></textarea>
     <button class="btn btn-primary" onclick="generateConvertPrompt()">🔄 変換プロンプトを生成</button>
   </div>
@@ -869,16 +911,127 @@ function createConvertDialogHTML(promptData, title, description) {
 
   <script>
     const template = \`${escapedTemplate}\`;
+    const sheetList = ${sheetListJson};
+    const saveKey = ${saveKeyJson};
+    let selectedSheetName = '';
 
     window.onload = function() {
       document.getElementById('templatePreview').textContent = template;
+      renderSheetList();
     };
+
+    function renderSheetList() {
+      const container = document.getElementById('sheetList');
+
+      if (!sheetList || sheetList.length === 0) {
+        container.innerHTML = '<div style="color:#666;padding:8px;">企業シートがありません</div>';
+        return;
+      }
+
+      // アクティブシートを先頭に
+      const sorted = [...sheetList].sort((a, b) => {
+        if (a.isActive) return -1;
+        if (b.isActive) return 1;
+        return 0;
+      });
+
+      let html = '';
+      sorted.forEach((item, index) => {
+        const isFirst = index === 0;
+        if (isFirst) selectedSheetName = item.sheetName;
+
+        const selectedClass = isFirst ? 'selected' : '';
+        const hasDataClass = item.hasSavedData ? 'has-data' : '';
+        const activeBadge = item.isActive ? '<span class="badge badge-active">アクティブ</span>' : '';
+        const savedBadge = item.hasSavedData ? '<span class="badge badge-saved">保存済</span>' : '';
+        const savedData = saveKey === '構成案_動画用' ? item.savedDraftDouga : item.savedDraftGenko;
+
+        html += \`
+          <div class="sheet-option \${selectedClass} \${hasDataClass}" onclick="selectSheet('\${escapeHtml(item.sheetName)}', '\${escapeHtml(savedData || '')}', this)">
+            <input type="radio" name="targetSheet" value="\${escapeHtml(item.sheetName)}" \${isFirst ? 'checked' : ''}>
+            <label>\${escapeHtml(item.sheetName)}\${activeBadge}\${savedBadge}</label>
+          </div>
+        \`;
+      });
+
+      container.innerHTML = html;
+
+      // 最初のシートの保存済みデータを読み込む
+      const firstSheet = sorted[0];
+      const savedData = saveKey === '構成案_動画用' ? firstSheet.savedDraftDouga : firstSheet.savedDraftGenko;
+      if (savedData) {
+        document.getElementById('inputArea').value = savedData;
+        showStatus('保存済みの構成案を読み込みました', 'info');
+      }
+    }
+
+    function selectSheet(sheetName, savedData, element) {
+      document.querySelectorAll('.sheet-option').forEach(el => el.classList.remove('selected'));
+      document.querySelectorAll('.sheet-option input[type="radio"]').forEach(el => el.checked = false);
+
+      element.classList.add('selected');
+      element.querySelector('input[type="radio"]').checked = true;
+      selectedSheetName = sheetName;
+
+      // 保存済みデータがあれば読み込む
+      const currentInput = document.getElementById('inputArea').value.trim();
+      if (savedData) {
+        if (currentInput && currentInput !== savedData) {
+          if (confirm('保存済みの構成案を読み込みますか？\\n（現在の入力は破棄されます）')) {
+            document.getElementById('inputArea').value = savedData;
+            showStatus('保存済みの構成案を読み込みました', 'info');
+          }
+        } else {
+          document.getElementById('inputArea').value = savedData;
+          showStatus('保存済みの構成案を読み込みました', 'info');
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     function toggleAccordion() {
       const content = document.getElementById('accordionContent');
       const icon = document.getElementById('accordionIcon');
       content.classList.toggle('show');
       icon.textContent = content.classList.contains('show') ? '▼' : '▶';
+    }
+
+    function saveDraft() {
+      if (!selectedSheetName) {
+        showStatus('企業シートを選択してください', 'error');
+        return;
+      }
+      const input = document.getElementById('inputArea').value.trim();
+      if (!input) {
+        showStatus('構成案を入力してください', 'error');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showStatus('💾 構成案を企業シートに保存しました', 'success');
+          } else if (result.needConfirm) {
+            if (confirm('既存のデータを上書きしますか？')) {
+              google.script.run
+                .withSuccessHandler(function(r) {
+                  if (r.success) showStatus('💾 構成案を上書き保存しました', 'success');
+                  else showStatus('保存エラー: ' + r.error, 'error');
+                })
+                .savePart3DataForce(selectedSheetName, saveKey, input);
+            }
+          } else {
+            showStatus('保存エラー: ' + result.error, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          showStatus('保存エラー: ' + error.message, 'error');
+        })
+        .savePart3Data(selectedSheetName, saveKey, input, true);
     }
 
     function generateConvertPrompt() {

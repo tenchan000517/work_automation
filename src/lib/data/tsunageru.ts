@@ -452,6 +452,44 @@ https://forms.gle/gXE12JNfsN9JGiPJA
           ]
         },
         {
+          label: "撮影フォルダ作成",
+          description: `ヒアリングシートのメニューから撮影データ用のフォルダを作成します。
+
+━━━━━━━━━━━━━━━━━━━━
+■ 手順
+━━━━━━━━━━━━━━━━━━━━
+
+1. ヒアリングシートを開く
+2. メニュー「📁 撮影フォルダ」→「📂 企業シートから作成」
+3. 対象の企業シートを選択
+4. 「📁 フォルダを作成」をクリック
+
+→ フォルダが自動作成され、URLが企業シートに保存されます
+
+━━━━━━━━━━━━━━━━━━━━
+■ 自動作成されるフォルダ構成
+━━━━━━━━━━━━━━━━━━━━
+
+[企業名]_撮影データ/
+├─ 01_撮影素材 ← 撮影担当者はここにアップ
+├─ 02_編集データ
+└─ 03_完成動画
+
+━━━━━━━━━━━━━━━━━━━━
+■ 補足
+━━━━━━━━━━━━━━━━━━━━
+
+・URLは企業シートのPart③に自動保存されます
+・次のステップの連絡フォーマットで自動的に使用されます`,
+          images: [
+            { url: "/images/gas-folder-menu.png", caption: "STEP 2: メニュー「📁 撮影フォルダ」→「📂 企業シートから作成」" },
+            { url: "/images/gas-folder-complete.png", caption: "STEP 4: フォルダ作成完了" }
+          ],
+          links: [
+            { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit" }
+          ]
+        },
+        {
           label: "撮影可能日5候補を確認",
           relatedTaskNo: "7",  // 撮影業務の担当者を動的に表示
           description: `初回打ち合わせで先方に撮影候補日を提示できるよう、撮影担当者に事前確認します。
@@ -473,7 +511,9 @@ https://forms.gle/gXE12JNfsN9JGiPJA
               inputFields: [
                 { id: "mention", label: "宛先（撮影担当）", placeholder: "@川崎", defaultValue: "@川崎" },
                 { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "mtgDate", label: "初回打ち合わせ日", placeholder: "○月○日（○）" }
+                { id: "mtgDate", label: "初回打ち合わせ日", placeholder: "○月○日（○）" },
+                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
+                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
               ],
               template: `{{mention}}
 {{company}}様の撮影について相談です。
@@ -482,7 +522,13 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 打ち合わせで先方に撮影候補日を提示したいので、
 打ち合わせ日以降で撮影可能な日程を5候補ほど教えてください。
 
-よろしくお願いします。`
+よろしくお願いします。
+
+━━━━━━━━━━━━━━━━━━━━
+📎 関連リンク
+━━━━━━━━━━━━━━━━━━━━
+📋 ヒアリングシート: {{hearingSheetUrl}}
+📁 撮影素材フォルダ: {{folderUrl}}`
             }
           ]
         },
@@ -507,7 +553,9 @@ https://forms.gle/gXE12JNfsN9JGiPJA
                 { id: "mention", label: "宛先", placeholder: "@渡邉 cc:@青柳", defaultValue: "@渡邉 cc:@青柳" },
                 { id: "company", label: "企業名", placeholder: "株式会社○○" },
                 { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" },
-                { id: "meetUrl", label: "Meet URL", placeholder: "https://meet.google.com/xxx-xxxx-xxx" }
+                { id: "meetUrl", label: "Meet URL", placeholder: "https://meet.google.com/xxx-xxxx-xxx" },
+                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
+                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
               ],
               template: `{{mention}}
 {{company}}様の初回打ち合わせリマインドです。
@@ -515,8 +563,13 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 【日時】{{datetime}}
 【Meet URL】{{meetUrl}}
 
-ヒアリングシート準備済みです。
-よろしくお願いします。`
+よろしくお願いします。
+
+━━━━━━━━━━━━━━━━━━━━
+📎 関連リンク
+━━━━━━━━━━━━━━━━━━━━
+📋 ヒアリングシート: {{hearingSheetUrl}}
+📁 撮影素材フォルダ: {{folderUrl}}`
             }
           ]
         },
@@ -869,115 +922,46 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
       hasManual: true,
       issues: "",
       simulation: `【業務内容】
-1. 撮影日程を川崎に連絡
+1. 撮影日程確定を撮影担当者に連絡
 2. 議事録をワークスに共有
-3. 撮影データの共有フォルダを作成
 
 【トリガー（次工程へ）】
-→ 議事録共有 + フォルダ作成完了`,
+→ 議事録共有完了`,
       flowSteps: [
-        {
-          label: "撮影フォルダ作成",
-          description: `ヒアリングシートのメニューから撮影データ用のフォルダを自動作成し、URLをコピーします。
-
-━━━━━━━━━━━━━━━━━━━━
-■ 手順
-━━━━━━━━━━━━━━━━━━━━
-
-1. ヒアリングシートを開く
-2. メニュー「📁 撮影フォルダ」→「🆕 新規フォルダ作成」
-3. 企業名を入力（例：株式会社〇〇）
-4. 完了ダイアログから「📋 URLをコピー」をクリック
-
-※日程の連絡と撮影フォルダの連絡を個別に行う場合は
-　「撮影担当者への連絡用テンプレート」をコピー
-
-━━━━━━━━━━━━━━━━━━━━
-■ 自動作成されるフォルダ構成
-━━━━━━━━━━━━━━━━━━━━
-
-[企業名]_撮影データ/
-├─ 01_撮影素材 ← 撮影担当者はここにアップ
-├─ 02_編集データ
-└─ 03_完成動画
-
-━━━━━━━━━━━━━━━━━━━━
-■ 初回のみ：撮影担当者の共有設定
-━━━━━━━━━━━━━━━━━━━━
-
-撮影担当者が初めてフォルダにアクセスする場合、
-親フォルダの共有設定が必要です。
-
-【共有設定するフォルダ】
-https://drive.google.com/drive/folders/1irkdRQYFypDErVHzUHoXF3BLnyOlumMh
-
-【設定手順】
-1. 上記フォルダを開く
-2. 「共有」→ 撮影担当者のメールアドレスを追加
-3. 権限：「編集者」→「送信」
-
-━━━━━━━━━━━━━━━━━━━━
-■ ダイアログを閉じてしまった場合
-━━━━━━━━━━━━━━━━━━━━
-
-1. メニュー「📁 撮影フォルダ」→「📋 最近作成したフォルダ一覧」
-2. 該当の企業名をクリックして選択
-3. テンプレートが表示される
-4. 「📋 URLをコピー」または「📋 テンプレートをコピー」
-
-※ 直近20件の履歴が保存されています`,
-          images: [
-            { url: "/images/gas-folder-menu.png", caption: "STEP 2: メニュー「📁 撮影フォルダ」→「🆕 新規フォルダ作成」" },
-            { url: "/images/gas-folder-complete.png", caption: "STEP 4: 完了ダイアログから「📋 URLをコピー」" },
-            { url: "/images/gas-folder-history-menu.png", caption: "【補足】メニュー「📁 撮影フォルダ」→「📋 最近作成したフォルダ一覧」" },
-            { url: "/images/gas-folder-history-new.png", caption: "【補足】履歴からURLをコピー" }
-          ],
-          links: [
-            {
-              label: "ヒアリングシート",
-              type: "link",
-              url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit"
-            }
-          ]
-        },
         {
           label: "撮影担当者へ連絡",
           relatedTaskNo: "7",
-          description: `撮影日程とフォルダURLをまとめて撮影担当者に連絡します。
+          description: `撮影日程確定を撮影担当者に連絡します。
+撮影データの保存先フォルダも明確に指示します。
 
 【送信手順】
 1. 下の「連絡フォーマット」ボタンから投稿文をコピー
-2. 企業名・撮影日・場所等を入力
-3. GASでコピーしたフォルダURLを貼り付け
-4. ワークスに貼り付けて送信
+2. 各項目を入力
+3. ワークスに貼り付けて送信
 
-【URLのコピーが残っていない場合】
-1. ヒアリングシートを開く
-2. メニュー「📁 撮影フォルダ」→「📋 最近作成したフォルダ一覧」
-3. 該当の企業名をクリックして「📋 URLをコピー」`,
-          images: [
-            { url: "/images/gas-folder-history-menu.png", caption: "【URLが残っていない場合】メニュー「📁 撮影フォルダ」→「📋 最近作成したフォルダ一覧」" },
-            { url: "/images/gas-folder-history-new.png", caption: "【URLが残っていない場合】企業名をクリック→「📋 URLをコピー」" }
-          ],
+【ヒアリングシート・フォルダURLの確認方法】
+企業シートのPart③（処理データ）に保存されています。`,
           links: [
             {
               label: "連絡フォーマット",
               type: "popup",
               hasInputField: true,
-              inputSectionTitle: "撮影連絡フォーマット",
-              inputNote: "各項目を入力してください。フォルダURLはGASでコピーしたものを貼り付け。",
+              inputSectionTitle: "撮影指示フォーマット",
+              inputNote: "各項目を入力してください",
               inputFields: [
-                { id: "mention", label: "宛先", placeholder: "@川崎 cc:@青柳", defaultValue: "@川崎 cc:@青柳" },
+                { id: "mention", label: "宛先（撮影担当）", placeholder: "@川崎", defaultValue: "@川崎" },
+                { id: "cc", label: "CC", placeholder: "@青柳", defaultValue: "@青柳" },
                 { id: "company", label: "企業名", placeholder: "株式会社○○" },
                 { id: "shootingDate", label: "撮影日", placeholder: "○月○日（○）○○:○○〜" },
                 { id: "location", label: "場所", placeholder: "○○株式会社 本社" },
                 { id: "address", label: "住所", placeholder: "愛知県名古屋市○○区..." },
                 { id: "interviewTarget", label: "インタビュー対象", placeholder: "代表取締役 ○○様、営業部 ○○様" },
                 { id: "notes", label: "備考", placeholder: "駐車場あり、作業着撮影希望 等" },
+                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
                 { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
               ],
-              template: `{{mention}}
-{{company}}様の撮影についてご連絡します。
+              template: `{{mention}} cc:{{cc}}
+{{company}}様の撮影日程が確定しましたのでご連絡します。
 
 【撮影日】{{shootingDate}}
 【場所】{{location}}
@@ -985,11 +969,19 @@ https://drive.google.com/drive/folders/1irkdRQYFypDErVHzUHoXF3BLnyOlumMh
 【インタビュー対象】{{interviewTarget}}
 【備考】{{notes}}
 
-📁 撮影素材アップロード先:
+━━━━━━━━━━━━━━━━━━━━
+📁 撮影データの保存先
+━━━━━━━━━━━━━━━━━━━━
+撮影後、以下のフォルダに素材をアップロードしてください。
 {{folderUrl}}
 
-撮影後、上記フォルダに素材をアップロードお願いします。
-確認したらリアクションお願いします。`
+確認したらリアクションお願いします。
+
+━━━━━━━━━━━━━━━━━━━━
+📎 関連リンク
+━━━━━━━━━━━━━━━━━━━━
+📋 ヒアリングシート: {{hearingSheetUrl}}
+📁 撮影素材フォルダ: {{folderUrl}}`
             }
           ]
         },
@@ -1132,17 +1124,26 @@ AIが出力した議事録をコピー
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "ワークス投稿フォーマット",
-              inputNote: "企業名と議事録を入力してください。GASを使わない場合はこちらから直接コピーできます。",
+              inputNote: "企業名と議事録を入力してください",
               inputFields: [
                 { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "minutes", label: "議事録", placeholder: "AIが出力した議事録をここに貼り付け...", type: "textarea", rows: 10 }
+                { id: "shootingMention", label: "撮影担当メンション", placeholder: "@川崎", defaultValue: "@川崎" },
+                { id: "minutes", label: "議事録", placeholder: "AIが出力した議事録をここに貼り付け...", type: "textarea", rows: 10 },
+                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
+                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
               ],
-              template: `@ALL
+              template: `@ALL {{shootingMention}}
 {{company}}様 初回打ち合わせの議事録を共有します。
 
 {{minutes}}
 
-ご確認お願いします。`
+ご確認お願いします。
+
+━━━━━━━━━━━━━━━━━━━━
+📎 関連リンク
+━━━━━━━━━━━━━━━━━━━━
+📋 ヒアリングシート: {{hearingSheetUrl}}
+📁 撮影素材フォルダ: {{folderUrl}}`
             }
           ]
         },

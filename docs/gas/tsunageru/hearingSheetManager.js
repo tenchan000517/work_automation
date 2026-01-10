@@ -757,6 +757,15 @@ function setupTemplate() {
   row = createInputRow(sheet, row, 'エリア', false);
   row = createInputRow(sheet, row, '検索キーワード', false);
   row = createInputRowLarge(sheet, row, '備考', false, 2);
+  row++;
+
+  // Part③ 処理データ（GASが自動保存するデータ）
+  row = createSectionHeader(sheet, row, 'Part③ 処理データ（システム管理）');
+  row = createDataStorageRow(sheet, row, '撮影素材フォルダURL');
+  row = createDataStorageRow(sheet, row, 'メインフォルダURL');
+  row = createDataStorageRowLarge(sheet, row, '文字起こし原文', 5);
+  row = createDataStorageRowLarge(sheet, row, '構成案（原稿用）', 8);
+  row = createDataStorageRowLarge(sheet, row, '構成案（動画用）', 8);
 
   // 罫線
   const lastRow = row;
@@ -979,6 +988,26 @@ function createDateRow(sheet, row, label, note) {
   sheet.getRange(row, 3).setBackground(bgColor).setNumberFormat('yyyy/mm/dd');
   if (note) sheet.getRange(row, 4, 1, 4).merge().setValue(note).setBackground(COLORS.LABEL).setFontSize(9).setFontColor('#666666');
   return row + 1;
+}
+
+// ===== Part③ 処理データ用ヘルパー関数 =====
+const COLORS_DATA_STORAGE = {
+  HEADER: '#616161',       // ダークグレー
+  HEADER_TEXT: '#FFFFFF',
+  LABEL: '#9e9e9e',        // グレー
+  VALUE: '#e0e0e0',        // ライトグレー
+};
+
+function createDataStorageRow(sheet, row, label) {
+  sheet.getRange(row, 2).setValue(label).setBackground(COLORS_DATA_STORAGE.LABEL).setFontWeight('bold').setFontColor('#333');
+  sheet.getRange(row, 3, 1, 5).merge().setBackground(COLORS_DATA_STORAGE.VALUE).setFontColor('#333');
+  return row + 1;
+}
+
+function createDataStorageRowLarge(sheet, row, label, height) {
+  sheet.getRange(row, 2, height, 1).merge().setValue(label).setBackground(COLORS_DATA_STORAGE.LABEL).setFontWeight('bold').setVerticalAlignment('top').setFontColor('#333');
+  sheet.getRange(row, 3, height, 5).merge().setBackground(COLORS_DATA_STORAGE.VALUE).setVerticalAlignment('top').setWrap(true).setFontColor('#333');
+  return row + height;
 }
 
 function formatCurrentSheet() {

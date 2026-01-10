@@ -43,6 +43,7 @@ const SUBFOLDERS = [
 function addShootingFolderMenu(ui) {
   ui.createMenu('２.📁 撮影フォルダ')
     .addItem('🆕 新規フォルダ作成', 'createShootingFolder')
+    .addItem('📂 企業シートから作成', 'createShootingFolderFromSheet')
     .addSeparator()
     .addItem('📋 最近作成したフォルダ一覧', 'showRecentFolders')
     .addSeparator()
@@ -988,4 +989,316 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+
+// ================================================================================
+// ===== 企業シートから作成（改善機能） =====
+// ================================================================================
+
+/**
+ * 企業シート選択ダイアログを表示してフォルダを作成
+ * - 企業シートの企業名を使用（手入力不要）
+ * - 作成したフォルダURLを企業シートのPart③に保存
+ */
+function createShootingFolderFromSheet() {
+  const ui = SpreadsheetApp.getUi();
+
+  // 親フォルダIDの確認
+  const parentFolderId = getParentFolderId();
+  if (!parentFolderId || parentFolderId === 'YOUR_PARENT_FOLDER_ID_HERE') {
+    ui.alert(
+      '⚠️ 親フォルダ未設定',
+      '先に「⚙️ 親フォルダを設定」から親フォルダを設定してください。',
+      ui.ButtonSet.OK
+    );
+    return;
+  }
+
+  // 企業シート一覧を取得
+  const sheetList = getCompanySheetListForFolder();
+
+  if (sheetList.length === 0) {
+    ui.alert('⚠️ 企業シートがありません', '先にヒアリングシートを作成してください。', ui.ButtonSet.OK);
+    return;
+  }
+
+  const html = HtmlService.createHtmlOutput(createSheetSelectDialogHTML(sheetList))
+    .setWidth(550)
+    .setHeight(500);
+  ui.showModalDialog(html, '📂 企業シートから撮影フォルダ作成');
+}
+
+/**
+ * 企業シート一覧を取得（フォルダ作成用）
+ */
+function getCompanySheetListForFolder() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+  const sheets = ss.getSheets();
+  const result = [];
+
+  for (const sheet of sheets) {
+    const name = sheet.getName();
+    // settingsSheet.js の isExcludedSheet() を使用
+    if (!isExcludedSheet(name)) {
+      let companyName = '';
+      try {
+        companyName = sheet.getRange(5, 3).getValue() || '';
+      } catch (e) {
+        companyName = '';
+      }
+
+      // Part③のフォルダURLを確認（既に作成済みか）
+      let hasFolder = false;
+      try {
+        const folderUrl = sheet.getRange(135, 3).getValue();  // 撮影素材フォルダURL
+        hasFolder = !!folderUrl;
+      } catch (e) {
+        hasFolder = false;
+      }
+
+      result.push({
+        sheetName: name,
+        companyName: String(companyName).trim(),
+        isActive: name === activeSheetName,
+        hasFolder: hasFolder
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * 企業シート選択ダイアログHTML
+ */
+function createSheetSelectDialogHTML(sheetList) {
+  const sheetListJson = JSON.stringify(sheetList);
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; background: #f8f9fa; }
+    h3 { margin: 0 0 15px 0; color: #1a73e8; }
+    .info-box { background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; }
+    .sheet-list { max-height: 280px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; }
+    .sheet-item {
+      padding: 12px 15px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sheet-item:last-child { border-bottom: none; }
+    .sheet-item:hover { background: #f5f5f5; }
+    .sheet-item.selected { background: #e3f2fd; }
+    .sheet-item.has-folder { background: #fff8e1; }
+    .sheet-item.has-folder.selected { background: #ffecb3; }
+    .sheet-info { flex: 1; }
+    .sheet-name { font-weight: bold; color: #333; }
+    .company-name { color: #666; font-size: 12px; margin-top: 2px; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+    .badge-active { background: #4caf50; color: white; }
+    .badge-folder { background: #ff9800; color: white; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+    .btn-primary { background: #1a73e8; color: white; }
+    .btn-primary:hover { background: #1557b0; }
+    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-secondary { background: #f1f3f4; color: #333; }
+    .status { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; }
+    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
+    .status.error { display: block; background: #ffebee; color: #c62828; }
+    .status.warning { display: block; background: #fff3e0; color: #e65100; }
+    .loading { display: none; margin-left: 10px; color: #1a73e8; }
+  </style>
+</head>
+<body>
+  <h3>📂 企業シートから撮影フォルダ作成</h3>
+
+  <div class="info-box">
+    <strong>使い方：</strong><br>
+    企業シートを選択すると、その企業名でフォルダを作成し、<br>
+    URLをPart③（処理データ）に自動保存します。
+  </div>
+
+  <div class="sheet-list" id="sheetList"></div>
+
+  <div style="margin-top: 15px;">
+    <button class="btn-primary" id="createBtn" onclick="createFolder()" disabled>
+      📁 フォルダを作成
+    </button>
+    <button class="btn-secondary" onclick="google.script.host.close()">閉じる</button>
+    <span class="loading" id="loading">⏳ 処理中...</span>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    const sheetList = ${sheetListJson};
+    let selectedSheet = null;
+
+    window.onload = function() {
+      renderSheetList();
+    };
+
+    function renderSheetList() {
+      const container = document.getElementById('sheetList');
+      container.innerHTML = '';
+
+      // アクティブシートを先頭に
+      const sorted = [...sheetList].sort((a, b) => {
+        if (a.isActive) return -1;
+        if (b.isActive) return 1;
+        return 0;
+      });
+
+      sorted.forEach((item) => {
+        const div = document.createElement('div');
+        let classes = 'sheet-item';
+        if (item.hasFolder) classes += ' has-folder';
+        if (item.isActive && !selectedSheet) {
+          classes += ' selected';
+          selectedSheet = item;
+          document.getElementById('createBtn').disabled = false;
+        }
+        div.className = classes;
+
+        let badges = '';
+        if (item.isActive) badges += '<span class="badge badge-active">アクティブ</span>';
+        if (item.hasFolder) badges += '<span class="badge badge-folder">作成済み</span>';
+
+        div.innerHTML = \`
+          <div class="sheet-info">
+            <div class="sheet-name">\${escapeHtml(item.sheetName)}\${badges}</div>
+            <div class="company-name">\${item.companyName ? '🏢 ' + escapeHtml(item.companyName) : '（企業名なし）'}</div>
+          </div>
+        \`;
+
+        div.onclick = function() {
+          document.querySelectorAll('.sheet-item').forEach(el => el.classList.remove('selected'));
+          div.classList.add('selected');
+          selectedSheet = item;
+          document.getElementById('createBtn').disabled = false;
+
+          // 作成済みの場合は警告
+          if (item.hasFolder) {
+            showStatus('⚠️ この企業シートには既にフォルダが作成されています。再作成すると上書きされます。', 'warning');
+          } else {
+            document.getElementById('status').style.display = 'none';
+          }
+        };
+
+        container.appendChild(div);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function createFolder() {
+      if (!selectedSheet) {
+        showStatus('シートを選択してください', 'error');
+        return;
+      }
+
+      if (!selectedSheet.companyName) {
+        showStatus('選択したシートに企業名が設定されていません（行5, C列）', 'error');
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'inline';
+      document.getElementById('createBtn').disabled = true;
+
+      google.script.run
+        .withSuccessHandler(handleResult)
+        .withFailureHandler(handleError)
+        .executeCreateFolderFromSheet(selectedSheet.sheetName, selectedSheet.companyName);
+    }
+
+    function handleResult(result) {
+      document.getElementById('loading').style.display = 'none';
+
+      if (result.success) {
+        showStatus('✅ フォルダを作成し、企業シートに保存しました', 'success');
+        // 成功ダイアログを表示
+        google.script.run.showSuccessDialogFromResult(result);
+      } else {
+        showStatus('❌ ' + result.error, 'error');
+        document.getElementById('createBtn').disabled = false;
+      }
+    }
+
+    function handleError(error) {
+      document.getElementById('loading').style.display = 'none';
+      showStatus('❌ エラー: ' + error.message, 'error');
+      document.getElementById('createBtn').disabled = false;
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.innerHTML = message;
+      status.className = 'status ' + type;
+    }
+  </script>
+</body>
+</html>
+`;
+}
+
+/**
+ * 企業シートからフォルダを作成（ダイアログから呼び出し）
+ */
+function executeCreateFolderFromSheet(sheetName, companyName) {
+  const parentFolderId = getParentFolderId();
+
+  try {
+    // フォルダ作成
+    const result = createFolderStructure(companyName, parentFolderId);
+
+    // 企業シートのPart③にURL保存
+    savePart3DataForce(sheetName, '撮影素材フォルダURL', result.subfolders[0].url);
+    savePart3DataForce(sheetName, 'メインフォルダURL', result.mainFolderUrl);
+
+    // 作成履歴に追加
+    addToHistory(companyName, result.mainFolderUrl, result.subfolders[0].url);
+
+    return {
+      success: true,
+      companyName: companyName,
+      sheetName: sheetName,
+      mainFolderName: result.mainFolderName,
+      mainFolderUrl: result.mainFolderUrl,
+      mainFolderId: result.mainFolderId,
+      subfolders: result.subfolders,
+      savedToSheet: true
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * 結果から成功ダイアログを表示
+ */
+function showSuccessDialogFromResult(result) {
+  if (!result.success) return;
+
+  showSuccessDialog(result.companyName, {
+    mainFolderName: result.mainFolderName,
+    mainFolderUrl: result.mainFolderUrl,
+    mainFolderId: result.mainFolderId,
+    subfolders: result.subfolders
+  });
 }

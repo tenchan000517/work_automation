@@ -1409,6 +1409,137 @@ function createPromptEditHTML(prompts) {
 `;
 }
 
+// ================================================================================
+// ===== Part③ 処理データ マッピング・保存・読み込み =====
+// ================================================================================
+
+/**
+ * Part③ 処理データのセル位置マッピング
+ * ※行番号はテンプレート作成後に調整が必要な場合があります
+ */
+const PART3_MAPPING = {
+  '撮影素材フォルダURL': { row: 135, col: 3 },
+  'メインフォルダURL': { row: 136, col: 3 },
+  '文字起こし原文': { row: 137, col: 3 },
+  '構成案_原稿用': { row: 142, col: 3 },
+  '構成案_動画用': { row: 150, col: 3 },
+};
+
+/**
+ * Part③のデータをシートに保存
+ * @param {string} sheetName - 企業シート名
+ * @param {string} key - PART3_MAPPINGのキー
+ * @param {string} value - 保存する値
+ * @param {boolean} confirmOverwrite - 上書き確認を行うか（デフォルト: true）
+ * @returns {Object} { success, overwritten, error }
+ */
+function savePart3Data(sheetName, key, value, confirmOverwrite) {
+  if (confirmOverwrite === undefined) confirmOverwrite = true;
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    return { success: false, error: 'シート「' + sheetName + '」が見つかりません' };
+  }
+
+  const mapping = PART3_MAPPING[key];
+  if (!mapping) {
+    return { success: false, error: '不明なキー: ' + key };
+  }
+
+  try {
+    const existingValue = sheet.getRange(mapping.row, mapping.col).getValue();
+    const existingStr = String(existingValue || '').trim();
+    const newStr = String(value || '').trim();
+
+    // 既存データがあり、上書き確認が必要な場合
+    if (confirmOverwrite && existingStr && existingStr !== newStr) {
+      // 上書き確認が必要であることを返す
+      return {
+        success: false,
+        needConfirm: true,
+        existingValue: existingStr.substring(0, 100) + (existingStr.length > 100 ? '...' : '')
+      };
+    }
+
+    // 保存実行
+    sheet.getRange(mapping.row, mapping.col).setValue(value);
+
+    return {
+      success: true,
+      overwritten: !!existingStr
+    };
+
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Part③のデータを強制的に上書き保存（確認後に呼び出す）
+ */
+function savePart3DataForce(sheetName, key, value) {
+  return savePart3Data(sheetName, key, value, false);
+}
+
+/**
+ * Part③のデータをシートから読み込み
+ * @param {string} sheetName - 企業シート名
+ * @param {string} key - PART3_MAPPINGのキー
+ * @returns {Object} { success, value, error }
+ */
+function loadPart3Data(sheetName, key) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    return { success: false, error: 'シート「' + sheetName + '」が見つかりません', value: '' };
+  }
+
+  const mapping = PART3_MAPPING[key];
+  if (!mapping) {
+    return { success: false, error: '不明なキー: ' + key, value: '' };
+  }
+
+  try {
+    const value = sheet.getRange(mapping.row, mapping.col).getValue();
+    return {
+      success: true,
+      value: String(value || '')
+    };
+  } catch (error) {
+    return { success: false, error: error.message, value: '' };
+  }
+}
+
+/**
+ * Part③の全データをシートから読み込み
+ * @param {string} sheetName - 企業シート名
+ * @returns {Object} { success, data: { key: value, ... }, error }
+ */
+function loadAllPart3Data(sheetName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    return { success: false, error: 'シート「' + sheetName + '」が見つかりません', data: {} };
+  }
+
+  try {
+    const data = {};
+    for (const key in PART3_MAPPING) {
+      const mapping = PART3_MAPPING[key];
+      const value = sheet.getRange(mapping.row, mapping.col).getValue();
+      data[key] = String(value || '');
+    }
+    return { success: true, data: data };
+  } catch (error) {
+    return { success: false, error: error.message, data: {} };
+  }
+}
+
+
 /**
  * プロンプト一覧を保存
  */

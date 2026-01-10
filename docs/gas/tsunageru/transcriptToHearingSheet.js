@@ -136,13 +136,58 @@ function showTranscriptPromptDialog() {
     promptData.template = replacePlaceholders(promptData.template, settings);
   }
 
-  // 企業シート一覧を取得
-  const sheetData = getCompanySheetListWithNames();
+  // 企業シート一覧を取得（保存済みデータ含む）
+  const sheetData = getCompanySheetListWithNamesAndData();
 
   const html = HtmlService.createHtmlOutput(createTranscriptPromptHTML(sheetData, promptData.template))
     .setWidth(800)
     .setHeight(700);
   SpreadsheetApp.getUi().showModalDialog(html, '📋 文字起こしを整理');
+}
+
+/**
+ * 企業シート一覧を取得（企業名・保存済みデータ付き）
+ */
+function getCompanySheetListWithNamesAndData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+
+  const allSheets = ss.getSheets();
+  const companySheets = [];
+
+  allSheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    if (!isExcludedSheet(sheetName)) {
+      const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+
+      // Part③から保存済みデータを取得
+      let savedTranscript = '';
+      try {
+        const result = loadPart3Data(sheetName, '文字起こし原文');
+        if (result.success) {
+          savedTranscript = result.value;
+        }
+      } catch (e) {
+        savedTranscript = '';
+      }
+
+      companySheets.push({
+        sheetName: sheetName,
+        companyName: companyName || sheetName,
+        savedTranscript: savedTranscript,
+        hasSavedData: !!savedTranscript
+      });
+    }
+  });
+
+  const isActiveCompanySheet = companySheets.some(s => s.sheetName === activeSheetName);
+
+  return {
+    activeSheetName: activeSheetName,
+    isActiveCompanySheet: isActiveCompanySheet,
+    companySheets: companySheets
+  };
 }
 
 /**
@@ -199,7 +244,7 @@ function createTranscriptPromptHTML(sheetData, template) {
     body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
     h3 { margin-top: 0; color: #1a73e8; }
     .section { margin-bottom: 15px; }
-    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; }
+    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; display: flex; align-items: center; gap: 10px; }
     textarea { width: 100%; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; }
     .input-area { height: 150px; }
     .output-area { height: 200px; background: #f8f9fa; }
@@ -209,9 +254,12 @@ function createTranscriptPromptHTML(sheetData, template) {
     .secondary { background: #f1f3f4; color: #333; }
     .secondary:hover { background: #e8eaed; }
     .success { background: #34a853; color: white; }
+    .save-btn { background: #ff9800; color: white; padding: 8px 16px; font-size: 13px; }
+    .save-btn:hover { background: #f57c00; }
     .msg { padding: 10px; border-radius: 6px; margin-top: 10px; display: none; }
     .msg.success { background: #e6f4ea; color: #1e7e34; display: block; }
     .msg.error { background: #fce8e6; color: #c5221f; display: block; }
+    .msg.info { background: #e3f2fd; color: #1565c0; display: block; }
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
     .note { font-size: 12px; color: #666; margin-top: 5px; }
     .accordion { background: #f1f3f4; border: none; padding: 12px 16px; width: 100%; text-align: left; cursor: pointer; border-radius: 6px; margin-bottom: 10px; }
@@ -225,9 +273,11 @@ function createTranscriptPromptHTML(sheetData, template) {
     .sheet-option { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; }
     .sheet-option:hover { background: #e3f2fd; }
     .sheet-option.selected { background: #bbdefb; }
+    .sheet-option.has-data { border-left: 3px solid #ff9800; }
     .sheet-option input[type="radio"] { margin-right: 10px; width: 16px; height: 16px; }
     .sheet-option label { cursor: pointer; flex: 1; }
     .active-badge { background: #34a853; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+    .saved-badge { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
     .company-name-display { background: #e8f0fe; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; }
   </style>
 </head>
@@ -248,9 +298,12 @@ function createTranscriptPromptHTML(sheetData, template) {
   </div>
 
   <div class="section">
-    <div class="section-title">文字起こしを貼り付け</div>
+    <div class="section-title">
+      文字起こしを貼り付け
+      <button class="save-btn" onclick="saveTranscript()">💾 シートに保存</button>
+    </div>
     <textarea id="transcriptInput" class="input-area" placeholder="NOTTAからダウンロードした文字起こしテキストを貼り付けてください..."></textarea>
-    <div class="note">※ 60分程度の打ち合わせの文字起こしを想定</div>
+    <div class="note">※ 60分程度の打ち合わせの文字起こしを想定 ｜ 保存すると次回自動読み込み</div>
   </div>
 
   <div class="btn-group">
@@ -270,6 +323,7 @@ function createTranscriptPromptHTML(sheetData, template) {
     const template = ${templateJson};
     const sheetData = ${sheetDataJson};
     let selectedCompanyName = '';
+    let selectedSheetName = '';
 
     // 初期化
     document.addEventListener('DOMContentLoaded', function() {
@@ -293,7 +347,14 @@ function createTranscriptPromptHTML(sheetData, template) {
       if (isActiveCompanySheet) {
         const activeSheetData = sheets.find(s => s.sheetName === activeSheet);
         selectedCompanyName = activeSheetData ? activeSheetData.companyName : '';
+        selectedSheetName = activeSheet;
         html += createSheetOption(activeSheetData, true, true);
+
+        // 保存済みデータがあれば読み込む
+        if (activeSheetData && activeSheetData.savedTranscript) {
+          document.getElementById('transcriptInput').value = activeSheetData.savedTranscript;
+          showMsg('保存済みの文字起こしを読み込みました', 'info');
+        }
 
         // 他のシート
         sheets.filter(s => s.sheetName !== activeSheet).forEach(sheet => {
@@ -301,10 +362,18 @@ function createTranscriptPromptHTML(sheetData, template) {
         });
       } else {
         // アクティブシートが企業シートでない場合、最初のシートを選択
-        selectedCompanyName = sheets[0] ? sheets[0].companyName : '';
+        const firstSheet = sheets[0];
+        selectedCompanyName = firstSheet ? firstSheet.companyName : '';
+        selectedSheetName = firstSheet ? firstSheet.sheetName : '';
         sheets.forEach((sheet, index) => {
           html += createSheetOption(sheet, index === 0, false);
         });
+
+        // 最初のシートの保存済みデータを読み込む
+        if (firstSheet && firstSheet.savedTranscript) {
+          document.getElementById('transcriptInput').value = firstSheet.savedTranscript;
+          showMsg('保存済みの文字起こしを読み込みました', 'info');
+        }
       }
 
       container.innerHTML = html;
@@ -314,25 +383,41 @@ function createTranscriptPromptHTML(sheetData, template) {
     function createSheetOption(sheet, isSelected, isActive) {
       const checked = isSelected ? 'checked' : '';
       const selectedClass = isSelected ? 'selected' : '';
+      const hasDataClass = sheet.hasSavedData ? 'has-data' : '';
       const activeBadge = isActive ? '<span class="active-badge">アクティブ</span>' : '';
-      const displayName = sheet.sheetName + (sheet.companyName !== sheet.sheetName ? ' (' + escapeHtml(sheet.companyName) + ')' : '');
+      const savedBadge = sheet.hasSavedData ? '<span class="saved-badge">保存済み</span>' : '';
 
       return \`
-        <div class="sheet-option \${selectedClass}" onclick="selectSheet('\${escapeHtml(sheet.sheetName)}', '\${escapeHtml(sheet.companyName)}', this)">
+        <div class="sheet-option \${selectedClass} \${hasDataClass}" onclick="selectSheet('\${escapeHtml(sheet.sheetName)}', '\${escapeHtml(sheet.companyName)}', '\${escapeHtml(sheet.savedTranscript || '')}', this)">
           <input type="radio" name="targetSheet" value="\${escapeHtml(sheet.sheetName)}" \${checked}>
-          <label>\${escapeHtml(sheet.sheetName)}\${activeBadge}</label>
+          <label>\${escapeHtml(sheet.sheetName)}\${activeBadge}\${savedBadge}</label>
         </div>
       \`;
     }
 
-    function selectSheet(sheetName, companyName, element) {
+    function selectSheet(sheetName, companyName, savedTranscript, element) {
       document.querySelectorAll('.sheet-option').forEach(el => el.classList.remove('selected'));
       document.querySelectorAll('.sheet-option input[type="radio"]').forEach(el => el.checked = false);
 
       element.classList.add('selected');
       element.querySelector('input[type="radio"]').checked = true;
       selectedCompanyName = companyName;
+      selectedSheetName = sheetName;
       updateCompanyNameDisplay();
+
+      // 保存済みデータがあれば読み込む（現在の入力があれば確認）
+      const currentInput = document.getElementById('transcriptInput').value.trim();
+      if (savedTranscript) {
+        if (currentInput && currentInput !== savedTranscript) {
+          if (confirm('保存済みの文字起こしを読み込みますか？\\n（現在の入力は破棄されます）')) {
+            document.getElementById('transcriptInput').value = savedTranscript;
+            showMsg('保存済みの文字起こしを読み込みました', 'info');
+          }
+        } else {
+          document.getElementById('transcriptInput').value = savedTranscript;
+          showMsg('保存済みの文字起こしを読み込みました', 'info');
+        }
+      }
     }
 
     function updateCompanyNameDisplay() {
@@ -365,6 +450,40 @@ function createTranscriptPromptHTML(sheetData, template) {
       navigator.clipboard.writeText(template).then(() => {
         showMsg('テンプレートをコピーしました', 'success');
       });
+    }
+
+    function saveTranscript() {
+      if (!selectedSheetName) {
+        showMsg('企業シートを選択してください', 'error');
+        return;
+      }
+      const input = document.getElementById('transcriptInput').value.trim();
+      if (!input) {
+        showMsg('文字起こしを入力してください', 'error');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showMsg('💾 文字起こしを企業シートに保存しました', 'success');
+          } else if (result.needConfirm) {
+            if (confirm('既存のデータを上書きしますか？')) {
+              google.script.run
+                .withSuccessHandler(function(r) {
+                  if (r.success) showMsg('💾 文字起こしを上書き保存しました', 'success');
+                  else showMsg('保存エラー: ' + r.error, 'error');
+                })
+                .savePart3DataForce(selectedSheetName, '文字起こし原文', input);
+            }
+          } else {
+            showMsg('保存エラー: ' + result.error, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          showMsg('保存エラー: ' + error.message, 'error');
+        })
+        .savePart3Data(selectedSheetName, '文字起こし原文', input, true);
     }
 
     function generatePrompt() {
