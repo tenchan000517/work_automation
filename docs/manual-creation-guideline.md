@@ -457,11 +457,67 @@ flowSteps: [
 
 担当者情報を設定シートで管理し、GASで動的に読み込む。
 
+**設定シートの構造:**
+```
+設定シート
+├── A列: 項目名
+├── B列: 値
+│
+├── 担当者一覧（メンバー名を列挙）
+│   ├── 河合
+│   ├── 中尾文香
+│   ├── 川崎
+│   ├── 下脇田
+│   ├── 紺谷
+│   └── 渡邉
+│
+└── その他設定（CC先、デフォルト値など）
+```
+
+**ダイアログでの担当者選択:**
+```html
+<!-- 設定シートから読み込んだ担当者をドロップダウン表示 -->
+<select id="assignee">
+  <option value="">選択してください</option>
+  <!-- GASから動的に生成 -->
+  <option value="河合">河合</option>
+  <option value="中尾文香">中尾文香</option>
+  ...
+  <option value="__custom__">その他（カスタム入力）</option>
+</select>
+
+<!-- カスタム入力欄（「その他」選択時に表示） -->
+<input type="text" id="customAssignee" style="display:none" placeholder="担当者名を入力">
+```
+
+**GAS実装:**
+```javascript
+// 設定シートから担当者一覧を取得
+function getAssigneeList() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('設定');
+  const data = sheet.getDataRange().getValues();
+  // 担当者一覧の行を抽出してリストで返す
+  return data.filter(row => row[0] === '担当者').map(row => row[1]);
+}
+
+// ダイアログHTMLに担当者ドロップダウンを生成
+function buildAssigneeDropdown(assignees) {
+  let html = '<select id="assignee"><option value="">選択してください</option>';
+  assignees.forEach(name => {
+    html += `<option value="${name}">${name}</option>`;
+  });
+  html += '<option value="__custom__">その他（カスタム入力）</option></select>';
+  return html;
+}
+```
+
+**関連ファイル:**
 ```
 setupSheets.js
 ├── setupPromptSheet()     # プロンプトシート作成
 ├── showSettingsDialog()   # 設定ダイアログ表示
 ├── getSettingsFromSheet() # 設定読み込み
+├── getAssigneeList()      # 担当者一覧取得
 └── replacePlaceholders()  # プレースホルダー置換
 ```
 
