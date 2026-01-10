@@ -521,6 +521,146 @@ GASダイアログとNext.js popup（ContentModal）は同じUI構成にする�
 | 完成版表示 | 出力フィールド | プレビュー |
 | コピー機能 | ボタン | handleTemplateCopy |
 
+### 7.5 入力データの永続化
+
+ダイアログで入力したデータは一時的ではなく、スプレッドシートに保存して再利用する。
+
+#### 7.5.1 保存先の考え方
+
+**対象シート = 企業シート（案件ごとに1シート）**
+
+企業シートはヒアリングシートをコピーして作成。そこに各フローで入力したデータを蓄積していく。
+
+```
+スプレッドシート
+├── プロンプト（システム）
+├── 設定（システム）
+├── ヒアリングシート（テンプレート/原本）
+├── フォームの回答1（システム）
+│
+├── 株式会社A（企業シート）← ここに保存
+├── 株式会社B（企業シート）← ここに保存
+└── ...
+```
+
+#### 7.5.2 保存セルの設計
+
+企業シートに「データ保存エリア」を設ける。ヒアリングシートの既存構造を活かしつつ、追加データ用の列/行を確保。
+
+**例: 文字起こしデータの保存**
+```
+企業シート
+├── Part① 基本情報（既存）
+├── Part② ヒアリング情報（既存）
+└── Part③ 処理データ（追加）
+    ├── 行XX: 文字起こし原文
+    ├── 行XX: AI整理後テキスト
+    ├── 行XX: 構成案（原稿用）
+    └── 行XX: 構成案（動画用）
+```
+
+#### 7.5.3 GASでの実装パターン
+
+```javascript
+// 保存
+function saveToSheet(sheetName, cellAddress, value) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const existingValue = sheet.getRange(cellAddress).getValue();
+
+  if (existingValue && existingValue !== value) {
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert('上書き確認', '既存データを上書きしますか？', ui.ButtonSet.OK_CANCEL);
+    if (response !== ui.Button.OK) return false;
+  }
+
+  sheet.getRange(cellAddress).setValue(value);
+  return true;
+}
+
+// 読み込み
+function loadFromSheet(sheetName, cellAddress) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  return sheet.getRange(cellAddress).getValue();
+}
+
+// ダイアログ表示時に既存データを初期値として渡す
+function showDialogWithData() {
+  const sheetName = getSelectedSheetName(); // 企業シート選択
+  const existingData = loadFromSheet(sheetName, 'X10'); // 保存先セル
+
+  const html = HtmlService.createHtmlOutput(`
+    <textarea id="input">${existingData}</textarea>
+    <button onclick="save()">保存</button>
+  `);
+  SpreadsheetApp.getUi().showModalDialog(html, 'タイトル');
+}
+```
+
+#### 7.5.4 フロー例: 文字起こし→構成案
+
+```
+1. 文字起こしダイアログを開く
+   └─ 企業シート選択 → 既存データがあればフィールドに表示
+
+2. 文字起こしを貼り付け
+   └─ 企業シートの「文字起こし原文」セルに保存
+
+3. AI整理プロンプトを生成 → AIに貼り付け → 結果を取得
+
+4. 構成案ダイアログを開く
+   └─ 「文字起こし原文」セルから自動読み込み
+   └─ AI整理後テキストを入力 → 「AI整理後」セルに保存
+
+5. 構成案生成 → 結果を「構成案」セルに保存
+
+6. 後日、同じ企業シートを開く
+   └─ 全てのデータが保存されており、途中から再開可能
+```
+
+**上書き時の挙動:**
+- 既にデータがある状態で新規入力 → 「上書きしますか？」アラート
+- OK → 上書き保存
+
+**除外シート（対象シート選択肢に出さない）:**
+- プロンプト
+- 設定
+- フォームの回答1
+- ヒアリングシート（原本/テンプレート）
+
+### 7.6 GASメニュー構造
+
+各GASファイルは `addXxxMenu(ui)` 関数を持ち、メインスクリプトのonOpenから呼び出す。
+
+**GASファイルの構造:**
+```javascript
+// ===== メニュー追加 =====
+function addCompositionMenu(ui) {
+  ui.createMenu('5. 構成案生成')
+    .addItem('構成案を生成（プロンプト生成）', 'showCompositionPromptDialog')
+    .addSeparator()
+    .addItem('ペアソナ/エンゲージ形式に変換', 'showPairsonaConvertDialog')
+    .addToUi();
+}
+```
+
+**メインスクリプト（onOpen）:**
+```javascript
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+
+  // 各GASのメニューを追加
+  addSetupMenu(ui);           // 初期設定
+  addHearingMenu(ui);         // ヒアリングシート
+  addCompositionMenu(ui);     // 構成案生成
+  addShootingMenu(ui);        // 撮影関連
+}
+```
+
+**メリット:**
+- GASファイルごとに独立したメニュー
+- メインスクリプトは呼び出しのみで簡潔
+- 新機能追加時はaddXxxMenu(ui)を追加するだけ
+
 ---
 
 ## 8. 新商材追加時のチェックリスト
