@@ -37,15 +37,25 @@ const SUBFOLDERS = [
 ];
 
 // ===== メニュー設定 =====
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('📁 撮影フォルダ')
+/**
+ * 既存のonOpenに統合する場合（hearingSheetManager.jsから呼び出し）
+ */
+function addShootingFolderMenu(ui) {
+  ui.createMenu('２.📁 撮影フォルダ')
     .addItem('🆕 新規フォルダ作成', 'createShootingFolder')
     .addSeparator()
     .addItem('📋 最近作成したフォルダ一覧', 'showRecentFolders')
     .addSeparator()
     .addItem('⚙️ 親フォルダを設定', 'setParentFolder')
     .addToUi();
+}
+
+/**
+ * 単独でメニューを追加する場合（デバッグ用）
+ */
+function addShootingFolderMenuStandalone() {
+  const ui = SpreadsheetApp.getUi();
+  addShootingFolderMenu(ui);
 }
 
 // ===== メイン機能: 撮影フォルダ作成 =====
@@ -125,9 +135,10 @@ function createFolderStructure(companyName, parentFolderId) {
   // メインフォルダ作成（v2/v3両対応）
   const mainFolder = createFolder(mainFolderName, parentFolderId);
 
-  // サブフォルダ作成
+  // サブフォルダ作成（設定シートから取得）
   const subfolderUrls = [];
-  SUBFOLDERS.forEach(function(name) {
+  const subfolders = getSubfoldersFromSettings();
+  subfolders.forEach(function(name) {
     const subfolder = createFolder(name, mainFolder.id);
     subfolderUrls.push({
       name: name,
@@ -171,6 +182,15 @@ function createFolder(folderName, parentId) {
 
 // ===== 成功ダイアログ（URLコピー機能付き） =====
 function showSuccessDialog(companyName, result) {
+  // 設定シートからメンバー一覧と担当者情報を取得
+  const members = getMemberList();
+  const settings = getSettingsFromSheet();
+  const defaultTantou = settings['撮影担当'] || '';
+  const defaultCC = settings['CC'] || '';
+
+  // メンバー一覧をJSON化
+  const membersJson = JSON.stringify(members);
+
   const html = `
     <html>
     <head>
@@ -322,15 +342,42 @@ function showSuccessDialog(companyName, result) {
 
       <div class="works-template">
         <h4>📝 撮影担当者への連絡用テンプレート</h4>
-        <pre id="worksTemplate">@（撮影担当者名）
-${escapeHtml(companyName)} 様の撮影データ共有フォルダを作成しました。
+        <div style="margin-bottom: 10px; display: flex; gap: 20px; flex-wrap: wrap;">
+          <div>
+            <label style="font-size: 13px; color: #666;">撮影担当:</label>
+            <select id="tantouSelect" onchange="updateWorksTemplate()" style="margin-left: 8px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+              <option value="">-- 選択 --</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 13px; color: #666;">CC:</label>
+            <select id="ccSelect" onchange="updateWorksTemplate()" style="margin-left: 8px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+              <option value="">-- なし --</option>
+            </select>
+          </div>
+        </div>
+        <pre id="worksTemplate" style="color: #999;">（担当者を選択するとテンプレートが生成されます）</pre>
+        <div style="margin-top: 10px;">
+          <button class="btn-copy" onclick="copyWorksTemplate()" id="copyWorksBtn" disabled>📋 テンプレートをコピー</button>
+        </div>
+
+        <!-- プレーンテンプレート（アコーディオン） -->
+        <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+          <div onclick="togglePlainTemplate()" style="cursor: pointer; font-size: 12px; color: #666;">
+            <span id="plainTemplateIcon">▶</span> プレーンテンプレートを表示
+          </div>
+          <div id="plainTemplateSection" style="display: none; margin-top: 8px;">
+            <pre style="font-size: 11px; background: #f9f9f9; padding: 8px; border-radius: 4px; white-space: pre-wrap;">@{{撮影担当}}
+{{企業名}} 様の撮影データ共有フォルダを作成しました。
 
 📁 撮影素材アップロード先:
-${result.subfolders[0].url}
+{{撮影素材URL}}
 
-撮影後、上記フォルダに素材をアップロードお願いします。</pre>
-        <div style="margin-top: 10px;">
-          <button class="btn-copy" onclick="copyWorksTemplate()">📋 テンプレートをコピー</button>
+撮影後、上記フォルダに素材をアップロードお願いします。
+
+CC: @{{CC}}</pre>
+            <button style="font-size: 11px; padding: 4px 8px; margin-top: 5px; background: #f1f3f4; border: none; border-radius: 4px; cursor: pointer;" onclick="copyPlainTemplate()">📋 プレーンをコピー</button>
+          </div>
         </div>
       </div>
 
@@ -350,6 +397,74 @@ ${result.subfolders[0].url}
       <div class="toast" id="toast">コピーしました</div>
 
       <script>
+        // 設定値
+        const members = ${membersJson};
+        const defaultTantou = '${escapeHtml(defaultTantou)}';
+        const defaultCC = '${escapeHtml(defaultCC)}';
+        const companyName = '${escapeHtml(companyName)}';
+        const shootingUrl = '${escapeHtml(result.subfolders[0].url)}';
+
+        // 初期化
+        window.onload = function() {
+          // 撮影担当ドロップダウン
+          const tantouSelect = document.getElementById('tantouSelect');
+          members.forEach(function(name) {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (name === defaultTantou) {
+              option.selected = true;
+            }
+            tantouSelect.appendChild(option);
+          });
+
+          // CCドロップダウン
+          const ccSelect = document.getElementById('ccSelect');
+          members.forEach(function(name) {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (name === defaultCC) {
+              option.selected = true;
+            }
+            ccSelect.appendChild(option);
+          });
+
+          // デフォルト担当者がいれば自動でテンプレート生成
+          if (defaultTantou) {
+            updateWorksTemplate();
+          }
+        };
+
+        function updateWorksTemplate() {
+          const tantou = document.getElementById('tantouSelect').value;
+          const cc = document.getElementById('ccSelect').value;
+          const pre = document.getElementById('worksTemplate');
+          const btn = document.getElementById('copyWorksBtn');
+
+          if (!tantou) {
+            pre.textContent = '（担当者を選択するとテンプレートが生成されます）';
+            pre.style.color = '#999';
+            btn.disabled = true;
+            return;
+          }
+
+          let template = '@' + tantou + '\\n' +
+            companyName + ' 様の撮影データ共有フォルダを作成しました。\\n\\n' +
+            '📁 撮影素材アップロード先:\\n' +
+            shootingUrl + '\\n\\n' +
+            '撮影後、上記フォルダに素材をアップロードお願いします。';
+
+          // CCがあれば追加
+          if (cc) {
+            template += '\\n\\nCC: @' + cc;
+          }
+
+          pre.textContent = template;
+          pre.style.color = '#333';
+          btn.disabled = false;
+        }
+
         function openUrl(url) {
           window.open(url, '_blank');
         }
@@ -362,14 +477,40 @@ ${result.subfolders[0].url}
 
         function copyWorksTemplate() {
           const template = document.getElementById('worksTemplate').textContent;
-          navigator.clipboard.writeText(template).then(function() {
-            showToast();
-          });
+          if (template && !template.includes('担当者を選択すると')) {
+            navigator.clipboard.writeText(template).then(function() {
+              showToast();
+            });
+          }
         }
 
         function copyAdminTemplate() {
           const template = document.getElementById('adminTemplate').textContent;
           navigator.clipboard.writeText(template).then(function() {
+            showToast();
+          });
+        }
+
+        function togglePlainTemplate() {
+          const section = document.getElementById('plainTemplateSection');
+          const icon = document.getElementById('plainTemplateIcon');
+          if (section.style.display === 'none') {
+            section.style.display = 'block';
+            icon.textContent = '▼';
+          } else {
+            section.style.display = 'none';
+            icon.textContent = '▶';
+          }
+        }
+
+        function copyPlainTemplate() {
+          const plainTemplate = '@{{撮影担当}}\\n' +
+            '{{企業名}} 様の撮影データ共有フォルダを作成しました。\\n\\n' +
+            '📁 撮影素材アップロード先:\\n' +
+            '{{撮影素材URL}}\\n\\n' +
+            '撮影後、上記フォルダに素材をアップロードお願いします。\\n\\n' +
+            'CC: @{{CC}}';
+          navigator.clipboard.writeText(plainTemplate).then(function() {
             showToast();
           });
         }
@@ -488,8 +629,15 @@ function showRecentFolders() {
     return;
   }
 
-  // 履歴データをJSONとしてHTMLに埋め込む
+  // 設定シートからメンバー一覧と担当者情報を取得
+  const members = getMemberList();
+  const settings = getSettingsFromSheet();
+  const defaultTantou = settings['撮影担当'] || '';
+  const defaultCC = settings['CC'] || '';
+
+  // 履歴データとメンバー一覧をJSONとしてHTMLに埋め込む
   const historyJson = JSON.stringify(history);
+  const membersJson = JSON.stringify(members);
 
   const html = `
     <html>
@@ -638,8 +786,22 @@ function showRecentFolders() {
         <button class="btn-open" onclick="openFolder()">🔗 フォルダを開く</button>
 
         <h4 style="margin-top: 15px;">📝 撮影担当者への連絡用テンプレート</h4>
-        <div class="template-content" id="templateContent"></div>
-        <button class="btn-copy" onclick="copyTemplate()">📋 テンプレートをコピー</button>
+        <div style="margin-bottom: 10px; display: flex; gap: 15px; flex-wrap: wrap;">
+          <div>
+            <label style="font-size: 12px; color: #666;">撮影担当:</label>
+            <select id="tantouSelect" onchange="updateTemplate()" style="margin-left: 8px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+              <option value="">-- 選択 --</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; color: #666;">CC:</label>
+            <select id="ccSelect" onchange="updateTemplate()" style="margin-left: 8px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+              <option value="">-- なし --</option>
+            </select>
+          </div>
+        </div>
+        <div class="template-content" id="templateContent" style="color: #999;">（担当者を選択してください）</div>
+        <button class="btn-copy" onclick="copyTemplate()" id="copyTemplateBtn" disabled>📋 テンプレートをコピー</button>
       </div>
 
       <div style="margin-top: 20px; text-align: right;">
@@ -650,7 +812,37 @@ function showRecentFolders() {
 
       <script>
         const history = ${historyJson};
+        const members = ${membersJson};
+        const defaultTantou = '${escapeHtml(defaultTantou)}';
+        const defaultCC = '${escapeHtml(defaultCC)}';
         let selectedIndex = -1;
+
+        // 初期化: ドロップダウンにメンバーを追加
+        window.onload = function() {
+          // 撮影担当ドロップダウン
+          const tantouSelect = document.getElementById('tantouSelect');
+          members.forEach(function(name) {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (name === defaultTantou) {
+              option.selected = true;
+            }
+            tantouSelect.appendChild(option);
+          });
+
+          // CCドロップダウン
+          const ccSelect = document.getElementById('ccSelect');
+          members.forEach(function(name) {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (name === defaultCC) {
+              option.selected = true;
+            }
+            ccSelect.appendChild(option);
+          });
+        };
 
         function selectFolder(index) {
           // 選択状態を更新
@@ -659,22 +851,56 @@ function showRecentFolders() {
           });
           selectedIndex = index;
 
-          // URLとテンプレートを生成
+          // URLを表示
           const item = history[index];
           const shootingUrl = item.shootingFolderUrl || item.url;
-
-          // URLを表示
           document.getElementById('urlContent').textContent = shootingUrl;
 
-          // テンプレートを生成
-          const template = '@（撮影担当者名）\\n' +
+          // テンプレートセクションを表示
+          document.getElementById('templateSection').classList.add('show');
+
+          // デフォルト担当者がいれば自動でテンプレート生成
+          if (defaultTantou) {
+            updateTemplate();
+          } else {
+            document.getElementById('templateContent').textContent = '（担当者を選択してください）';
+            document.getElementById('templateContent').style.color = '#999';
+            document.getElementById('copyTemplateBtn').disabled = true;
+          }
+        }
+
+        function updateTemplate() {
+          if (selectedIndex < 0) return;
+
+          const tantou = document.getElementById('tantouSelect').value;
+          const cc = document.getElementById('ccSelect').value;
+          const content = document.getElementById('templateContent');
+          const btn = document.getElementById('copyTemplateBtn');
+
+          if (!tantou) {
+            content.textContent = '（担当者を選択してください）';
+            content.style.color = '#999';
+            btn.disabled = true;
+            return;
+          }
+
+          const item = history[selectedIndex];
+          const shootingUrl = item.shootingFolderUrl || item.url;
+
+          let template = '@' + tantou + '\\n' +
             item.companyName + ' 様の撮影データ共有フォルダを作成しました。\\n\\n' +
             '📁 撮影素材アップロード先:\\n' +
             shootingUrl + '\\n\\n' +
             '撮影後、上記フォルダに素材をアップロードお願いします。';
 
-          document.getElementById('templateContent').textContent = template;
-          document.getElementById('templateSection').classList.add('show');
+          // CCがあれば追加
+          if (cc) {
+            template += '\\n\\nCC: @' + cc;
+          }
+
+          content.textContent = template;
+          content.style.color = '#333';
+          btn.disabled = false;
         }
 
         function copyUrl() {
@@ -686,9 +912,11 @@ function showRecentFolders() {
 
         function copyTemplate() {
           const template = document.getElementById('templateContent').textContent;
-          navigator.clipboard.writeText(template).then(function() {
-            showToast();
-          });
+          if (template && !template.includes('担当者を選択')) {
+            navigator.clipboard.writeText(template).then(function() {
+              showToast();
+            });
+          }
         }
 
         function openFolder() {

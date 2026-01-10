@@ -131,132 +131,10 @@ const PART2_MAPPING = {
 
 
 // ================================================================================
-// ===== 設定シート機能（担当者の動的管理） =====
+// ===== 設定シート機能 =====
 // ================================================================================
-
-/**
- * 設定シートから担当者情報を取得
- *
- * 【設定シートの構造】
- * A列: キー（原稿担当1, 原稿担当2, 動画担当, 編集担当, CC など）
- * B列: 値（担当者名）
- * C列: 説明（省略可）
- */
-function getSettingsFromSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('設定');
-
-  if (!sheet) {
-    return {
-      error: '「設定」シートがありません。\n\n' +
-             'メニュー「５.📝 構成案生成」→「⚙️ 設定シートを作成」を実行してください。'
-    };
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const settings = {};
-
-  // 1行目はヘッダーとしてスキップ
-  for (let i = 1; i < data.length; i++) {
-    const key = String(data[i][0]).trim();
-    const value = String(data[i][1]).trim();
-    if (key && value) {
-      settings[key] = value;
-    }
-  }
-
-  return settings;
-}
-
-
-/**
- * プレースホルダーを担当者情報で置換
- *
- * 【対応プレースホルダー】
- * {{原稿担当1}} → 河合
- * {{原稿担当2}} → 中尾文香
- * {{原稿チーム}} → 河合・中尾文香
- * {{@原稿担当1}} → @河合
- * {{@原稿担当2}} → @中尾文香
- * {{@原稿チーム}} → @河合 @中尾文香
- * {{動画担当}} → 川崎
- * {{@動画担当}} → @川崎
- * {{撮影担当}} → 川崎
- * {{@撮影担当}} → @川崎
- * {{編集担当}} → 河合
- * {{@編集担当}} → @河合
- * {{CC}} → 青柳
- * {{@CC}} → @青柳
- */
-function replacePlaceholders(text, settings) {
-  if (!text) return text;
-  if (!settings) {
-    settings = getSettingsFromSheet();
-  }
-
-  let result = text;
-
-  // 単一担当者のプレースホルダー
-  const singleKeys = ['原稿担当1', '原稿担当2', '動画担当', '撮影担当', '編集担当', 'CC'];
-  for (const key of singleKeys) {
-    const value = settings[key] || '';
-    // 名前のみ
-    result = result.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), value);
-    // @メンション
-    result = result.replace(new RegExp('\\{\\{@' + key + '\\}\\}', 'g'), value ? '@' + value : '');
-  }
-
-  // 原稿チーム（複数担当者）
-  const genkoTeam = [settings['原稿担当1'], settings['原稿担当2']].filter(v => v).join('・');
-  const genkoTeamMention = [settings['原稿担当1'], settings['原稿担当2']].filter(v => v).map(v => '@' + v).join(' ');
-  result = result.replace(/\{\{原稿チーム\}\}/g, genkoTeam);
-  result = result.replace(/\{\{@原稿チーム\}\}/g, genkoTeamMention);
-
-  return result;
-}
-
-
-/**
- * 設定シートを初期化（なければ作成）
- */
-function initializeSettingsSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('設定');
-
-  if (sheet) {
-    SpreadsheetApp.getUi().alert('情報', '「設定」シートは既に存在します。', SpreadsheetApp.getUi().ButtonSet.OK);
-    return;
-  }
-
-  // 新規作成
-  sheet = ss.insertSheet('設定');
-
-  // ヘッダー
-  sheet.getRange('A1:C1').setValues([['キー', '値', '説明']]);
-  sheet.getRange('A1:C1').setFontWeight('bold').setBackground('#f3f3f3');
-
-  // デフォルト値
-  const defaultSettings = [
-    ['原稿担当1', '河合', '原稿執筆メイン担当'],
-    ['原稿担当2', '中尾文香', '原稿執筆サブ担当'],
-    ['動画担当', '川崎', '撮影・企画担当'],
-    ['撮影担当', '川崎', '現地撮影担当'],
-    ['編集担当', '河合', '動画編集担当'],
-    ['CC', '青柳', 'CC宛先']
-  ];
-
-  sheet.getRange(2, 1, defaultSettings.length, 3).setValues(defaultSettings);
-
-  // 列幅調整
-  sheet.setColumnWidth(1, 120);
-  sheet.setColumnWidth(2, 100);
-  sheet.setColumnWidth(3, 200);
-
-  SpreadsheetApp.getUi().alert('完了',
-    '「設定」シートを作成しました。\n\n' +
-    '担当者を変更する場合は、このシートのB列を編集してください。',
-    SpreadsheetApp.getUi().ButtonSet.OK);
-}
+// getSettingsFromSheet(), replacePlaceholders() は settingsSheet.js で定義
+// このファイルでは settingsSheet.js の関数を使用
 
 
 // ===== メニュー追加 =====
@@ -268,7 +146,6 @@ function addCompositionMenu(ui) {
     .addItem('📤 ワークス報告用に変換', 'showWorksReportConvertDialog')
     .addItem('📤 撮影指示書に変換', 'showShootingInstructionConvertDialog')
     .addSeparator()
-    .addItem('⚙️ 設定シートを作成', 'initializeSettingsSheet')
     .addItem('🔧 シートデータ確認', 'showSheetDataDebug')
     .addToUi();
 }
@@ -528,15 +405,13 @@ function getCompanySheetListForComposition() {
   const activeSheet = ss.getActiveSheet();
   const activeSheetName = activeSheet.getName();
 
-  // 除外するシート名
-  const excludeSheets = ['プロンプト', 'フォームの回答 1', 'フォームの回答1', 'ヒアリングシート'];
-
   const sheets = ss.getSheets();
   const result = [];
 
   for (const sheet of sheets) {
     const name = sheet.getName();
-    if (!excludeSheets.includes(name)) {
+    // settingsSheet.js の isExcludedSheet() を使用
+    if (!isExcludedSheet(name)) {
       // 企業名を取得（行5, C列）
       let companyName = '';
       try {

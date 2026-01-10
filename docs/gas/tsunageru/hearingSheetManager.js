@@ -103,8 +103,11 @@ const FORM_TO_SHEET_MAPPING = {
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
 
-  // ヒアリングシート管理メニュー
-  ui.createMenu('📋 ヒアリングシート')
+  // ０. 設定メニュー（settingsSheet.jsから）
+  addSettingsMenu(ui);
+
+  // １. ヒアリングシート管理メニュー
+  ui.createMenu('１.📋 ヒアリングシート')
     .addItem('🆕 新規作成（フォーム回答から）', 'createFromFormResponse')
     .addItem('🆕 新規作成（手動）', 'createNewHearingSheet')
     .addSeparator()
@@ -114,13 +117,20 @@ function onOpen() {
     .addItem('📄 現在のシートをテンプレート化', 'formatCurrentSheet')
     .addToUi();
 
-  // AI出力メニュー
-  ui.createMenu('📄 AI出力')
-    .addItem('JSONでダウンロード', 'downloadAsJson')
-    .addItem('テキストでダウンロード', 'downloadAsText')
-    .addSeparator()
-    .addItem('🔧 シート構造を確認', 'debugSheetDataFull')
-    .addToUi();
+  // ２. 撮影フォルダメニュー（createShootingFolder.jsから）
+  addShootingFolderMenu(ui);
+
+  // ３. プロンプトメニュー（promptDialog.jsから）
+  createPromptMenu(ui);
+
+  // ４. 文字起こし整理・転記メニュー（transcriptToHearingSheet.jsから）
+  addTranscriptMenuToExisting(ui);
+
+  // ５. 構成案生成メニュー（compositionDraftGenerator.jsから）
+  addCompositionMenu(ui);
+
+  // メンテナンス用（必要に応じてコメント解除）
+  // addStructureCheckMenuToExisting(ui);
 }
 
 // ===== 1. 新規作成（フォーム回答から） =====

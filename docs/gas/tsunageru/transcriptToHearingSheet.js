@@ -60,7 +60,7 @@ const TRANSCRIPT_TO_SHEET_MAPPING = {
 // ===== メニュー追加 =====
 function addTranscriptMenu() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('📝 文字起こし転記')
+  ui.createMenu('４.📝 文字起こし整理・転記')
     .addItem('📋 文字起こしを整理（プロンプト生成）', 'showTranscriptPromptDialog')
     .addItem('📥 AI出力を転記', 'showTransferFromAIDialog')
     .addSeparator()
@@ -70,7 +70,7 @@ function addTranscriptMenu() {
 
 // 既存のonOpenに統合する場合
 function addTranscriptMenuToExisting(ui) {
-  ui.createMenu('📝 文字起こし転記')
+  ui.createMenu('４.📝 文字起こし整理・転記')
     .addItem('📋 文字起こしを整理（プロンプト生成）', 'showTranscriptPromptDialog')
     .addItem('📥 AI出力を転記', 'showTransferFromAIDialog')
     .addSeparator()
@@ -130,6 +130,12 @@ function showTranscriptPromptDialog() {
     return;
   }
 
+  // 設定シートから担当者情報を取得してプレースホルダーを置換
+  const settings = getSettingsFromSheet();
+  if (!settings.error) {
+    promptData.template = replacePlaceholders(promptData.template, settings);
+  }
+
   // 企業シート一覧を取得
   const sheetData = getCompanySheetListWithNames();
 
@@ -147,16 +153,13 @@ function getCompanySheetListWithNames() {
   const activeSheet = ss.getActiveSheet();
   const activeSheetName = activeSheet.getName();
 
-  // 除外するシート名
-  const excludeSheets = ['プロンプト', 'フォームの回答 1', 'フォームの回答1', 'ヒアリングシート'];
-
-  // 全シートを取得し、除外リストにないものをフィルタ
+  // 全シートを取得し、除外シートをフィルタ（settingsSheet.js の isExcludedSheet() を使用）
   const allSheets = ss.getSheets();
   const companySheets = [];
 
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
-    if (!excludeSheets.some(exclude => sheetName.includes(exclude))) {
+    if (!isExcludedSheet(sheetName)) {
       // 企業名を取得（行5, C列）
       const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
       companySheets.push({
@@ -423,21 +426,18 @@ function showTransferFromAIDialog() {
 
 /**
  * 企業シート一覧を取得
- * 除外: プロンプト、フォームの回答1、ヒアリングシート
+ * settingsSheet.js の isExcludedSheet() を使用
  */
 function getCompanySheetList() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const activeSheet = ss.getActiveSheet();
   const activeSheetName = activeSheet.getName();
 
-  // 除外するシート名
-  const excludeSheets = ['プロンプト', 'フォームの回答 1', 'フォームの回答1', 'ヒアリングシート'];
-
-  // 全シートを取得し、除外リストにないものをフィルタ
+  // 全シートを取得し、除外シートをフィルタ
   const allSheets = ss.getSheets();
   const companySheets = allSheets
     .map(sheet => sheet.getName())
-    .filter(name => !excludeSheets.some(exclude => name.includes(exclude)));
+    .filter(name => !isExcludedSheet(name));
 
   // アクティブシートが企業シートかどうか
   const isActiveCompanySheet = companySheets.includes(activeSheetName);

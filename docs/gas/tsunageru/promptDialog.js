@@ -29,7 +29,7 @@
  * @param {GoogleAppsScript.Base.Ui} ui - SpreadsheetApp.getUi()の結果
  */
 function createPromptMenu(ui) {
-  const menu = ui.createMenu('📝 プロンプト');
+  const menu = ui.createMenu('３.📝 議事録作成・報告プロンプト');
 
   // プロンプトシートからメニュー項目を動的に生成
   const prompts = getPromptList();
