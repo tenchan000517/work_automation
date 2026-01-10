@@ -105,13 +105,15 @@ C:\work-manual\
 ├── HANDOFF.md                      # このファイル
 ├── docs/
 │   ├── manual-creation-guideline.md  # マニュアル作成ガイドライン ★重要
-│   ├── gas/                        # GASスクリプト
-│   │   ├── setupSheets.js          # 初期設定
-│   │   ├── hearingSheetManager.js  # ヒアリングシート管理
-│   │   ├── transcriptToHearingSheet.js
-│   │   ├── compositionDraftGenerator.js
-│   │   ├── createShootingFolder.js
-│   │   └── promptDialog.js
+│   ├── gas/                        # GASスクリプト（商材別フォルダ）
+│   │   ├── tsunageru/              # ツナゲル専用
+│   │   │   ├── setupSheets.js
+│   │   │   ├── hearingSheetManager.js
+│   │   │   ├── transcriptToHearingSheet.js
+│   │   │   ├── compositionDraftGenerator.js
+│   │   │   ├── createShootingFolder.js
+│   │   │   └── promptDialog.js
+│   │   └── (他商材)/               # 追加時にフォルダ作成
 │   ├── prompts/                    # AIプロンプト
 │   └── 業務一覧/                   # 商材別業務詳細（txt）
 │
@@ -154,6 +156,28 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 ## 次回セッションでやること
 
+### 最優先: 稼働中GASとリポジトリjsの同期
+
+**問題:**
+スプレッドシートで実際に稼働しているGASコードと、`docs/gas/tsunageru/`のjsファイルがバージョン違いで同期が取れていない。
+
+**作業フロー:**
+```
+1. ユーザーがスプレッドシートのGASエディタから稼働中コードを共有
+2. 共有されたコードを確認
+3. ガイドライン仕様に沿って最適化しながらjsファイルを更新
+   - 7.2: 設定シートから担当者ドロップダウン
+   - 7.4: ダイアログUI統一（アコーディオン、プレビュー等）
+   - 7.5: 入力データ永続化、上書きアラート、除外シート
+   - 7.6: メニュー構造（addXxxMenu形式）
+4. 最適化したコードをコミット
+```
+
+**重要:**
+- ユーザーからの共有を待ってから作業開始すること
+- 脳死でコピーではなく、ガイドライン仕様に沿って最適化すること
+- 最適化後はユーザーに確認してからスプレッドシートに反映
+
 ### 優先度高: ガイドライン定義済み・未実装の機能
 
 ガイドライン（7章）で設計済みだが、GAS側で未実装のもの:
@@ -166,7 +190,7 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 | 除外シートのフィルタリング | 7.5 | 未実装 |
 | GASメニュー構造統一（addXxxMenu） | 7.6 | 一部対応 |
 
-### 優先度高: GASとNext.jsのギャップ解消
+### 優先度高: GASダイアログとNext.js ContentModalのUI統一
 
 現状のGASダイアログとNext.js ContentModalでUIが完全一致していない。
 ガイドライン 7.4 の仕様に揃える:

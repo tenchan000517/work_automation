@@ -28,11 +28,11 @@
 |-------------|--------|
 | 初回ヒアリング〜議事録共有 | ツナゲル配列順0〜5（tsunageru.ts） |
 | 撮影フロー | ツナゲル配列順4（tsunageru.ts） |
-| 構成案生成 | docs/gas/compositionDraftGenerator.js |
-| 文字起こし転記 | docs/gas/transcriptToHearingSheet.js |
-| プロンプト・フォーマット管理 | docs/gas/setupSheets.js |
-| ヒアリングシート操作 | docs/gas/hearingSheetManager.js |
-| 撮影フォルダ作成 | docs/gas/createShootingFolder.js |
+| 構成案生成 | docs/gas/tsunageru/compositionDraftGenerator.js |
+| 文字起こし転記 | docs/gas/tsunageru/transcriptToHearingSheet.js |
+| プロンプト・フォーマット管理 | docs/gas/tsunageru/setupSheets.js |
+| ヒアリングシート操作 | docs/gas/tsunageru/hearingSheetManager.js |
+| 撮影フォルダ作成 | docs/gas/tsunageru/createShootingFolder.js |
 
 ---
 
@@ -54,12 +54,15 @@ src/lib/data/
 └── sing.ts         # 月刊Sing
 
 docs/gas/
-├── setupSheets.js              # 初期設定（プロンプトシート・設定シート）
-├── hearingSheetManager.js      # ヒアリングシート管理
-├── transcriptToHearingSheet.js # 文字起こし転記
-├── compositionDraftGenerator.js # 構成案生成
-├── createShootingFolder.js     # 撮影フォルダ作成
-└── promptDialog.js             # プロンプトダイアログ
+├── tsunageru/                  # ツナゲル専用GAS
+│   ├── setupSheets.js          # 初期設定（プロンプト・設定シート）
+│   ├── hearingSheetManager.js  # ヒアリングシート管理
+│   ├── transcriptToHearingSheet.js # 文字起こし転記
+│   ├── compositionDraftGenerator.js # 構成案生成
+│   ├── createShootingFolder.js # 撮影フォルダ作成
+│   └── promptDialog.js         # プロンプトダイアログ
+├── (他商材)/                   # 他商材追加時にフォルダ作成
+└── (common)/                   # 共通機能が出てきたら作成
 
 src/components/
 ├── TaskCard.tsx     # 業務カードコンポーネント
