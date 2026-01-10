@@ -22,6 +22,20 @@
 
 ---
 
+## 1.3 参照先
+
+| やりたいこと | 参照先 |
+|-------------|--------|
+| 初回ヒアリング〜議事録共有 | ツナゲル配列順0〜5（tsunageru.ts） |
+| 撮影フロー | ツナゲル配列順4（tsunageru.ts） |
+| 構成案生成 | docs/gas/compositionDraftGenerator.js |
+| 文字起こし転記 | docs/gas/transcriptToHearingSheet.js |
+| プロンプト・フォーマット管理 | docs/gas/setupSheets.js |
+| ヒアリングシート操作 | docs/gas/hearingSheetManager.js |
+| 撮影フォルダ作成 | docs/gas/createShootingFolder.js |
+
+---
+
 ## 2. システム全体像
 
 ### 2.1 ファイル構成
