@@ -65,6 +65,28 @@ const DEFAULT_FOLDER_SETTINGS = [
   { key: 'サブフォルダ3', value: '03_完成動画', note: '' },
 ];
 
+// デフォルトURL設定
+const DEFAULT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfOqrC2GITh67P5D-3_iop3v2eU9wIYPW7eiYdhi3r40vTrkA/viewform';
+
+// デフォルト企業情報項目（■で始まる項目はセクション区切り）
+const DEFAULT_COMPANY_INFO_HEADERS = [
+  '■基本情報',
+  '企業名',
+  '担当者名',
+  '役職・部署',
+  '連絡先（電話）',
+  '連絡先（メール）',
+  '契約開始日',
+  '■受注内容',
+  '受注商材',
+  '契約期間',
+  '契約金額',
+  '備考',
+  '■制作担当',
+  'メイン担当',
+  'サブ担当'
+];
+
 
 // ================================================================================
 // ===== メニュー =====
@@ -75,12 +97,15 @@ const DEFAULT_FOLDER_SETTINGS = [
  */
 function addSettingsMenu(ui) {
   ui.createMenu('０.⚙️ 設定')
-    .addItem('📋 設定シートを作成', 'initializeSettingsSheet')
-    .addSeparator()
     .addItem('👥 メンバー編集', 'showMemberEditDialog')
     .addItem('📝 業務担当者編集', 'showTaskAssigneeEditDialog')
     .addItem('📁 フォルダ設定編集', 'showFolderSettingsEditDialog')
+    .addSeparator()
     .addItem('📄 プロンプト編集', 'showPromptEditDialog')
+    .addSeparator()
+    .addItem('📋 設定シートを作成', 'initializeSettingsSheet')
+    .addItem('📝 プロンプトシートを作成', 'initializePromptSheet')
+    .addItem('📊 企業情報一覧を作成', 'initializeCompanyListSheet')
     .addToUi();
 }
 
@@ -151,6 +176,25 @@ function initializeSettingsSheet() {
     sheet.getRange(3, 8, subfolderData.length, 2).setValues(subfolderData);
   }
 
+  // フォームURL（サブフォルダの後）
+  const formUrlRow = 3 + subfolderData.length;
+  sheet.getRange(formUrlRow, 8, 1, 2).setValues([['フォームURL', DEFAULT_FORM_URL]]);
+  sheet.getRange(formUrlRow, 9).setFontColor('#1a73e8');  // リンク色
+
+  // ===== 企業情報項目セクション（K列） =====
+  sheet.getRange('K1').setValue('企業情報項目').setFontWeight('bold').setBackground('#9c27b0').setFontColor('#fff');
+
+  // 企業情報項目（■で始まる項目はセクション区切り）
+  const companyInfoData = DEFAULT_COMPANY_INFO_HEADERS.map(h => [h]);
+  sheet.getRange(2, 11, companyInfoData.length, 1).setValues(companyInfoData);
+
+  // セクション区切り行の背景色
+  for (let i = 0; i < DEFAULT_COMPANY_INFO_HEADERS.length; i++) {
+    if (DEFAULT_COMPANY_INFO_HEADERS[i].startsWith('■')) {
+      sheet.getRange(i + 2, 11).setBackground('#e1bee7').setFontWeight('bold');
+    }
+  }
+
   // ===== 列幅調整 =====
   sheet.setColumnWidth(1, 100);  // メンバー名
   sheet.setColumnWidth(2, 120);  // 備考
@@ -161,13 +205,16 @@ function initializeSettingsSheet() {
   sheet.setColumnWidth(7, 30);   // 区切り
   sheet.setColumnWidth(8, 120);  // フォルダ設定
   sheet.setColumnWidth(9, 280);  // 値
+  sheet.setColumnWidth(10, 30);  // 区切り
+  sheet.setColumnWidth(11, 140); // 企業情報項目
 
   ui.alert('完了',
     '設定シートを作成しました。\n\n' +
     '・メンバー一覧: A列〜B列\n' +
     '・業務担当者: D列〜F列（メニューから編集）\n' +
-    '・フォルダ設定: H列〜J列\n\n' +
-    '各項目はシートで直接編集するか、メニューからダイアログで編集できます。',
+    '・フォルダ設定: H列〜I列\n' +
+    '・企業情報項目: K列（■で始まる項目はセクション区切り）\n\n' +
+    '各項目はシートで直接編集できます。',
     ui.ButtonSet.OK
   );
 }
@@ -322,6 +369,59 @@ function getSubfoldersFromSettings() {
 
 
 /**
+ * 企業情報項目を取得（設定シートのK列）
+ * @returns {string[]} 企業情報項目の配列（■セクション区切り含む）
+ */
+function getCompanyInfoHeadersFromSettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+
+  if (!sheet) {
+    return DEFAULT_COMPANY_INFO_HEADERS;
+  }
+
+  const data = sheet.getRange('K2:K').getValues();
+  const headers = [];
+
+  for (const row of data) {
+    const value = String(row[0] || '').trim();
+    if (value) {
+      headers.push(value);
+    }
+  }
+
+  return headers.length > 0 ? headers : DEFAULT_COMPANY_INFO_HEADERS;
+}
+
+
+/**
+ * ヒアリングフォームURLを取得
+ * @returns {string} フォームURL
+ */
+function getFormUrlFromSettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+
+  if (!sheet) {
+    return DEFAULT_FORM_URL;
+  }
+
+  const data = sheet.getRange('H2:I').getValues();
+
+  for (const row of data) {
+    const key = String(row[0] || '').trim();
+    const value = String(row[1] || '').trim();
+
+    if (key === 'フォームURL' && value) {
+      return value;
+    }
+  }
+
+  return DEFAULT_FORM_URL;
+}
+
+
+/**
  * 設定シートから担当者情報を取得（compositionDraftGenerator.js互換）
  * @returns {Object} { 原稿担当1: '河合', ... } または { error: 'エラーメッセージ' }
  */
@@ -383,7 +483,7 @@ function getSettingsFromSheet() {
  */
 function isExcludedSheet(sheetName) {
   // 完全一致で除外
-  const exactMatch = ['プロンプト', '設定', 'フォームの回答 1', 'フォームの回答1'];
+  const exactMatch = ['プロンプト', '設定', 'フォームの回答 1', 'フォームの回答1', '企業情報一覧'];
   if (exactMatch.includes(sheetName)) {
     return true;
   }
@@ -1243,13 +1343,13 @@ function createPromptEditHTML(prompts) {
 
       <div class="form-group">
         <label>プロンプト名 *</label>
-        <input type="text" id="inputName" placeholder="例：構成案生成">
+        <input type="text" id="inputName" placeholder="例：構成案作成">
         <div class="hint">メニューに表示される名前</div>
       </div>
 
       <div class="form-group">
         <label>説明</label>
-        <input type="text" id="inputDescription" placeholder="例：ヒアリング内容から構成案を生成">
+        <input type="text" id="inputDescription" placeholder="例：ヒアリング内容から構成案を作成">
         <div class="hint">ダイアログのサブタイトル</div>
       </div>
 
@@ -1577,4 +1677,159 @@ function savePrompts(prompts) {
   } catch (error) {
     return { success: false, error: error.message };
   }
+}
+
+
+// ================================================================================
+// ===== プロンプトシート作成 =====
+// ================================================================================
+
+/**
+ * プロンプトシートを作成・初期化
+ */
+function initializePromptSheet() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(PROMPT_SHEET_NAME);
+
+  // 既存シートがある場合は確認
+  if (sheet) {
+    const response = ui.alert(
+      '確認',
+      '「プロンプト」シートは既に存在します。\n\n初期化すると現在のプロンプトが上書きされます。\n続行しますか？',
+      ui.ButtonSet.YES_NO
+    );
+    if (response !== ui.Button.YES) {
+      return;
+    }
+    sheet.clear();
+  } else {
+    sheet = ss.insertSheet(PROMPT_SHEET_NAME);
+  }
+
+  // ヘッダー設定
+  const headers = ['プロンプト名', '説明', '入力欄ラベル', 'プレースホルダー', 'テンプレート'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setFontWeight('bold')
+    .setBackground('#4285f4')
+    .setFontColor('#fff');
+
+  // デフォルトプロンプトを追加
+  const defaultPrompts = [
+    ['構成案作成', 'ヒアリング内容から構成案を作成', 'ヒアリング内容', 'ここにヒアリング内容を貼り付け...', '以下のヒアリング内容から、採用動画の構成案を作成してください。\n\n{{input}}'],
+    ['原稿生成', '構成案から原稿を生成', '構成案', 'ここに構成案を貼り付け...', '以下の構成案から、採用動画の原稿を作成してください。\n\n{{input}}'],
+  ];
+  sheet.getRange(2, 1, defaultPrompts.length, 5).setValues(defaultPrompts);
+
+  // 列幅調整
+  sheet.setColumnWidth(1, 150);  // プロンプト名
+  sheet.setColumnWidth(2, 200);  // 説明
+  sheet.setColumnWidth(3, 120);  // 入力欄ラベル
+  sheet.setColumnWidth(4, 180);  // プレースホルダー
+  sheet.setColumnWidth(5, 400);  // テンプレート
+
+  // 行の高さを自動調整
+  sheet.setRowHeights(2, defaultPrompts.length, 60);
+
+  ui.alert('完了',
+    'プロンプトシートを作成しました。\n\n' +
+    '・A列: プロンプト名\n' +
+    '・B列: 説明\n' +
+    '・C列: 入力欄ラベル\n' +
+    '・D列: プレースホルダー\n' +
+    '・E列: テンプレート（{{input}}が入力値に置換）\n\n' +
+    'メニュー「プロンプト編集」からダイアログで編集できます。',
+    ui.ButtonSet.OK
+  );
+}
+
+
+// ================================================================================
+// ===== 企業情報一覧シート作成 =====
+// ================================================================================
+
+const COMPANY_LIST_SHEET_NAME = '企業情報一覧';
+
+/**
+ * 企業情報一覧シートを作成（設定シートの企業情報項目から）
+ */
+function initializeCompanyListSheet() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(COMPANY_LIST_SHEET_NAME);
+
+  // 既存シートがある場合は確認
+  if (sheet) {
+    const response = ui.alert(
+      '確認',
+      '「企業情報一覧」シートは既に存在します。\n\n初期化すると現在のデータが上書きされます。\n続行しますか？',
+      ui.ButtonSet.YES_NO
+    );
+    if (response !== ui.Button.YES) {
+      return;
+    }
+    sheet.clear();
+  } else {
+    sheet = ss.insertSheet(COMPANY_LIST_SHEET_NAME);
+  }
+
+  // 設定シートから企業情報項目を取得（■セクション区切り含む）
+  const allHeaders = getCompanyInfoHeadersFromSettings();
+
+  // ヘッダー設定（セクション区切りも含めて設定）
+  sheet.getRange(1, 1, 1, allHeaders.length).setValues([allHeaders]);
+
+  // 全体のスタイル
+  sheet.getRange(1, 1, 1, allHeaders.length)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  // セクション区切り（■）とデータ項目で色分け
+  for (let i = 0; i < allHeaders.length; i++) {
+    const cell = sheet.getRange(1, i + 1);
+    if (allHeaders[i].startsWith('■')) {
+      // セクション区切り: 紫系
+      cell.setBackground('#9c27b0').setFontColor('#fff');
+    } else {
+      // データ項目: 緑系
+      cell.setBackground('#34a853').setFontColor('#fff');
+    }
+  }
+
+  // 列幅調整（動的）
+  for (let i = 0; i < allHeaders.length; i++) {
+    const header = allHeaders[i];
+    if (header.startsWith('■')) {
+      sheet.setColumnWidth(i + 1, 100);  // セクション区切り
+    } else if (header === '企業名') {
+      sheet.setColumnWidth(i + 1, 150);
+    } else if (header.includes('メール')) {
+      sheet.setColumnWidth(i + 1, 180);
+    } else if (header === '備考') {
+      sheet.setColumnWidth(i + 1, 150);
+    } else {
+      sheet.setColumnWidth(i + 1, 100);  // デフォルト
+    }
+  }
+
+  // ■列のデータエリアをグレーアウト（入力不要を明示）
+  for (let i = 0; i < allHeaders.length; i++) {
+    if (allHeaders[i].startsWith('■')) {
+      sheet.getRange(2, i + 1, 100, 1).setBackground('#d0d0d0');
+    }
+  }
+
+  // 1行目を固定
+  sheet.setFrozenRows(1);
+
+  // データ項目のみ抽出（メッセージ用）
+  const dataHeaders = allHeaders.filter(h => !h.startsWith('■'));
+
+  ui.alert('完了',
+    '企業情報一覧シートを作成しました。\n\n' +
+    '項目: ' + dataHeaders.join('、') + '\n\n' +
+    '※ 設定シートのK列で項目を変更できます。',
+    ui.ButtonSet.OK
+  );
 }

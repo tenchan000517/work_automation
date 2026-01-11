@@ -70,7 +70,7 @@ function addTranscriptMenu() {
 
 // 既存のonOpenに統合する場合
 function addTranscriptMenuToExisting(ui) {
-  ui.createMenu('４.📝 文字起こし整理・転記')
+  ui.createMenu('４.📝 議事録作成・報告プロンプト')
     .addItem('📋 文字起こしを整理（プロンプト生成）', 'showTranscriptPromptDialog')
     .addItem('📥 AI出力を転記', 'showTransferFromAIDialog')
     .addSeparator()

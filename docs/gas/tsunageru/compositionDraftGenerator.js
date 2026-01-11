@@ -1,5 +1,5 @@
 /**
- * 構成案生成 GAS
+ * 構成案作成 GAS
  *
  * 【機能】
  * 1. ヒアリングシート（Part①+Part②）から情報を取得
@@ -139,8 +139,8 @@ const PART2_MAPPING = {
 
 // ===== メニュー追加 =====
 function addCompositionMenu(ui) {
-  ui.createMenu('５.📝 構成案生成')
-    .addItem('📋 構成案を生成（プロンプト生成）', 'showCompositionPromptDialog')
+  ui.createMenu('５.📝 構成案作成')
+    .addItem('📋 構成案を作成（プロンプト生成）', 'showCompositionPromptDialog')
     .addSeparator()
     .addItem('📤 ペアソナ/エンゲージ形式に変換', 'showPairsonaConvertDialog')
     .addItem('📤 ワークス報告用に変換', 'showWorksReportConvertDialog')
@@ -159,7 +159,7 @@ function addCompositionMenuStandalone() {
 
 // ===== プロンプトシートからテンプレート読み込み =====
 function getCompositionPromptFromSheet() {
-  const PROMPT_NAME = '構成案生成';
+  const PROMPT_NAME = '構成案作成';
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('プロンプト');
@@ -168,7 +168,7 @@ function getCompositionPromptFromSheet() {
     return {
       success: false,
       error: '「プロンプト」シートがありません。\n\n' +
-             '先にプロンプトシートを作成し、「構成案生成」プロンプトを追加してください。'
+             '先にプロンプトシートを作成し、「構成案作成」プロンプトを追加してください。'
     };
   }
 
@@ -186,7 +186,7 @@ function getCompositionPromptFromSheet() {
     success: false,
     error: 'プロンプトシートに「' + PROMPT_NAME + '」がありません。\n\n' +
            'プロンプトシートに以下の行を追加してください：\n' +
-           'A列: 構成案生成\n' +
+           'A列: 構成案作成\n' +
            'E列: プロンプトテンプレート'
   };
 }
@@ -463,7 +463,7 @@ function showCompositionPromptDialog() {
   const html = HtmlService.createHtmlOutput(createCompositionDialogHTML(sheetList, promptData.template))
     .setWidth(900)
     .setHeight(700);
-  SpreadsheetApp.getUi().showModalDialog(html, '📋 構成案を生成');
+  SpreadsheetApp.getUi().showModalDialog(html, '📋 構成案を作成');
 }
 
 
@@ -530,7 +530,7 @@ function createCompositionDialogHTML(sheetList, template) {
 
   <div class="accordion">
     <div class="accordion-header" onclick="toggleAccordion()">
-      <span>📝 構成案生成プロンプト（クリックで展開）</span>
+      <span>📝 構成案作成プロンプト（クリックで展開）</span>
       <span id="accordionIcon">▶</span>
     </div>
     <div class="accordion-content" id="accordionContent">

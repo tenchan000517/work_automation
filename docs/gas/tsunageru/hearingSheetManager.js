@@ -106,28 +106,34 @@ function onOpen() {
   // ０. 設定メニュー（settingsSheet.jsから）
   addSettingsMenu(ui);
 
-  // １. ヒアリングシート管理メニュー
-  ui.createMenu('１.📋 ヒアリングシート')
-    .addItem('🆕 新規作成（フォーム回答から）', 'createFromFormResponse')
-    .addItem('🆕 新規作成（手動）', 'createNewHearingSheet')
+  // １. キックオフ・企業情報入力メニュー（companyInfoManager.jsから）
+  addKickoffMenu(ui);
+
+  // ２. ヒアリングシート・撮影フォルダ（統合メニュー）
+  ui.createMenu('２.📋 ヒアリングシート・撮影フォルダ')
+    .addItem('🆕 新規ヒアリングシート作成（フォーム回答から）', 'createFromFormResponse')
+    .addItem('🆕 新規ヒアリングシート作成（手動）', 'createNewHearingSheet')
+    .addSeparator()
+    .addItem('📂 新規フォルダ作成（企業シートから）', 'createShootingFolderFromSheet')
+    .addItem('🆕 新規フォルダ作成（手動）', 'createShootingFolder')
     .addSeparator()
     .addItem('📥 フォーム回答を既存シートに転記', 'transferToExistingSheet')
     .addSeparator()
+    .addItem('📋 最近作成した企業フォルダ一覧', 'showRecentFolders')
+    .addSeparator()
     .addItem('🎨 テンプレート初期設定', 'setupTemplate')
-    .addItem('📄 現在のシートをテンプレート化', 'formatCurrentSheet')
+    .addItem('⚙️ 親フォルダを設定', 'setParentFolder')
+    // .addItem('📄 現在のシートをテンプレート化', 'formatCurrentSheet')
     .addToUi();
 
-  // ２. 撮影フォルダメニュー（createShootingFolder.jsから）
-  addShootingFolderMenu(ui);
-
-  // ３. プロンプトメニュー（promptDialog.jsから）
+  // ４. 議事録作成・報告プロンプトメニュー（promptDialog.js + transcriptToHearingSheet.js統合）
   createPromptMenu(ui);
 
-  // ４. 文字起こし整理・転記メニュー（transcriptToHearingSheet.jsから）
-  addTranscriptMenuToExisting(ui);
-
-  // ５. 構成案生成メニュー（compositionDraftGenerator.jsから）
+  // ５. 構成案作成メニュー（compositionDraftGenerator.jsから）
   addCompositionMenu(ui);
+
+  // 連絡用フォーマットメニュー（ナンバリングなし）（contactFormats.jsから）
+  addContactFormatsMenu(ui);
 
   // メンテナンス用（必要に応じてコメント解除）
   // addStructureCheckMenuToExisting(ui);

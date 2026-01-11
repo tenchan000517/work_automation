@@ -138,15 +138,19 @@ export const tsunageru: Product = {
               type: "popup",
               hasInputField: true,
               inputSectionTitle: "投稿フォーマット",
-              inputNote: "担当者名・企業名を入力してください",
+              inputNote: "宛先・CC・企業名を入力してください（@を付けてください）",
               inputFields: [
-                { id: "mention", label: "宛先", placeholder: "@河合 @中尾文香 cc:@青柳", defaultValue: "@河合 @中尾文香 cc:@青柳" },
+                { id: "mention", label: "宛先（複数可）", placeholder: "@河合 @中尾文香", defaultValue: "@河合 @中尾文香" },
+                { id: "cc", label: "CC（複数可）", placeholder: "@青柳", defaultValue: "@青柳" },
                 { id: "company", label: "企業名", placeholder: "株式会社○○" }
               ],
-              template: `{{mention}}
+              template: `{{mention}} cc:{{cc}}
 新規受注です。
 {{company}}様、ツナゲル12ヶ月契約。
-初回打ち合わせは来週中に調整予定です。
+
+初回打ち合わせはカレンダーを見て調整しますので、
+予定の記入漏れがある方は記入してください。
+
 詳細は上記フォーマットをご確認ください。`
             }
           ]

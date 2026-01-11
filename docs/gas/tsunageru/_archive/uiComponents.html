@@ -1,0 +1,370 @@
+<!--
+  共通UIコンポーネント (uiComponents.html)
+
+  使用方法:
+  1. GASでinclude関数を定義
+     function include(filename) {
+       return HtmlService.createHtmlOutputFromFile(filename).getContent();
+     }
+
+  2. HTMLテンプレート内で呼び出し
+     <?!= include('uiComponents'); ?>
+
+  提供する機能:
+  - copyToClipboard(text): クリップボードにコピー
+  - showCopySuccess(): コピー成功トースト表示
+  - toggleAccordion(arrowId, contentId): アコーディオン開閉
+  - escapeHtml(str): HTMLエスケープ
+  - createMultiSelectDropdown(name, members, defaults): 担当者選択ドロップダウン生成
+  - toggleDropdown(name): 担当者ドロップダウン開閉
+  - updateDisplay(name): 担当者選択表示更新
+  - closeAllDropdowns(): 全ドロップダウンを閉じる
+-->
+
+<script>
+// ================================================================================
+// ===== クリップボード・トースト =====
+// ================================================================================
+
+/**
+ * クリップボードにコピー
+ */
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showCopySuccess();
+  }).catch(err => {
+    // フォールバック（古いブラウザ用）
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showCopySuccess();
+  });
+}
+
+/**
+ * コピー成功メッセージ表示
+ */
+function showCopySuccess() {
+  const msg = document.getElementById('copySuccess');
+  if (msg) {
+    msg.classList.add('show');
+    setTimeout(() => {
+      msg.classList.remove('show');
+    }, 2000);
+  }
+}
+
+// ================================================================================
+// ===== アコーディオン =====
+// ================================================================================
+
+/**
+ * アコーディオン開閉（デフォルトID版）
+ */
+function toggleAccordion() {
+  toggleAccordionById('arrow', 'accordionContent');
+}
+
+/**
+ * アコーディオン開閉（ID指定版）
+ */
+function toggleAccordionById(arrowId, contentId) {
+  const content = document.getElementById(contentId);
+  const arrow = document.getElementById(arrowId);
+  if (content && arrow) {
+    content.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+}
+
+// ================================================================================
+// ===== HTMLエスケープ =====
+// ================================================================================
+
+/**
+ * HTMLエスケープ
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ================================================================================
+// ===== コンパクトドロップダウン（担当者選択） =====
+// ================================================================================
+
+/**
+ * 担当者選択ドロップダウン生成
+ * @param {string} name - ドロップダウン名（'mention', 'cc'等）
+ * @param {string[]} members - メンバー一覧
+ * @param {string[]} defaults - デフォルト選択されるメンバー
+ */
+function createMultiSelectDropdown(name, members, defaults) {
+  const dropdown = document.getElementById(name + 'Dropdown');
+  if (!dropdown) return;
+
+  dropdown.innerHTML = '';
+  for (const member of members) {
+    const checked = defaults.includes(member) ? 'checked' : '';
+    const item = document.createElement('div');
+    item.className = 'multi-select-item';
+    item.innerHTML = `
+      <input type="checkbox" id="${name}_${member}" name="${name}" value="${member}" ${checked} onchange="updateDisplay('${name}')">
+      <label for="${name}_${member}">${escapeHtml(member)}</label>
+    `;
+    item.onclick = function(e) {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = item.querySelector('input');
+        cb.checked = !cb.checked;
+        updateDisplay(name);
+      }
+    };
+    dropdown.appendChild(item);
+  }
+  updateDisplay(name);
+}
+
+/**
+ * 担当者ドロップダウン開閉
+ */
+function toggleDropdown(name) {
+  const display = document.getElementById(name + 'Display');
+  const dropdown = document.getElementById(name + 'Dropdown');
+  if (!display || !dropdown) return;
+
+  const isOpen = dropdown.classList.contains('show');
+
+  // 他のドロップダウンを閉じる
+  document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+  document.querySelectorAll('.multi-select-display').forEach(d => d.classList.remove('active'));
+
+  if (!isOpen) {
+    dropdown.classList.add('show');
+    display.classList.add('active');
+  }
+}
+
+/**
+ * 担当者選択表示更新
+ */
+function updateDisplay(name) {
+  const display = document.getElementById(name + 'Display');
+  if (!display) return;
+
+  const checked = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+
+  if (checked.length === 0) {
+    display.innerHTML = '<span class="placeholder">選択してください</span>';
+  } else {
+    display.innerHTML = escapeHtml(checked.join(', '));
+  }
+
+  // updatePreviewが定義されていれば呼び出し
+  if (typeof updatePreview === 'function') {
+    updatePreview();
+  }
+}
+
+/**
+ * 全ドロップダウンを閉じる（外側クリック用）
+ */
+function closeAllDropdowns() {
+  document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+  document.querySelectorAll('.multi-select-display').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.company-select-dropdown').forEach(d => d.classList.remove('show'));
+  document.querySelectorAll('.company-select-display').forEach(d => d.classList.remove('active'));
+}
+
+// ドキュメントロード時に外側クリックイベント登録
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    // 担当者ドロップダウンの外側クリック
+    if (!e.target.closest('.multi-select-wrapper')) {
+      document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+      document.querySelectorAll('.multi-select-display').forEach(d => d.classList.remove('active'));
+    }
+    // 企業選択ドロップダウンの外側クリック
+    if (!e.target.closest('.company-select-wrapper')) {
+      document.querySelectorAll('.company-select-dropdown').forEach(d => d.classList.remove('show'));
+      document.querySelectorAll('.company-select-display').forEach(d => d.classList.remove('active'));
+    }
+  });
+});
+
+// ================================================================================
+// ===== 企業選択ドロップダウン =====
+// ================================================================================
+
+/**
+ * 企業選択ドロップダウン初期化
+ * @param {Object[]} companies - 企業リスト [{name, isActive}]
+ * @param {string|null} activeCompanyName - アクティブ企業名
+ * @param {Function} onSelect - 選択時コールバック
+ */
+function initCompanyDropdown(companies, activeCompanyName, onSelect) {
+  const dropdown = document.getElementById('companySelectDropdown');
+  if (!dropdown) return;
+
+  dropdown.innerHTML = '';
+
+  companies.forEach((company) => {
+    const item = document.createElement('div');
+    item.className = 'company-select-item';
+    item.dataset.name = company.name;
+
+    const checkIcon = document.createElement('span');
+    checkIcon.className = 'check-icon';
+    checkIcon.textContent = '';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'company-name';
+    nameSpan.textContent = company.name;
+
+    item.appendChild(checkIcon);
+    item.appendChild(nameSpan);
+
+    if (company.isActive) {
+      const badge = document.createElement('span');
+      badge.className = 'badge-active';
+      badge.textContent = 'アクティブ';
+      item.appendChild(badge);
+    }
+
+    item.onclick = function() {
+      selectCompanyItem(company.name, companies, onSelect);
+    };
+
+    dropdown.appendChild(item);
+  });
+
+  // アクティブ企業があれば自動選択
+  if (activeCompanyName) {
+    selectCompanyItem(activeCompanyName, companies, onSelect);
+  }
+}
+
+/**
+ * 企業選択ドロップダウン開閉
+ */
+function toggleCompanyDropdown() {
+  const display = document.getElementById('companySelectDisplay');
+  const dropdown = document.getElementById('companySelectDropdown');
+  if (!display || !dropdown) return;
+
+  const isOpen = dropdown.classList.contains('show');
+
+  // 他のドロップダウンを閉じる
+  document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+  document.querySelectorAll('.multi-select-display').forEach(d => d.classList.remove('active'));
+
+  if (isOpen) {
+    dropdown.classList.remove('show');
+    display.classList.remove('active');
+  } else {
+    dropdown.classList.add('show');
+    display.classList.add('active');
+  }
+}
+
+/**
+ * 企業選択（内部用）
+ */
+function selectCompanyItem(companyName, companies, onSelect) {
+  // グローバル変数に選択を保存（各ダイアログで定義されていることを期待）
+  if (typeof window.selectedCompany !== 'undefined') {
+    window.selectedCompany = companyName;
+  }
+
+  // 表示を更新
+  const display = document.getElementById('companySelectDisplay');
+  if (display) {
+    const activeCompany = companies.find(c => c.name === companyName);
+    const activeBadge = activeCompany && activeCompany.isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+    display.innerHTML = '<span class="selected-check">✓</span><span class="selected-name">' + escapeHtml(companyName) + '</span>' + activeBadge;
+  }
+
+  // リスト内のハイライトとチェック更新
+  document.querySelectorAll('.company-select-item').forEach(item => {
+    const isSelected = item.dataset.name === companyName;
+    item.classList.toggle('selected', isSelected);
+    const checkIcon = item.querySelector('.check-icon');
+    if (checkIcon) {
+      checkIcon.textContent = isSelected ? '✓' : '';
+    }
+  });
+
+  // ドロップダウンを閉じる
+  const dropdown = document.getElementById('companySelectDropdown');
+  if (dropdown) dropdown.classList.remove('show');
+  if (display) display.classList.remove('active');
+
+  // コールバック呼び出し
+  if (typeof onSelect === 'function') {
+    onSelect(companyName);
+  } else if (typeof updatePreview === 'function') {
+    updatePreview();
+  }
+}
+
+// ================================================================================
+// ===== 入力モード切り替え =====
+// ================================================================================
+
+/**
+ * 入力モード切り替え（一覧選択/手入力）
+ */
+function toggleInputMode() {
+  const mode = document.querySelector('input[name="inputMode"]:checked');
+  if (!mode) return;
+
+  const selectWrapper = document.getElementById('companySelectWrapper');
+  const manualEl = document.getElementById('companyManual');
+
+  if (mode.value === 'select') {
+    if (selectWrapper) selectWrapper.style.display = 'block';
+    if (manualEl) manualEl.style.display = 'none';
+  } else {
+    if (selectWrapper) selectWrapper.style.display = 'none';
+    if (manualEl) manualEl.style.display = 'block';
+  }
+
+  if (typeof updatePreview === 'function') {
+    updatePreview();
+  }
+}
+
+// ================================================================================
+// ===== ステータス表示 =====
+// ================================================================================
+
+/**
+ * ステータス表示
+ */
+function showStatus(message, type, elementId) {
+  const status = document.getElementById(elementId || 'status');
+  if (status) {
+    status.textContent = message;
+    status.className = 'status ' + type;
+  }
+}
+
+/**
+ * パースステータス表示
+ */
+function showParseStatus(message, type) {
+  const status = document.getElementById('parseStatus');
+  if (status) {
+    status.textContent = message;
+    status.className = 'parse-status ' + type;
+    status.style.display = 'block';
+  }
+}
+</script>

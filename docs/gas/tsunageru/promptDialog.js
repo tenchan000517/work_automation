@@ -29,7 +29,7 @@
  * @param {GoogleAppsScript.Base.Ui} ui - SpreadsheetApp.getUi()の結果
  */
 function createPromptMenu(ui) {
-  const menu = ui.createMenu('３.📝 議事録作成・報告プロンプト');
+  const menu = ui.createMenu('４.📝 議事録作成・報告プロンプト');
 
   // プロンプトシートからメニュー項目を動的に生成
   const prompts = getPromptList();
@@ -42,6 +42,11 @@ function createPromptMenu(ui) {
     });
     menu.addSeparator();
   }
+
+  // 文字起こし整理・転記（transcriptToHearingSheet.jsから統合）
+  menu.addItem('📋 文字起こしを整理（プロンプト生成）', 'showTranscriptPromptDialog');
+  menu.addItem('📥 AI出力を転記', 'showTransferFromAIDialog');
+  menu.addSeparator();
 
   menu.addItem('📄 プロンプトシートを作成', 'createPromptSheet');
   menu.addItem('🔄 サンプルプロンプトを追加', 'addSamplePrompts');

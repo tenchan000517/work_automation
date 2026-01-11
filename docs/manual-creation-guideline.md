@@ -666,6 +666,130 @@ function updateTemplate() {
 
 **参考実装**: `docs/gas/tsunageru/createShootingFolder.js` の `showSuccessDialog()`
 
+#### 7.5.5 担当者選択コンポーネント（コンパクトドロップダウン）
+
+複数人選択が必要な担当者・宛先・CCの選択には、コンパクトドロップダウンUIを使用する。
+
+**UI仕様:**
+```
+┌─────────────────────────────────────┐
+│ 宛先: [河合, 中尾文香          ▼]  │ ← クリックで展開
+│       ┌─────────────────────────┐  │
+│       │ ☑ 河合                 │  │
+│       │ ☑ 中尾文香             │  │
+│       │ ☐ 川崎                 │  │
+│       │ ☐ 下脇田               │  │
+│       │ ☐ ...                  │  │
+│       └─────────────────────────┘  │
+│ CC:   [青柳                    ▼]  │
+└─────────────────────────────────────┘
+```
+
+**特徴:**
+- 選択済みの名前がカンマ区切りで表示される
+- クリックでチェックリストが展開
+- 外側クリックで自動的に閉じる
+- ▼アイコンが展開時に▲に回転
+- 複数人選択可能（チェックボックス方式）
+
+**従来UIとの比較:**
+| 項目 | 従来（チェックボックス並べ） | コンパクトドロップダウン |
+|------|---------------------------|----------------------|
+| 縦幅 | 2行×メンバー数 | 1行（展開時のみ拡大） |
+| 一覧性 | 全員が常に見える | 選択済みのみ見える |
+| 操作性 | ワンクリック選択 | クリック→選択 |
+| 推奨用途 | - | **全ての担当者選択UI** |
+
+**GAS実装パターン:**
+```javascript
+// HTML
+<div class="multi-select-wrapper">
+  <div class="multi-select-display" id="mentionDisplay" onclick="toggleDropdown('mention')">
+    <span class="placeholder">選択してください</span>
+  </div>
+  <div class="multi-select-dropdown" id="mentionDropdown"></div>
+</div>
+
+// JavaScript
+function createDropdown(name, defaults) {
+  const dropdown = document.getElementById(name + 'Dropdown');
+  dropdown.innerHTML = '';
+  for (const member of members) {
+    const checked = defaults.includes(member) ? 'checked' : '';
+    const item = document.createElement('div');
+    item.className = 'multi-select-item';
+    item.innerHTML = `
+      <input type="checkbox" name="${name}" value="${member}" ${checked}>
+      <label>${member}</label>
+    `;
+    item.onclick = function(e) {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = item.querySelector('input');
+        cb.checked = !cb.checked;
+        updateDisplay(name);
+      }
+    };
+    dropdown.appendChild(item);
+  }
+  updateDisplay(name);
+}
+
+function updateDisplay(name) {
+  const display = document.getElementById(name + 'Display');
+  const checked = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+    .map(cb => cb.value);
+  display.innerHTML = checked.length === 0
+    ? '<span class="placeholder">選択してください</span>'
+    : checked.join(', ');
+}
+```
+
+**CSS:**
+```css
+.multi-select-wrapper { position: relative; }
+.multi-select-display {
+  width: 100%;
+  padding: 10px 35px 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+  min-height: 42px;
+}
+.multi-select-display::after {
+  content: '▼';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.multi-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.multi-select-dropdown.show { display: block; }
+.multi-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.multi-select-item:hover { background: #f5f5f5; }
+```
+
+**参考実装**: `docs/gas/tsunageru/companyInfoManager.js` の `createOrderReportHTML()`
+
 ---
 
 ### 7.6 入力データの永続化
@@ -896,3 +1020,4 @@ function onOpen() {
 | 2026-01-10 | 初版作成 |
 | 2026-01-10 | 複数入力フィールド対応（InputFieldConfig）を追加 |
 | 2026-01-10 | 「連絡」系フォーマット設計パターン追加（7.5節） |
+| 2026-01-11 | 担当者選択コンポーネント（コンパクトドロップダウン）追加（7.5.5節） |
