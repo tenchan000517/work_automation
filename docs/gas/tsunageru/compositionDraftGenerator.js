@@ -483,37 +483,22 @@ function createCompositionDialogHTML(sheetList, template) {
 <html>
 <head>
   <base target="_top">
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }
+    /* compositionDraftGenerator固有スタイル */
     h3 { margin: 0 0 15px 0; color: #1a73e8; }
-    .section { margin-bottom: 20px; }
-    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; }
     .sheet-list { max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; }
     .sheet-item { padding: 8px; margin: 4px 0; border-radius: 4px; cursor: pointer; display: flex; align-items: center; }
     .sheet-item:hover { background: #f0f0f0; }
     .sheet-item.selected { background: #e3f2fd; border: 1px solid #1a73e8; }
     .sheet-item input[type="radio"] { margin-right: 10px; }
-    .active-badge { background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 10px; }
     .company-name { color: #666; font-size: 12px; margin-left: 10px; }
-    .info-box { background: #e8f5e9; padding: 12px; border-radius: 4px; margin-bottom: 15px; }
-    .info-box.warning { background: #fff3e0; }
     .output-area { width: 100%; height: 250px; font-family: monospace; font-size: 12px; resize: vertical; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-primary:hover { background: #1557b0; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .btn-secondary:hover { background: #e0e0e0; }
     .btn-success { background: #4caf50; color: white; }
     .btn-success:hover { background: #388e3c; }
     .loading { display: none; color: #1a73e8; margin-left: 10px; }
-    .status { margin-top: 10px; padding: 10px; border-radius: 4px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
-    .accordion { margin-bottom: 15px; }
     .accordion-header { background: #f5f5f5; padding: 10px 15px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
     .accordion-header:hover { background: #e0e0e0; }
-    .accordion-content { display: none; padding: 15px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; }
     .accordion-content.show { display: block; }
     pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; }
   </style>
@@ -825,33 +810,19 @@ function createConvertDialogHTML(promptData, title, description, sheetList, save
 <html>
 <head>
   <base target="_top">
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }
+    /* createConvertDialog固有スタイル */
     h3 { margin: 0 0 10px 0; color: #1a73e8; }
-    .description { color: #666; margin-bottom: 15px; font-size: 14px; }
-    .section { margin-bottom: 15px; }
-    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; display: flex; align-items: center; gap: 10px; }
     .input-area { width: 100%; height: 180px; font-family: monospace; font-size: 12px; resize: vertical; margin-bottom: 10px; }
     .output-area { width: 100%; height: 200px; font-family: monospace; font-size: 12px; resize: vertical; background: #f9f9f9; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; margin-bottom: 10px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-primary:hover { background: #1557b0; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .btn-secondary:hover { background: #e0e0e0; }
     .btn-success { background: #4caf50; color: white; }
     .btn-success:hover { background: #388e3c; }
     .btn-save { background: #ff9800; color: white; padding: 8px 16px; font-size: 13px; }
     .btn-save:hover { background: #f57c00; }
-    .status { margin-top: 10px; padding: 10px; border-radius: 4px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
     .status.info { display: block; background: #e3f2fd; color: #1565c0; }
-    .info-box { background: #e3f2fd; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; }
-    .accordion { margin-bottom: 15px; }
     .accordion-header { background: #f5f5f5; padding: 10px 15px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .accordion-header:hover { background: #e0e0e0; }
-    .accordion-content { display: none; padding: 15px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; }
     .accordion-content.show { display: block; }
     pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 150px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; }
     /* シート選択UI */
@@ -864,7 +835,6 @@ function createConvertDialogHTML(promptData, title, description, sheetList, save
     .sheet-option.has-data { border-left: 3px solid #ff9800; }
     .sheet-option input[type="radio"] { margin-right: 8px; }
     .badge { font-size: 10px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
-    .badge-active { background: #4caf50; color: white; }
     .badge-saved { background: #ff9800; color: white; }
   </style>
 </head>

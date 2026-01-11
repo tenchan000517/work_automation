@@ -195,12 +195,9 @@ function showSuccessDialog(companyName, result) {
   const html = `
     <html>
     <head>
+      ${CI_DIALOG_STYLES}
       <style>
-        body {
-          font-family: 'Segoe UI', sans-serif;
-          padding: 20px;
-          background: #f8f9fa;
-        }
+        /* showSuccessDialog固有スタイル */
         .success-header {
           background: #e8f5e9;
           padding: 15px;
@@ -233,11 +230,6 @@ function showSuccessDialog(companyName, result) {
           color: #666;
           margin-bottom: 10px;
         }
-        .btn-group {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
         button {
           padding: 10px 16px;
           border: none;
@@ -246,26 +238,12 @@ function showSuccessDialog(companyName, result) {
           font-size: 13px;
           transition: all 0.2s;
         }
-        .btn-primary {
-          background: #1976d2;
-          color: white;
-        }
-        .btn-primary:hover {
-          background: #1565c0;
-        }
         .btn-copy {
           background: #43a047;
           color: white;
         }
         .btn-copy:hover {
           background: #388e3c;
-        }
-        .btn-secondary {
-          background: #e0e0e0;
-          color: #333;
-        }
-        .btn-secondary:hover {
-          background: #d0d0d0;
         }
         .subfolders {
           margin-top: 15px;
@@ -643,12 +621,9 @@ function showRecentFolders() {
   const html = `
     <html>
     <head>
+      ${CI_DIALOG_STYLES}
       <style>
-        body {
-          font-family: 'Segoe UI', sans-serif;
-          padding: 20px;
-          background: #f8f9fa;
-        }
+        /* showRecentFolders固有スタイル */
         .folder-list {
           max-height: 200px;
           overflow-y: auto;
@@ -723,10 +698,6 @@ function showRecentFolders() {
           background: #1976d2;
           color: white;
         }
-        .btn-secondary {
-          background: #e0e0e0;
-          color: #333;
-        }
         .btn-delete {
           background: #ffebee;
           color: #c62828;
@@ -754,11 +725,6 @@ function showRecentFolders() {
           border-radius: 6px;
           display: none;
           font-size: 13px;
-        }
-        .hint {
-          color: #666;
-          font-size: 12px;
-          margin-bottom: 10px;
         }
       </style>
     </head>
@@ -1081,11 +1047,10 @@ function createSheetSelectDialogHTML(sheetList) {
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; background: #f8f9fa; }
+    /* createSheetSelectDialog固有スタイル */
     h3 { margin: 0 0 15px 0; color: #1a73e8; }
-    .info-box { background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; }
     .sheet-list { max-height: 280px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; }
     .sheet-item {
       padding: 12px 15px;
@@ -1104,17 +1069,8 @@ function createSheetSelectDialogHTML(sheetList) {
     .sheet-name { font-weight: bold; color: #333; }
     .company-name { color: #666; font-size: 12px; margin-top: 2px; }
     .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
-    .badge-active { background: #4caf50; color: white; }
     .badge-folder { background: #ff9800; color: white; }
     button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-primary:hover { background: #1557b0; }
-    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .status { margin-top: 15px; padding: 10px; border-radius: 6px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
-    .status.warning { display: block; background: #fff3e0; color: #e65100; }
     .loading { display: none; margin-left: 10px; color: #1a73e8; }
   </style>
 </head>

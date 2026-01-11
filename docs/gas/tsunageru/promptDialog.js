@@ -144,138 +144,9 @@ function getPromptDialogHtml(prompt) {
 <html>
 <head>
   <base target="_top">
+  ${CI_DIALOG_STYLES}
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      padding: 16px;
-      background: #f8f9fa;
-    }
-
-    .description {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 16px;
-    }
-
-    /* アコーディオン */
-    .accordion {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-
-    .accordion-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .accordion-header:hover {
-      background: #f5f5f5;
-    }
-
-    .accordion-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .accordion-arrow {
-      transition: transform 0.2s;
-    }
-
-    .accordion-arrow.open {
-      transform: rotate(90deg);
-    }
-
-    .accordion-content {
-      display: none;
-      padding: 0 16px 16px;
-      border-top: 1px solid #eee;
-    }
-
-    .accordion-content.open {
-      display: block;
-    }
-
-    .template-text {
-      background: #f8f9fa;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      padding: 12px;
-      font-family: monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      max-height: 200px;
-      overflow-y: auto;
-      margin-top: 12px;
-    }
-
-    /* ボタン */
-    .btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .btn-blue {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .btn-blue:hover {
-      background: #2563eb;
-    }
-
-    .btn-green {
-      background: #22c55e;
-      color: white;
-    }
-
-    .btn-green:hover {
-      background: #16a34a;
-    }
-
-    .btn-gray {
-      background: #e5e7eb;
-      color: #374151;
-    }
-
-    .btn-gray:hover {
-      background: #d1d5db;
-    }
-
-    /* 入力エリア */
-    .input-section {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-
-    .input-label {
-      font-weight: 500;
-      color: #333;
-      margin-bottom: 8px;
-      display: block;
-    }
-
+    /* promptDialog固有スタイル */
     .input-textarea {
       width: 100%;
       height: 120px;
@@ -286,77 +157,10 @@ function getPromptDialogHtml(prompt) {
       resize: vertical;
       font-family: inherit;
     }
-
     .input-textarea:focus {
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    /* プレビュー */
-    .preview-section {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-
-    .preview-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .preview-title {
-      font-weight: 500;
-      color: #333;
-    }
-
-    .preview-content {
-      background: #f8f9fa;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      padding: 12px;
-      font-size: 13px;
-      white-space: pre-wrap;
-      max-height: 200px;
-      overflow-y: auto;
-      color: #333;
-    }
-
-    .preview-placeholder {
-      color: #999;
-      font-style: italic;
-    }
-
-    /* コピー成功メッセージ */
-    .copy-success {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #22c55e;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 1000;
-    }
-
-    .copy-success.show {
-      opacity: 1;
-    }
-
-    /* フッター */
-    .footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
     }
   </style>
 </head>
@@ -417,15 +221,7 @@ function getPromptDialogHtml(prompt) {
     // 初期化
     document.getElementById('templateText').textContent = template;
 
-    // アコーディオン開閉
-    function toggleAccordion() {
-      const content = document.getElementById('accordionContent');
-      const arrow = document.getElementById('arrow');
-      content.classList.toggle('open');
-      arrow.classList.toggle('open');
-    }
-
-    // プレビュー更新
+    // プレビュー更新（固有機能）
     function updatePreview() {
       const input = document.getElementById('inputText').value;
       const preview = document.getElementById('previewContent');
@@ -442,43 +238,19 @@ function getPromptDialogHtml(prompt) {
       }
     }
 
-    // テンプレートをコピー
+    // テンプレートをコピー（固有機能）
     function copyTemplate() {
       copyToClipboard(template);
     }
 
-    // 完成版をコピー
+    // 完成版をコピー（固有機能）
     function copyResult() {
       const input = document.getElementById('inputText').value;
       const result = template.replace('{{input}}', input);
       copyToClipboard(result);
     }
-
-    // クリップボードにコピー
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        showCopySuccess();
-      }).catch(err => {
-        // フォールバック
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        showCopySuccess();
-      });
-    }
-
-    // コピー成功メッセージ表示
-    function showCopySuccess() {
-      const msg = document.getElementById('copySuccess');
-      msg.classList.add('show');
-      setTimeout(() => {
-        msg.classList.remove('show');
-      }, 2000);
-    }
   </script>
+  ${CI_UI_COMPONENTS}
 </body>
 </html>
   `;

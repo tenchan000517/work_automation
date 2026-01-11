@@ -151,85 +151,13 @@ function escapeHtml(str) {
 // ================================================================================
 // ===== 共通ダイアログスタイル =====
 // ================================================================================
+// CI_DIALOG_STYLES は commonStyles.js で定義
+// 各ダイアログで ${CI_DIALOG_STYLES} を使用
 
-const DIALOG_STYLES = `
+// 互換性のための固有スタイル（CI_DIALOG_STYLESに含まれていないもの）
+const CONTACT_FORMATS_STYLES = `
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; padding: 20px; margin: 0; font-size: 14px; }
-  h3 { margin: 0 0 5px 0; color: #333; font-size: 16px; }
-  .subtitle { color: #666; font-size: 12px; margin-bottom: 20px; }
-
-  .form-group { margin-bottom: 16px; }
-  .form-group label { display: block; font-weight: bold; margin-bottom: 6px; color: #333; }
-  .form-group .hint { font-size: 11px; color: #888; margin-top: 3px; }
-
-  input[type="text"], input[type="email"], input[type="date"], input[type="datetime-local"],
-  textarea, select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border-color 0.2s;
-  }
-  input:focus, textarea:focus, select:focus {
-    outline: none;
-    border-color: #4285f4;
-    box-shadow: 0 0 0 2px rgba(66,133,244,0.1);
-  }
-  textarea { min-height: 80px; resize: vertical; }
-
-  .member-select {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px;
-    background: #f9f9f9;
-    border-radius: 6px;
-  }
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 12px;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .checkbox-label:hover { border-color: #4285f4; background: #e8f0fe; }
-  .checkbox-label:has(input:checked) {
-    background: #e8f0fe;
-    border-color: #4285f4;
-    color: #1a73e8;
-  }
-  .checkbox-label input { margin: 0; cursor: pointer; }
-
-  .btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
-  .btn-primary { background: #1a73e8; color: white; }
-  .btn-primary:hover { background: #1557b0; }
-  .btn-secondary { background: #f1f3f4; color: #333; }
-  .btn-secondary:hover { background: #e0e0e0; }
-  .btn-copy { background: #34a853; color: white; }
-  .btn-copy:hover { background: #2d8e47; }
-
-  .actions { display: flex; gap: 10px; margin-top: 20px; }
-
-  .result-area { margin-top: 20px; display: none; }
-  .result-area.show { display: block; }
-  .result-box {
-    background: #f5f5f5;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    padding: 15px;
-    font-family: 'Consolas', monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    word-break: break-all;
-    max-height: 250px;
-    overflow-y: auto;
-  }
+  /* contactFormats固有スタイル */
   .copy-success { color: #2e7d32; font-size: 12px; margin-top: 8px; display: none; }
   .copy-success.show { display: block; }
 </style>
@@ -279,7 +207,7 @@ function createScheduleConfirmHTML(companySheets, members) {
   return `
 <!DOCTYPE html>
 <html>
-<head>${DIALOG_STYLES}</head>
+<head>${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}</head>
 <body>
   <h3>日程確定報告</h3>
   <p class="subtitle">初回打ち合わせの日程確定をワークスで報告</p>
@@ -419,7 +347,7 @@ function createShootingDateRequestHTML(companySheets, members, defaultShooter) {
   return `
 <!DOCTYPE html>
 <html>
-<head>${DIALOG_STYLES}</head>
+<head>${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}</head>
 <body>
   <h3>撮影日程確認</h3>
   <p class="subtitle">撮影担当に候補日程を確認</p>
@@ -581,7 +509,7 @@ function createMeetingReminderHTML(companySheets, members) {
   return `
 <!DOCTYPE html>
 <html>
-<head>${DIALOG_STYLES}</head>
+<head>${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}</head>
 <body>
   <h3>参加者リマインド</h3>
   <p class="subtitle">打ち合わせ参加者へのリマインド</p>
@@ -759,7 +687,7 @@ function createShootingInstructionHTML(companySheets, members, defaultShooter, d
   return `
 <!DOCTYPE html>
 <html>
-<head>${DIALOG_STYLES}</head>
+<head>${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}</head>
 <body>
   <h3>撮影指示連絡</h3>
   <p class="subtitle">撮影担当への詳細連絡</p>
@@ -951,7 +879,7 @@ function createMinutesShareHTML(companySheets, members, defaultShooter) {
   return `
 <!DOCTYPE html>
 <html>
-<head>${DIALOG_STYLES}</head>
+<head>${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}</head>
 <body>
   <h3>議事録共有</h3>
   <p class="subtitle">初回打ち合わせの議事録をワークスで共有</p>

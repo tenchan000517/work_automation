@@ -206,33 +206,32 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 ---
 
-## 次回セッションでやること
+## 本セッションの進捗（2026-01-12 続き②）
 
-### 共通スタイル（commonStyles.js）を全GASに適用
+### ✅ 完了: 共通スタイル（commonStyles.js）を全GASに適用
 
-**状況:**
-- `companyInfoManager.js` のみ対応済み（参考例として使う）
-- 他6ファイルは独自スタイル定義を持っている（未対応）
+**適用済みファイル（計7ファイル）:**
+| ファイル | 修正内容 |
+|----------|----------|
+| companyInfoManager.js | ✅ 前回対応済み |
+| promptDialog.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル + `${CI_UI_COMPONENTS}` |
+| compositionDraftGenerator.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル（script部は維持※1） |
+| contactFormats.js | ✅ `${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}` に置換 |
+| transcriptToHearingSheet.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル（2ダイアログ） |
+| createShootingFolder.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル（3ダイアログ） |
+| hearingSheetManager.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル |
 
-**未対応ファイル一覧:**
-| ファイル | 独自スタイル箇所 |
-|----------|------------------|
-| promptDialog.js | 行147-361（スタイル）、行362-450（JS関数） |
-| compositionDraftGenerator.js | 行486-520、行828-869 |
-| contactFormats.js | 行155-236（DIALOG_STYLES定数） |
-| transcriptToHearingSheet.js | 行242-281、行579-626 |
-| createShootingFolder.js | 行198-316、行645-762、行1084-1119 |
-| hearingSheetManager.js | 行467-479 |
+**※1 compositionDraftGeneratorの注意点:**
+- `toggleAccordion`が`show`クラス＋独自実装（共通版は`open`クラス）
+- `showStatus`が固有の動作
+- script部分は変更せず、スタイル部分のみ共通化
 
-**各ファイルの修正手順:**
-1. ファイル全体を読む
-2. `<head>` 内の `<style>...</style>` を `${CI_DIALOG_STYLES}` に置換
-3. 独自の `escapeHtml`, `copyToClipboard`, `showCopySuccess`, `toggleAccordion` 関数を削除
-4. `</body>` の前に `${CI_UI_COMPONENTS}` を追加
-
-**参考:** `companyInfoManager.js` 行257, 368, 643, 733, 1191, 1274, 1634, 1741
-
-**注意:** 各ファイル固有のJS関数（escapeHtml等以外）は残す
+**適用方針（安全に進めた結果）:**
+1. 各ファイルの独自`<style>`を`${CI_DIALOG_STYLES}`に置換
+2. 共通スタイルで既にカバーされているスタイルは削除
+3. 固有のスタイル（各ファイル特有のUIパーツ）は残す
+4. script部分は基本的に維持（動作の違いによる不具合を避けるため）
+5. `${CI_UI_COMPONENTS}`は、共通関数（copyToClipboard, toggleAccordion）と競合しない場合のみ追加
 
 ---
 
@@ -951,6 +950,7 @@ tsunageru.tsとGASファイル全8つの内容を記載。
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-12 | ✅ 共通スタイル適用完了: 全7ファイルに`${CI_DIALOG_STYLES}`を適用 |
 | 2026-01-12 | ✅ 企業選択時の担当者自動入力修正: contactName取得+制作担当ヒント削除 |
 | 2026-01-12 | ✅ getCompanyListFromSheet修正: A列固定→「企業名」列を動的検索 |
 | 2026-01-12 | ✅ GASメニュー表示問題完全解決: シート分析.gs削除（CI_DIALOG_STYLES重複が真の原因） |

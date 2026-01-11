@@ -466,12 +466,12 @@ function createSelectionDialog(companyList, action) {
   return `
     <html>
     <head>
+      ${CI_DIALOG_STYLES}
       <style>
-        body { font-family: sans-serif; padding: 20px; }
+        /* hearingSheetManager固有スタイル */
         select { width: 100%; padding: 10px; font-size: 14px; margin-bottom: 20px; }
         button { padding: 12px 24px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; }
         .primary { background: #4285f4; color: white; }
-        .secondary { background: #f1f3f4; color: #333; }
         .result { margin-top: 20px; padding: 15px; border-radius: 6px; display: none; }
         .success { background: #e6f4ea; color: #1e7e34; }
         .error { background: #fce8e6; color: #c5221f; }

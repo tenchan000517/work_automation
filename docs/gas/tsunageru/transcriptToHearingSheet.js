@@ -239,15 +239,11 @@ function createTranscriptPromptHTML(sheetData, template) {
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+    /* transcriptPrompt固有スタイル */
     h3 { margin-top: 0; color: #1a73e8; }
-    .section { margin-bottom: 15px; }
-    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; display: flex; align-items: center; gap: 10px; }
     textarea { width: 100%; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; }
-    .input-area { height: 150px; }
-    .output-area { height: 200px; background: #f8f9fa; }
     button { padding: 12px 24px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
     .primary { background: #1a73e8; color: white; }
     .primary:hover { background: #1557b0; }
@@ -261,10 +257,8 @@ function createTranscriptPromptHTML(sheetData, template) {
     .msg.error { background: #fce8e6; color: #c5221f; display: block; }
     .msg.info { background: #e3f2fd; color: #1565c0; display: block; }
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-    .note { font-size: 12px; color: #666; margin-top: 5px; }
     .accordion { background: #f1f3f4; border: none; padding: 12px 16px; width: 100%; text-align: left; cursor: pointer; border-radius: 6px; margin-bottom: 10px; }
     .accordion:hover { background: #e8eaed; }
-    .accordion-content { display: none; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; }
     .accordion-content.show { display: block; }
     /* シート選択UI */
     .sheet-select-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
@@ -276,7 +270,6 @@ function createTranscriptPromptHTML(sheetData, template) {
     .sheet-option.has-data { border-left: 3px solid #ff9800; }
     .sheet-option input[type="radio"] { margin-right: 10px; width: 16px; height: 16px; }
     .sheet-option label { cursor: pointer; flex: 1; }
-    .active-badge { background: #34a853; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
     .saved-badge { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
     .company-name-display { background: #e8f0fe; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; }
   </style>
@@ -576,14 +569,11 @@ function createTransferFromAIHTML(sheetData) {
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+    /* transferFromAI固有スタイル */
     h3 { margin-top: 0; color: #1a73e8; }
-    .section { margin-bottom: 15px; }
-    .section-title { font-weight: bold; margin-bottom: 8px; color: #333; }
     textarea { width: 100%; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-    .input-area { height: 120px; }
     button { padding: 10px 20px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
     .primary { background: #1a73e8; color: white; }
     .primary:hover { background: #1557b0; }
@@ -620,7 +610,6 @@ function createTransferFromAIHTML(sheetData) {
     .sheet-option.selected { background: #bbdefb; }
     .sheet-option input[type="radio"] { margin-right: 10px; width: 16px; height: 16px; }
     .sheet-option label { cursor: pointer; flex: 1; }
-    .active-badge { background: #34a853; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
     .no-sheets-msg { color: #666; font-style: italic; padding: 10px; }
     .sheet-warning { background: #fff3e0; border: 1px solid #ffcc80; padding: 10px; border-radius: 6px; margin-top: 10px; color: #e65100; display: none; }
   </style>
