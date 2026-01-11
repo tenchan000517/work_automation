@@ -1049,27 +1049,70 @@ function createSheetSelectDialogHTML(sheetList) {
 <head>
   ${CI_DIALOG_STYLES}
   <style>
-    /* createSheetSelectDialog固有スタイル */
+    /* createSheetSelectDialog固有スタイル - ドロップダウン形式 */
     h3 { margin: 0 0 15px 0; color: #1a73e8; }
-    .sheet-list { max-height: 280px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; }
-    .sheet-item {
-      padding: 12px 15px;
-      border-bottom: 1px solid #f0f0f0;
+    .sheet-select-wrapper { position: relative; margin-bottom: 16px; }
+    .sheet-select-display {
+      width: 100%;
+      padding: 12px 36px 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
       cursor: pointer;
+      background: white;
+      min-height: 48px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 8px;
+      position: relative;
+    }
+    .sheet-select-display:hover { border-color: #3b82f6; }
+    .sheet-select-display.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .sheet-select-display::after {
+      content: '▼';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      color: #666;
+    }
+    .sheet-select-display .placeholder { color: #999; }
+    .sheet-select-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+      display: none;
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 4px;
+    }
+    .sheet-select-dropdown.show { display: block; }
+    .sheet-item {
+      padding: 12px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
     }
     .sheet-item:last-child { border-bottom: none; }
     .sheet-item:hover { background: #f5f5f5; }
     .sheet-item.selected { background: #e3f2fd; }
-    .sheet-item.has-folder { background: #fff8e1; }
-    .sheet-item.has-folder.selected { background: #ffecb3; }
-    .sheet-info { flex: 1; }
-    .sheet-name { font-weight: bold; color: #333; }
-    .company-name { color: #666; font-size: 12px; margin-top: 2px; }
-    .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
-    .badge-folder { background: #ff9800; color: white; }
+    .sheet-item.has-folder { border-left: 3px solid #ff9800; }
+    .sheet-name {
+      font-weight: bold;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .company-name { color: #666; font-size: 12px; margin-top: 4px; }
+    .badge-folder { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
     button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; }
     .loading { display: none; margin-left: 10px; color: #1a73e8; }
   </style>
@@ -1083,13 +1126,18 @@ function createSheetSelectDialogHTML(sheetList) {
     URLをPart③（処理データ）に自動保存します。
   </div>
 
-  <div class="sheet-list" id="sheetList"></div>
+  <div class="sheet-select-wrapper">
+    <div class="sheet-select-display" id="sheetSelectDisplay" onclick="toggleDropdown()">
+      <span class="placeholder">企業シートを選択してください</span>
+    </div>
+    <div class="sheet-select-dropdown" id="sheetSelectDropdown"></div>
+  </div>
 
   <div style="margin-top: 15px;">
-    <button class="btn-primary" id="createBtn" onclick="createFolder()" disabled>
+    <button class="btn btn-primary" id="createBtn" onclick="createFolder()" disabled>
       📁 フォルダを作成
     </button>
-    <button class="btn-secondary" onclick="google.script.host.close()">閉じる</button>
+    <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
     <span class="loading" id="loading">⏳ 処理中...</span>
   </div>
 
@@ -1100,64 +1148,102 @@ function createSheetSelectDialogHTML(sheetList) {
     let selectedSheet = null;
 
     window.onload = function() {
-      renderSheetList();
-    };
-
-    function renderSheetList() {
-      const container = document.getElementById('sheetList');
-      container.innerHTML = '';
-
-      // アクティブシートを先頭に
-      const sorted = [...sheetList].sort((a, b) => {
+      // アクティブシートを先頭に、残りはそのまま（シート順）
+      sheetList.sort((a, b) => {
         if (a.isActive) return -1;
         if (b.isActive) return 1;
         return 0;
       });
 
-      sorted.forEach((item) => {
+      renderDropdown();
+
+      // アクティブがあれば自動選択
+      const activeItem = sheetList.find(item => item.isActive);
+      if (activeItem) {
+        selectSheet(activeItem);
+      }
+    };
+
+    function toggleDropdown() {
+      const display = document.getElementById('sheetSelectDisplay');
+      const dropdown = document.getElementById('sheetSelectDropdown');
+      const isOpen = dropdown.classList.contains('show');
+
+      if (isOpen) {
+        dropdown.classList.remove('show');
+        display.classList.remove('active');
+      } else {
+        dropdown.classList.add('show');
+        display.classList.add('active');
+      }
+    }
+
+    function renderDropdown() {
+      const dropdown = document.getElementById('sheetSelectDropdown');
+      dropdown.innerHTML = '';
+
+      sheetList.forEach(item => {
         const div = document.createElement('div');
         let classes = 'sheet-item';
         if (item.hasFolder) classes += ' has-folder';
-        if (item.isActive && !selectedSheet) {
+        if (selectedSheet && selectedSheet.sheetName === item.sheetName) {
           classes += ' selected';
-          selectedSheet = item;
-          document.getElementById('createBtn').disabled = false;
         }
         div.className = classes;
 
-        let badges = '';
-        if (item.isActive) badges += '<span class="badge badge-active">アクティブ</span>';
-        if (item.hasFolder) badges += '<span class="badge badge-folder">作成済み</span>';
+        const activeBadge = item.isActive ? '<span class="badge-active">アクティブ</span>' : '';
+        const folderBadge = item.hasFolder ? '<span class="badge-folder">作成済み</span>' : '';
 
         div.innerHTML = \`
-          <div class="sheet-info">
-            <div class="sheet-name">\${escapeHtml(item.sheetName)}\${badges}</div>
-            <div class="company-name">\${item.companyName ? '🏢 ' + escapeHtml(item.companyName) : '（企業名なし）'}</div>
-          </div>
+          <div class="sheet-name">\${escapeHtml(item.sheetName)}\${activeBadge}\${folderBadge}</div>
+          <div class="company-name">\${item.companyName ? '🏢 ' + escapeHtml(item.companyName) : '（企業名なし）'}</div>
         \`;
 
-        div.onclick = function() {
-          document.querySelectorAll('.sheet-item').forEach(el => el.classList.remove('selected'));
-          div.classList.add('selected');
-          selectedSheet = item;
-          document.getElementById('createBtn').disabled = false;
-
-          // 作成済みの場合は警告
-          if (item.hasFolder) {
-            showStatus('⚠️ この企業シートには既にフォルダが作成されています。再作成すると上書きされます。', 'warning');
-          } else {
-            document.getElementById('status').style.display = 'none';
-          }
+        div.onclick = function(e) {
+          e.stopPropagation();
+          selectSheet(item);
+          toggleDropdown();
         };
 
-        container.appendChild(div);
+        dropdown.appendChild(div);
       });
+    }
+
+    function selectSheet(item) {
+      selectedSheet = item;
+
+      // 表示を更新
+      const display = document.getElementById('sheetSelectDisplay');
+      const activeBadge = item.isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+      const folderBadge = item.hasFolder ? '<span class="badge-folder" style="margin-left:8px;">作成済み</span>' : '';
+      display.innerHTML = \`<span>\${escapeHtml(item.sheetName)}\${activeBadge}\${folderBadge}</span>\`;
+
+      // ドロップダウン内の選択状態を更新
+      document.querySelectorAll('.sheet-item').forEach(el => el.classList.remove('selected'));
+
+      document.getElementById('createBtn').disabled = false;
+
+      // 作成済みの場合は警告
+      if (item.hasFolder) {
+        showStatus('⚠️ この企業シートには既にフォルダが作成されています。再作成すると上書きされます。', 'warning');
+      } else {
+        document.getElementById('status').style.display = 'none';
+      }
     }
 
     function escapeHtml(str) {
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+    // ドロップダウン外クリックで閉じる
+    document.addEventListener('click', function(e) {
+      const wrapper = document.querySelector('.sheet-select-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('sheetSelectDropdown').classList.remove('show');
+        document.getElementById('sheetSelectDisplay').classList.remove('active');
+      }
+    });
 
     function createFolder() {
       if (!selectedSheet) {
