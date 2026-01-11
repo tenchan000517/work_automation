@@ -459,9 +459,7 @@ function transferFormDataToSheet(sheet, formData) {
 
 // ===== 選択ダイアログHTML生成 =====
 function createSelectionDialog(companyList, action) {
-  let options = companyList.map(item =>
-    `<option value="${item.index}">${item.display}</option>`
-  ).join('');
+  const companyListJson = JSON.stringify(companyList);
 
   return `
     <html>
@@ -469,28 +467,85 @@ function createSelectionDialog(companyList, action) {
       ${CI_DIALOG_STYLES}
       <style>
         /* hearingSheetManager固有スタイル */
-        select { width: 100%; padding: 10px; font-size: 14px; margin-bottom: 20px; }
-        button { padding: 12px 24px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; }
-        .primary { background: #4285f4; color: white; }
-        .result { margin-top: 20px; padding: 15px; border-radius: 6px; display: none; }
-        .success { background: #e6f4ea; color: #1e7e34; }
-        .error { background: #fce8e6; color: #c5221f; }
+        .response-list {
+          max-height: 300px;
+          overflow-y: auto;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          background: white;
+          margin-bottom: 16px;
+        }
+        .response-item {
+          padding: 12px 16px;
+          border-bottom: 1px solid #f0f0f0;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .response-item:last-child { border-bottom: none; }
+        .response-item:hover { background: #f5f5f5; }
+        .response-item.selected { background: #e3f2fd; border-left: 3px solid #1a73e8; }
+        .response-company { font-weight: bold; color: #333; }
+        .response-timestamp { color: #666; font-size: 12px; margin-top: 4px; }
+        .result { margin-top: 16px; padding: 12px; border-radius: 6px; display: none; }
+        .result.success { display: block; background: #e6f4ea; color: #1e7e34; }
+        .result.error { display: block; background: #fce8e6; color: #c5221f; }
+        .footer { display: flex; gap: 10px; justify-content: flex-end; }
       </style>
     </head>
     <body>
-      <p>転記するフォーム回答を選択してください：</p>
-      <select id="companySelect" size="10">
-        ${options}
-      </select>
-      <br>
-      <button class="primary" onclick="execute()">実行</button>
-      <button class="secondary" onclick="google.script.host.close()">キャンセル</button>
+      <p class="description">転記するフォーム回答を選択してください：</p>
+      <div class="response-list" id="responseList"></div>
+      <div class="footer">
+        <button class="btn btn-primary" onclick="execute()" id="executeBtn" disabled>実行</button>
+        <button class="btn btn-gray" onclick="google.script.host.close()">キャンセル</button>
+      </div>
       <div id="result" class="result"></div>
       <script>
+        const companyList = ${companyListJson};
+        let selectedIndex = null;
+
+        window.onload = function() {
+          renderResponseList();
+        };
+
+        function renderResponseList() {
+          const container = document.getElementById('responseList');
+          container.innerHTML = '';
+
+          // 新しい順（下の行が上に来る）
+          const sorted = [...companyList].reverse();
+
+          sorted.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'response-item';
+            div.setAttribute('data-index', item.index);
+
+            const timestampMatch = item.display.match(/\\((.+)\\)$/);
+            const timestamp = timestampMatch ? timestampMatch[1] : '';
+
+            div.innerHTML = \`
+              <div class="response-company">\${escapeHtml(item.companyName)}</div>
+              <div class="response-timestamp">\${escapeHtml(timestamp)}</div>
+            \`;
+
+            div.onclick = function() {
+              document.querySelectorAll('.response-item').forEach(el => el.classList.remove('selected'));
+              div.classList.add('selected');
+              selectedIndex = item.index;
+              document.getElementById('executeBtn').disabled = false;
+            };
+
+            container.appendChild(div);
+          });
+        }
+
+        function escapeHtml(str) {
+          if (!str) return '';
+          return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
         function execute() {
-          const select = document.getElementById('companySelect');
-          const rowIndex = select.value;
-          if (!rowIndex) {
+          if (!selectedIndex) {
             alert('回答を選択してください');
             return;
           }
@@ -500,12 +555,12 @@ function createSelectionDialog(companyList, action) {
             google.script.run
               .withSuccessHandler(handleCreateResult)
               .withFailureHandler(handleError)
-              .executeCreateFromFormResponse(parseInt(rowIndex));
+              .executeCreateFromFormResponse(selectedIndex);
           } else if (action === 'transferToExistingSheet') {
             google.script.run
               .withSuccessHandler(handleTransferResult)
               .withFailureHandler(handleError)
-              .executeTransferToExistingSheet(parseInt(rowIndex));
+              .executeTransferToExistingSheet(selectedIndex);
           }
         }
 
@@ -514,7 +569,7 @@ function createSelectionDialog(companyList, action) {
           div.style.display = 'block';
           if (result.success) {
             div.className = 'result success';
-            div.innerHTML = '✅ 作成完了: 「' + result.companyName + '」シートを作成しました<br><br>シートに移動しました。<br><br><button class="primary" onclick="google.script.host.close()">閉じる</button>';
+            div.innerHTML = '✅ 作成完了: 「' + result.companyName + '」シートを作成しました<br><br>シートに移動しました。<br><br><button class="btn btn-primary" onclick="google.script.host.close()">閉じる</button>';
           } else {
             div.className = 'result error';
             div.innerHTML = '❌ エラー: ' + result.error;
@@ -526,16 +581,15 @@ function createSelectionDialog(companyList, action) {
           div.style.display = 'block';
           if (result.success) {
             div.className = 'result success';
-            div.innerHTML = '✅ 転記完了: ' + result.sheetName + '<br><br><button class="primary" onclick="google.script.host.close()">閉じる</button>';
+            div.innerHTML = '✅ 転記完了: ' + result.sheetName + '<br><br><button class="btn btn-primary" onclick="google.script.host.close()">閉じる</button>';
           } else if (result.needConfirm) {
             div.className = 'result error';
             div.innerHTML = '⚠️ 企業名が一致しません<br><br>' +
               '<strong>フォーム回答:</strong> ' + result.formCompanyName + '<br>' +
               '<strong>シート:</strong> ' + result.sheetCompanyName + '<br><br>' +
               '該当する企業のシートを開いてから実行してください。<br><br>' +
-              '<button class="secondary" onclick="forceTransfer()">それでも転記する</button>';
-            // rowIndexを保存
-            window.lastRowIndex = document.getElementById('companySelect').value;
+              '<button class="btn btn-gray" onclick="forceTransfer()">それでも転記する</button>';
+            // selectedIndexはグローバル変数として既に保持されている
           } else {
             div.className = 'result error';
             div.innerHTML = '❌ エラー: ' + result.error;
@@ -543,11 +597,11 @@ function createSelectionDialog(companyList, action) {
         }
 
         function forceTransfer() {
-          if (window.lastRowIndex) {
+          if (selectedIndex) {
             google.script.run
               .withSuccessHandler(handleForceResult)
               .withFailureHandler(handleError)
-              .executeTransferForce(parseInt(window.lastRowIndex));
+              .executeTransferForce(selectedIndex);
           }
         }
 
@@ -556,7 +610,7 @@ function createSelectionDialog(companyList, action) {
           div.style.display = 'block';
           if (result.success) {
             div.className = 'result success';
-            div.innerHTML = '✅ 転記完了: ' + result.sheetName + '<br><br><button class="primary" onclick="google.script.host.close()">閉じる</button>';
+            div.innerHTML = '✅ 転記完了: ' + result.sheetName + '<br><br><button class="btn btn-primary" onclick="google.script.host.close()">閉じる</button>';
           } else {
             div.className = 'result error';
             div.innerHTML = '❌ エラー: ' + result.error;
