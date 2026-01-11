@@ -224,6 +224,34 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 ---
 
+## 次回セッションでやること
+
+### 全GASの企業/シート選択UIをドロップダウン形式に統一
+
+**完了済み:**
+- hearingSheetManager.js: フォーム回答選択ダイアログ ✅
+- createShootingFolder.js: 企業シート選択ダイアログ（`createSheetSelectDialogHTML`）✅
+
+**未対応（要修正）:**
+| ファイル | 対象ダイアログ |
+|----------|---------------|
+| compositionDraftGenerator.js | 構成案作成ダイアログのシート選択 |
+| transcriptToHearingSheet.js | 文字起こし転記ダイアログのシート選択 |
+| contactFormats.js | 各種連絡フォーマットダイアログの企業選択 |
+| promptDialog.js | プロンプトダイアログ（該当があれば） |
+
+**UIの仕様:**
+- ドロップダウン形式（クリックで展開/閉じる）
+- **アクティブバッジ（緑）**: 現在開いているシートに対応する項目に表示
+- **ソート順**: アクティブが最上段、残りは新しい順（スプレッドシートの下の行が上）
+- アクティブがあれば自動選択
+- ドロップダウン外クリックで閉じる
+- 「作成済み」等のステータスバッジがあれば表示
+
+**参考実装:** `hearingSheetManager.js` の `createSelectionDialog()` 関数
+
+---
+
 ### ✅ 完了: 共通スタイル（commonStyles.js）を全GASに適用
 
 **適用済みファイル（計7ファイル）:**
