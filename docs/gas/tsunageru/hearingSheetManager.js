@@ -159,27 +159,49 @@ function createFromFormResponse() {
     return;
   }
 
+  // アクティブシートの企業名を取得（システムシート以外）
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+  let activeCompanyName = null;
+  if (!isExcludedSheet(activeSheetName)) {
+    try {
+      activeCompanyName = activeSheet.getRange(5, 3).getValue() || activeSheetName;
+    } catch (e) {
+      activeCompanyName = activeSheetName;
+    }
+  }
+
   // 回答一覧を取得
   const responses = formSheet.getRange(2, 1, lastRow - 1, formSheet.getLastColumn()).getValues();
   const headers = formSheet.getRange(1, 1, 1, formSheet.getLastColumn()).getValues()[0];
 
-  // 企業名リストを作成（選択用）
+  // 企業名リストを作成（選択用）+ アクティブ判定
   const companyList = responses.map((row, index) => {
     const timestamp = row[0] ? new Date(row[0]).toLocaleString('ja-JP') : '';
     const companyName = row[1] || '(企業名なし)';
+    const isActive = activeCompanyName && companyName === activeCompanyName;
     return {
       index: index + 2, // 実際の行番号（ヘッダー分+1）
       display: `${companyName} (${timestamp})`,
       companyName: companyName,
+      timestamp: timestamp,
+      isActive: isActive,
       data: row
     };
+  });
+
+  // ソート: アクティブ最上段、残りは新しい順（下の行が上）
+  companyList.sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return b.index - a.index; // indexが大きい（新しい）方が上
   });
 
   // 選択ダイアログを表示
   const htmlContent = createSelectionDialog(companyList, 'createFromFormResponse');
   const htmlOutput = HtmlService.createHtmlOutput(htmlContent)
     .setWidth(500)
-    .setHeight(500);
+    .setHeight(550);
   ui.showModalDialog(htmlOutput, 'フォーム回答から新規作成');
 }
 
@@ -307,26 +329,48 @@ function transferToExistingSheet() {
     return;
   }
 
+  // アクティブシートの企業名を取得（システムシート以外）
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+  let activeCompanyName = null;
+  if (!isExcludedSheet(activeSheetName)) {
+    try {
+      activeCompanyName = activeSheet.getRange(5, 3).getValue() || activeSheetName;
+    } catch (e) {
+      activeCompanyName = activeSheetName;
+    }
+  }
+
   // 回答一覧を取得
   const responses = formSheet.getRange(2, 1, lastRow - 1, formSheet.getLastColumn()).getValues();
 
-  // 企業名リストを作成
+  // 企業名リストを作成 + アクティブ判定
   const companyList = responses.map((row, index) => {
     const timestamp = row[0] ? new Date(row[0]).toLocaleString('ja-JP') : '';
     const companyName = row[1] || '(企業名なし)';
+    const isActive = activeCompanyName && companyName === activeCompanyName;
     return {
       index: index + 2,
       display: `${companyName} (${timestamp})`,
       companyName: companyName,
+      timestamp: timestamp,
+      isActive: isActive,
       data: row
     };
+  });
+
+  // ソート: アクティブ最上段、残りは新しい順（下の行が上）
+  companyList.sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return b.index - a.index;
   });
 
   // 選択ダイアログを表示
   const htmlContent = createSelectionDialog(companyList, 'transferToExistingSheet');
   const htmlOutput = HtmlService.createHtmlOutput(htmlContent)
     .setWidth(500)
-    .setHeight(500);
+    .setHeight(550);
   ui.showModalDialog(htmlOutput, 'フォーム回答を既存シートに転記');
 }
 
@@ -466,25 +510,66 @@ function createSelectionDialog(companyList, action) {
     <head>
       ${CI_DIALOG_STYLES}
       <style>
-        /* hearingSheetManager固有スタイル */
-        .response-list {
-          max-height: 300px;
-          overflow-y: auto;
+        /* hearingSheetManager固有スタイル - ドロップダウン形式 */
+        .response-select-wrapper { position: relative; margin-bottom: 16px; }
+        .response-select-display {
+          width: 100%;
+          padding: 12px 36px 12px 14px;
           border: 1px solid #ddd;
           border-radius: 8px;
-          background: white;
-          margin-bottom: 16px;
-        }
-        .response-item {
-          padding: 12px 16px;
-          border-bottom: 1px solid #f0f0f0;
+          font-size: 14px;
           cursor: pointer;
-          transition: background 0.2s;
+          background: white;
+          min-height: 48px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          position: relative;
+        }
+        .response-select-display:hover { border-color: #3b82f6; }
+        .response-select-display.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .response-select-display::after {
+          content: '▼';
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 10px;
+          color: #666;
+        }
+        .response-select-display .placeholder { color: #999; }
+        .response-select-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 100;
+          display: none;
+          max-height: 280px;
+          overflow-y: auto;
+          margin-top: 4px;
+        }
+        .response-select-dropdown.show { display: block; }
+        .response-item {
+          padding: 12px 14px;
+          cursor: pointer;
+          border-bottom: 1px solid #f0f0f0;
+          transition: background 0.15s;
         }
         .response-item:last-child { border-bottom: none; }
         .response-item:hover { background: #f5f5f5; }
-        .response-item.selected { background: #e3f2fd; border-left: 3px solid #1a73e8; }
-        .response-company { font-weight: bold; color: #333; }
+        .response-item.selected { background: #e3f2fd; }
+        .response-company {
+          font-weight: bold;
+          color: #333;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
         .response-timestamp { color: #666; font-size: 12px; margin-top: 4px; }
         .result { margin-top: 16px; padding: 12px; border-radius: 6px; display: none; }
         .result.success { display: block; background: #e6f4ea; color: #1e7e34; }
@@ -494,55 +579,112 @@ function createSelectionDialog(companyList, action) {
     </head>
     <body>
       <p class="description">転記するフォーム回答を選択してください：</p>
-      <div class="response-list" id="responseList"></div>
+
+      <div class="response-select-wrapper">
+        <div class="response-select-display" id="responseSelectDisplay" onclick="toggleDropdown()">
+          <span class="placeholder">フォーム回答を選択してください</span>
+        </div>
+        <div class="response-select-dropdown" id="responseSelectDropdown"></div>
+      </div>
+
       <div class="footer">
         <button class="btn btn-primary" onclick="execute()" id="executeBtn" disabled>実行</button>
         <button class="btn btn-gray" onclick="google.script.host.close()">キャンセル</button>
       </div>
       <div id="result" class="result"></div>
+
       <script>
         const companyList = ${companyListJson};
         let selectedIndex = null;
+        let selectedItem = null;
 
         window.onload = function() {
-          renderResponseList();
+          renderDropdown();
+          // アクティブがあれば自動選択
+          const activeItem = companyList.find(item => item.isActive);
+          if (activeItem) {
+            selectResponse(activeItem);
+          }
         };
 
-        function renderResponseList() {
-          const container = document.getElementById('responseList');
-          container.innerHTML = '';
+        function toggleDropdown() {
+          const display = document.getElementById('responseSelectDisplay');
+          const dropdown = document.getElementById('responseSelectDropdown');
+          const isOpen = dropdown.classList.contains('show');
 
-          // 新しい順（下の行が上に来る）
-          const sorted = [...companyList].reverse();
+          if (isOpen) {
+            dropdown.classList.remove('show');
+            display.classList.remove('active');
+          } else {
+            dropdown.classList.add('show');
+            display.classList.add('active');
+          }
+        }
 
-          sorted.forEach(item => {
+        function renderDropdown() {
+          const dropdown = document.getElementById('responseSelectDropdown');
+          dropdown.innerHTML = '';
+
+          // companyListは既にソート済み（アクティブ最上段、残りは新しい順）
+          companyList.forEach(item => {
             const div = document.createElement('div');
             div.className = 'response-item';
-            div.setAttribute('data-index', item.index);
+            if (selectedIndex === item.index) {
+              div.classList.add('selected');
+            }
 
-            const timestampMatch = item.display.match(/\\((.+)\\)$/);
-            const timestamp = timestampMatch ? timestampMatch[1] : '';
+            const badge = item.isActive ? '<span class="badge-active">アクティブ</span>' : '';
 
             div.innerHTML = \`
-              <div class="response-company">\${escapeHtml(item.companyName)}</div>
-              <div class="response-timestamp">\${escapeHtml(timestamp)}</div>
+              <div class="response-company">\${escapeHtml(item.companyName)}\${badge}</div>
+              <div class="response-timestamp">\${escapeHtml(item.timestamp || '')}</div>
             \`;
 
-            div.onclick = function() {
-              document.querySelectorAll('.response-item').forEach(el => el.classList.remove('selected'));
-              div.classList.add('selected');
-              selectedIndex = item.index;
-              document.getElementById('executeBtn').disabled = false;
+            div.onclick = function(e) {
+              e.stopPropagation();
+              selectResponse(item);
+              toggleDropdown();
             };
 
-            container.appendChild(div);
+            dropdown.appendChild(div);
           });
+        }
+
+        function selectResponse(item) {
+          selectedIndex = item.index;
+          selectedItem = item;
+
+          // 表示を更新
+          const display = document.getElementById('responseSelectDisplay');
+          const badge = item.isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+          display.innerHTML = \`<span>\${escapeHtml(item.companyName)}\${badge}</span>\`;
+
+          // ドロップダウン内の選択状態を更新
+          document.querySelectorAll('.response-item').forEach(el => el.classList.remove('selected'));
+          const items = document.querySelectorAll('.response-item');
+          items.forEach(el => {
+            const name = el.querySelector('.response-company').textContent.replace('アクティブ', '').trim();
+            if (name === item.companyName) {
+              el.classList.add('selected');
+            }
+          });
+
+          document.getElementById('executeBtn').disabled = false;
         }
 
         function escapeHtml(str) {
           if (!str) return '';
           return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
+
+        // ドロップダウン外クリックで閉じる
+        document.addEventListener('click', function(e) {
+          const wrapper = document.querySelector('.response-select-wrapper');
+          if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('responseSelectDropdown').classList.remove('show');
+            document.getElementById('responseSelectDisplay').classList.remove('active');
+          }
+        });
 
         function execute() {
           if (!selectedIndex) {
