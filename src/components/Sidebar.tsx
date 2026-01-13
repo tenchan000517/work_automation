@@ -140,11 +140,11 @@ export function Sidebar({ product, isOpen, onToggle, isMobile = false }: Sidebar
         </SidebarSection>
       </aside>
 
-      {/* 開くボタン - サイドバーが閉じている時に表示 */}
+      {/* 開くボタン - デスクトップのみ、サイドバーが閉じている時に表示 */}
       <button
         onClick={onToggle}
         className={`
-          fixed left-0 top-20 z-50 p-1
+          hidden lg:block fixed left-0 top-20 z-50 p-1
           bg-white dark:bg-zinc-800 border border-l-0 border-zinc-200 dark:border-zinc-700
           rounded-r-md shadow-md hover:bg-zinc-100 dark:hover:bg-zinc-700
           transition-all duration-300 ease-in-out

@@ -156,6 +156,7 @@ export interface FlowStepLink {
 // フローステップの型定義
 export interface FlowStep {
   label: string;           // "LINEWORKSで企業グループを作成"
+  summary?: string;        // ステップの簡潔な説明（カード内に表示）
   links?: FlowStepLink[];  // このステップで使うリンク/ポップアップ（任意）
   // 詳細情報（インフォアイコンで表示）
   description?: string;    // このステップの詳細説明

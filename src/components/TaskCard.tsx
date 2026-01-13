@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Task, ImageItem, RelatedLink, getAssigneeColor, getPriorityAssigneeColor, InputFieldConfig } from "@/lib/data";
 import { ContentModal } from "./ContentModal";
-import { ArrowRight, ArrowDown } from "lucide-react";
+import { ArrowRight, ArrowDown, ChevronRight, ChevronDown } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
@@ -113,8 +113,6 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
     task.nottaManual ||
     task.relatedSheetUrl ||
     (task.relatedLinks && task.relatedLinks.length > 0);
-
-  const hasFlowSteps = task.flowSteps && task.flowSteps.length > 0;
 
   // フローステップのカテゴリを判定してCSSクラスを返す
   const getFlowStepClass = (label: string): string => {
@@ -290,10 +288,11 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
           {/* フローステップ */}
           {task.flowSteps && task.flowSteps.length > 0 && (
             <div className="mt-4 pt-3 border-t border-zinc-400 dark:border-zinc-600">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
                 フロー
               </p>
-              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-2">
+              {/* PC: 横並び折り返し / モバイル: 縦並び */}
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-2 w-full">
                 {task.flowSteps.map((step, index) => {
                   const hasStepDetail = step.description || (step.images && step.images.length > 0);
                   // step.linksをEmbeddedLink形式に変換
@@ -304,9 +303,13 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                     type: link.type
                   }));
                   return (
-                    <div key={index} className="flex flex-col sm:flex-row items-center gap-2">
+                    <div key={index} className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                       {/* ステップボックス */}
-                      <div className={`border rounded-lg px-3 py-2 min-w-[140px] min-h-[70px] flex flex-col justify-between ${getFlowStepClass(step.label)} relative`}>
+                      <div className={`border rounded-lg px-3 py-3 w-full sm:w-32 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
+                        {/* ステップ番号 */}
+                        <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-zinc-600 dark:bg-zinc-500 text-white flex items-center justify-center text-xs font-bold shadow-md">
+                          {index + 1}
+                        </span>
                         {/* インフォアイコン（詳細がある場合のみ表示） */}
                         {hasStepDetail && (
                           <button
@@ -317,6 +320,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                             i
                           </button>
                         )}
+                        {/* ラベル */}
                         <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium leading-tight">
                           {step.label}
                           {step.relatedTaskNo && getRelatedAssignee(step.relatedTaskNo, step.excludeSelf) && (
@@ -325,8 +329,14 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                             </span>
                           )}
                         </p>
-                        {/* ステップ内のリンク/ボタン（常にスペースを確保・中央揃え） */}
-                        <div className="flex flex-wrap gap-1 mt-2 min-h-[24px] justify-center">
+                        {/* summary（あれば表示） */}
+                        {step.summary && (
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-snug">
+                            {step.summary}
+                          </p>
+                        )}
+                        {/* ステップ内のリンク/ボタン */}
+                        <div className="flex flex-wrap gap-1 mt-auto pt-2">
                           {step.links && step.links.length > 0 ? (
                             step.links.map((link, linkIndex) => (
                               link.type === 'link' && link.url ? (
@@ -367,8 +377,12 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                       {/* 矢印（最後のステップ以外） */}
                       {index < task.flowSteps!.length - 1 && (
                         <>
-                          <ArrowRight className="hidden sm:block w-5 h-5 text-zinc-400 dark:text-zinc-500" />
-                          <ArrowDown className="sm:hidden w-5 h-5 text-zinc-400 dark:text-zinc-500" />
+                          <span className="hidden sm:flex w-7 h-7 rounded-full bg-zinc-200 dark:bg-zinc-600 items-center justify-center flex-shrink-0">
+                            <ChevronRight className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+                          </span>
+                          <span className="sm:hidden flex w-7 h-7 rounded-full bg-zinc-200 dark:bg-zinc-600 items-center justify-center">
+                            <ChevronDown className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+                          </span>
                         </>
                       )}
                     </div>
