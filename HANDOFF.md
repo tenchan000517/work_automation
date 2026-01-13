@@ -312,8 +312,19 @@ ManualMarkdownRenderer (Client Component)
 ```
 
 **残タスク:**
+- [ ] **マークダウンスタイル問題の修正**（優先）
 - [ ] 全15タスクのmdファイル作成（No.0〜14）
 - [ ] tsunageru.tsの`manualDraft`削除（任意）
+
+**次回セッションでやること:**
+1. マークダウンスタイルが効いていない問題を修正
+   - 確認URL: http://localhost:3000/manuals/common/notta
+   - 症状: 見出し、リスト等のマークダウン装飾が適用されていない
+   - 原因候補:
+     - Tailwind Typographyプラグイン未インストール（@tailwindcss/typography）
+     - proseクラスのスタイルが効いていない
+     - ManualMarkdownRenderer.tsxのスタイル不足
+2. 修正後、mdファイル分離作業を継続
 
 **タスク一覧（tsunageru）:**
 | No | タスク名 | ファイル名 |
