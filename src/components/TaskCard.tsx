@@ -402,7 +402,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                 {/* NOTTAマニュアル - 別タブで開く */}
                 {task.nottaManual && (
                   <a
-                    href="/manuals/notta"
+                    href="/manuals/common/notta"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"

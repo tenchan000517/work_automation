@@ -287,6 +287,9 @@ docs/manuals/
 - 商材固有: `/products/{productId}/tasks/{taskNo}/manual`
 - 共通: `/manuals/common/{name}`
 
+**移行済み共通マニュアル:**
+- `/manuals/common/notta` ← 旧 `/manuals/notta` から移行
+
 **使用パッケージ:**（インストール済み）
 ```bash
 npm install react-markdown remark-gfm rehype-raw
