@@ -263,9 +263,7 @@ createReminderTemplate()
 
 ---
 
-## 将来の改善
-
-### マニュアルのmd分離（次回実装予定）
+## マニュアルのmd分離（実装中）
 
 tsunageru.tsの`manualDraft`をmdファイルに分離し、メンテナンス性を向上させる。
 
@@ -279,26 +277,46 @@ docs/manuals/tsunageru/
 └── 14-月次FB打合せ.md
 ```
 
-**使用パッケージ:**
+**使用パッケージ:**（インストール済み）
 ```bash
 npm install react-markdown remark-gfm rehype-raw
 ```
+
+**実装済み:**
+- [x] パッケージインストール
+- [x] ディレクトリ作成（docs/manuals/tsunageru/）
+- [x] lib/manuals.ts作成（md読み込み関数）
+- [x] ManualMarkdownRenderer.tsx作成（Client Component）
+- [x] manual/page.tsx改修（Server Component方式）
+
+**アーキテクチャ:** Server Component方式（ベストプラクティス）
+```
+manual/page.tsx (Server Component)
+    ↓ getManualByTaskNo() で fs.readFile
+    ↓ content を props で渡す
+ManualMarkdownRenderer (Client Component)
+    ↓ react-markdown でレンダリング
+```
+
+**残タスク:**
+- [ ] サンプルmdファイル作成・動作確認
+- [ ] 全14タスクのmdファイル作成
+- [ ] tsunageru.tsの`manualDraft`削除（任意）
 
 **対応機能:**
 - マークダウン装飾（見出し、リスト、テーブル等）
 - 画像表示（`<img>`）
 - 動画埋め込み（`<video>`, YouTube `<iframe>`）
-- リンク（`<a>`）
-- コピーボタン（`<button>` + JS）
+- リンク（`<a>`、`class="btn-link"`でボタン風）
+- コピーボタン（`<button class="btn-copy" data-content="...">`）
 - 任意のHTML埋め込み（rehype-raw）
 
-**実装タスク:**
-1. パッケージインストール
-2. docs/manuals/tsunageru/にmdファイル作成（14ファイル）
-3. manual/page.tsxをmd読み込み・レンダリングに改修
-4. tsunageru.tsの`manualDraft`を`manualPath`に変更
+**フォールバック動作:**
+mdファイルが存在しない場合は既存の`task.manualDraft`を表示（移行期間中も動作保証）
 
 ---
+
+## 将来の改善
 
 ### 「各種フォーマット」シートの作成
 メールテンプレートなどのフォーマットを「各種フォーマット」シートから取得するように改善する。
@@ -336,6 +354,7 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-13 | マニュアルmd分離実装（Server Component方式に変更、lib/manuals.ts、ManualMarkdownRenderer.tsx） |
 | 2026-01-13 | マニュアルmd分離の設計決定（react-markdown + rehype-raw、HTML埋め込み対応） |
 | 2026-01-13 | Next.jsサイト共通化（common/manuals, common/templates）、ワークススタンプルール追加 |
 | 2026-01-13 | 撮影関連情報フロー実装、日程調整メール更新、GASメニュー名変更 |

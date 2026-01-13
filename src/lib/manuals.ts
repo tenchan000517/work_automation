@@ -1,0 +1,61 @@
+import fs from "fs";
+import path from "path";
+
+const manualsDirectory = path.join(process.cwd(), "docs", "manuals");
+
+export interface ManualData {
+  content: string;
+  fileName: string;
+}
+
+/**
+ * 指定された商材・タスク番号のマニュアルmdファイルを読み込む
+ * ファイル名形式: {taskNo}-{name}.md (例: 00-受注・ワークス立ち上げ.md)
+ */
+export function getManualByTaskNo(
+  productId: string,
+  taskNo: string
+): ManualData | null {
+  const productDir = path.join(manualsDirectory, productId);
+
+  // ディレクトリが存在するか確認
+  if (!fs.existsSync(productDir)) {
+    return null;
+  }
+
+  // タスク番号にマッチするmdファイルを検索
+  const files = fs.readdirSync(productDir);
+  const paddedTaskNo = taskNo.padStart(2, "0");
+  const targetFile = files.find(
+    (file) => file.startsWith(`${paddedTaskNo}-`) && file.endsWith(".md")
+  );
+
+  if (!targetFile) {
+    return null;
+  }
+
+  // mdファイルを読み込み
+  const filePath = path.join(productDir, targetFile);
+  const content = fs.readFileSync(filePath, "utf-8");
+
+  return {
+    content,
+    fileName: targetFile,
+  };
+}
+
+/**
+ * 指定された商材の全マニュアルファイル一覧を取得
+ */
+export function getAllManualsByProduct(productId: string): string[] {
+  const productDir = path.join(manualsDirectory, productId);
+
+  if (!fs.existsSync(productDir)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(productDir)
+    .filter((file) => file.endsWith(".md"))
+    .sort();
+}

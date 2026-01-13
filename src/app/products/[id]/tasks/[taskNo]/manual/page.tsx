@@ -1,41 +1,26 @@
-"use client";
+import { notFound } from "next/navigation";
+import { getTask } from "@/lib/data";
+import { getManualByTaskNo } from "@/lib/manuals";
+import { ManualMarkdownRenderer, CopyAllButton } from "@/components/ManualMarkdownRenderer";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getTask, Task } from "@/lib/data";
+export default async function ManualPage({
+  params,
+}: {
+  params: Promise<{ id: string; taskNo: string }>;
+}) {
+  const { id: productId, taskNo } = await params;
 
-export default function ManualPage() {
-  const params = useParams();
-  const [task, setTask] = useState<Task | undefined>();
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const productId = params.id as string;
-    const taskNo = params.taskNo as string;
-    const foundTask = getTask(productId, taskNo);
-    setTask(foundTask);
-  }, [params]);
-
-  const handleCopy = async () => {
-    if (!task?.manualDraft) return;
-    try {
-      await navigator.clipboard.writeText(task.manualDraft);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
-
+  // タスク情報を取得
+  const task = getTask(productId, taskNo);
   if (!task) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
-        <p className="text-zinc-500 dark:text-zinc-400">読み込み中...</p>
-      </div>
-    );
+    notFound();
   }
 
-  if (!task.manualDraft) {
+  // mdファイルを取得（なければmanualDraftにフォールバック）
+  const manual = getManualByTaskNo(productId, taskNo);
+  const content = manual?.content || task.manualDraft;
+
+  if (!content) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
         <p className="text-zinc-500 dark:text-zinc-400">
@@ -44,6 +29,8 @@ export default function ManualPage() {
       </div>
     );
   }
+
+  const isMarkdown = !!manual?.content;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -57,26 +44,26 @@ export default function ManualPage() {
               <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                 {task.name} - マニュアル
               </h1>
+              {isMarkdown && (
+                <span className="inline-block mt-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
+                  Markdown
+                </span>
+              )}
             </div>
-            <button
-              onClick={handleCopy}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                copied
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                  : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-              }`}
-            >
-              {copied ? "Copied!" : "Copy All"}
-            </button>
+            <CopyAllButton content={content} />
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-          <pre className="text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap font-mono leading-relaxed">
-            {task.manualDraft}
-          </pre>
+          {isMarkdown ? (
+            <ManualMarkdownRenderer content={content} />
+          ) : (
+            <pre className="text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap font-mono leading-relaxed">
+              {content}
+            </pre>
+          )}
         </div>
       </main>
     </div>
