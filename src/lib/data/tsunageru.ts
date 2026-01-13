@@ -77,7 +77,8 @@ export const tsunageru: Product = {
 サブ担当:`,
       flowSteps: [
         {
-          label: "ワークスで企業グループを作成",
+          label: "グループ作成",
+          summary: "LINEWORKSで企業グループを立ち上げ",
           description: `【ワークスでの企業グループ作成手順】
 
 1. LINEWORKSにログイン
@@ -93,7 +94,8 @@ export const tsunageru: Product = {
 ※グループ名は統一フォーマットで作成すること`,
         },
         {
-          label: "フォーマットを記入しグループに送信",
+          label: "情報共有",
+          summary: "企業情報をフォーマットでグループに共有",
           description: `【企業基本情報フォーマットの記入ポイント】
 
 必須項目：
@@ -167,7 +169,8 @@ export const tsunageru: Product = {
 → 日程確定報告（カレンダー更新 or スプレッドシート更新）`,
       flowSteps: [
         {
-          label: "先方へ日程調整+フォーム記入依頼",
+          label: "日程調整",
+          summary: "初回打ち合わせの日程を先方と調整",
           description: `初回打ち合わせの日程調整を行います。
 あわせて、Googleフォーム（ヒアリングシート）の事前入力をお願いします。
 
@@ -224,9 +227,10 @@ https://forms.gle/gXE12JNfsN9JGiPJA
             { label: "Googleフォーム", type: "link", url: "https://forms.gle/gXE12JNfsN9JGiPJA" }
           ]
         },
-        { label: "日程確定・カレンダー登録" },
+        { label: "カレンダー登録", summary: "確定した日程をカレンダーに登録" },
         {
-          label: "ワークスで日程を共有",
+          label: "ワークス共有",
+          summary: "日程確定をグループに報告",
           description: `日程が確定したら、ワークスの企業グループで制作メンバーに共有します。
 
 【送信手順】
@@ -240,6 +244,7 @@ https://forms.gle/gXE12JNfsN9JGiPJA
         },
         {
           label: "リアクション確認",
+          summary: "メンバーの確認状況をチェック",
           description: WORKS_REACTION_MANUAL,
         },
       ],
@@ -263,7 +268,8 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 → ヒアリングシート作成完了 + 撮影可能日程の確保`,
       flowSteps: [
         {
-          label: "フォーム回答を確認",
+          label: "回答確認",
+          summary: "フォームの事前回答を確認",
           description: `先方がGoogleフォームに回答しているか確認します。
 
 回答があれば次のステップでヒアリングシートを作成します。
@@ -273,7 +279,8 @@ https://forms.gle/gXE12JNfsN9JGiPJA
           ]
         },
         {
-          label: "GASでヒアリングシート作成",
+          label: "シート作成",
+          summary: "GASでヒアリングシートを生成",
           description: `ヒアリングシートのスプレッドシートを開き、GASでシートを作成します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -338,7 +345,8 @@ ${GAS_AUTH_MANUAL}`,
           ]
         },
         {
-          label: "撮影フォルダ作成",
+          label: "フォルダ作成",
+          summary: "撮影素材用フォルダを作成",
           description: `ヒアリングシートのメニューから撮影データ用のフォルダを作成します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -376,7 +384,8 @@ ${GAS_AUTH_MANUAL}`,
           ]
         },
         {
-          label: "撮影可能日5候補を確認",
+          label: "撮影日確認",
+          summary: "撮影担当者の空き日程を確認",
           relatedTaskNo: "7",  // 撮影業務の担当者を動的に表示
           description: `初回打ち合わせで先方に撮影候補日を提示できるよう、撮影担当者に事前確認します。
 
@@ -392,7 +401,8 @@ ${GAS_AUTH_MANUAL}`,
           ]
         },
         {
-          label: "参加者へリマインド",
+          label: "リマインド",
+          summary: "打ち合わせ参加者にリマインド送信",
           relatedTaskNo: "3",  // オンライン初回打ち合わせの参加者を動的に表示
           excludeSelf: true,     // 自分（河合）を除く
           description: `初回打ち合わせの参加者（自分を除く）にリマインドを送ります。
@@ -407,12 +417,14 @@ ${GAS_AUTH_MANUAL}`,
         },
         {
           label: "リアクション確認",
+          summary: "メンバーの確認状況をチェック",
           description: `${WORKS_REACTION_MANUAL}
 
 撮影可能日5候補が確定したら、次のステップへ進みます。`,
         },
         {
-          label: "NOTTA録画要領の確認",
+          label: "録画準備",
+          summary: "NOTTAの録画設定を確認",
           description: `初回打ち合わせ前に、NOTTAの録画要領を確認しておきます。
 
 ${NOTTA_PREP_CHECK}`,
@@ -447,7 +459,8 @@ ${NOTTA_PREP_CHECK}`,
       nottaManual: "enabled",
       flowSteps: [
         {
-          label: "Meetに入ってNOTTAを起動",
+          label: "NOTTA起動",
+          summary: "録音・文字起こしを開始",
           description: `【NOTTAの起動マニュアル】
 
 ${NOTTA_START_MANUAL}
@@ -459,7 +472,8 @@ ${NOTTA_LAYOUT_TIP}`,
           ]
         },
         {
-          label: "ミーティング開始",
+          label: "MTG開始",
+          summary: "初回打ち合わせを実施",
           description: `【オンライン初回打ち合わせマニュアル】
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -515,7 +529,8 @@ ${NOTTA_LAYOUT_TIP}`,
           ]
         },
         {
-          label: "ヒアリングシートに記入",
+          label: "シート記入",
+          summary: "打ち合わせ内容を随時記録",
           description: `打ち合わせ中、ヒアリングシートのPart②（白いセル）に内容を記入していきます。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -533,7 +548,8 @@ ${NOTTA_LAYOUT_TIP}`,
           ]
         },
         {
-          label: "撮影日程調整・カレンダー登録",
+          label: "撮影日調整",
+          summary: "撮影候補日を提示・確定",
           description: `事前に川崎から取得した撮影候補日5つを先方に提示し、日程を確定します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -552,7 +568,8 @@ ${NOTTA_LAYOUT_TIP}`,
 ・カレンダーに登録`,
         },
         {
-          label: "NOTTAの録音を確認",
+          label: "NOTTA確認",
+          summary: "録音停止・データを確認",
           description: `【NOTTAの停止・録音確認マニュアル】
 
 ${NOTTA_END_MANUAL}`,
@@ -562,7 +579,8 @@ ${NOTTA_END_MANUAL}`,
           ]
         },
         {
-          label: "営業担当とすり合わせ",
+          label: "すり合わせ",
+          summary: "営業担当と内容の認識合わせ",
           description: `打ち合わせ後、営業担当（渡邉）と内容のすり合わせを行います。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -608,7 +626,8 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
 → 議事録共有完了`,
       flowSteps: [
         {
-          label: "撮影担当者へ連絡",
+          label: "撮影連絡",
+          summary: "撮影日程確定を撮影担当者に連絡",
           relatedTaskNo: "7",
           description: `撮影日程確定を撮影担当者に連絡します。
 撮影データの保存先フォルダも明確に指示します。
@@ -626,10 +645,12 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
         },
         {
           label: "リアクション確認",
+          summary: "メンバーの確認状況をチェック",
           description: WORKS_REACTION_MANUAL,
         },
         {
-          label: "議事録を作成",
+          label: "議事録作成",
+          summary: "文字起こしからAIで議事録を生成",
           description: `NOTTAの文字起こしをGASのプロンプトダイアログでAI用に整形し、議事録を作成します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -718,7 +739,8 @@ AIが出力した議事録をコピー
           ]
         },
         {
-          label: "議事録をワークスで共有",
+          label: "ワークス共有",
+          summary: "議事録をグループに報告",
           description: `GASのプロンプトダイアログで議事録を投稿形式に整形し、ワークスグループに共有します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -1049,7 +1071,8 @@ Step4.
 `,
       flowSteps: [
         {
-          label: "文字起こしを整理",
+          label: "文字起こし整理",
+          summary: "AIで文字起こしをJSON形式に整理",
           description: `NOTTAの文字起こしをAIで整理し、ヒアリングシート転記用のJSONを生成します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -1091,7 +1114,8 @@ Step4.
           ]
         },
         {
-          label: "ヒアリングシートへ転記",
+          label: "シート転記",
+          summary: "AIのJSON出力をシートに転記",
           description: `AIが出力したJSONをGASで転記します。既存値との差分を確認しながら選択的に転記できます。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -1132,7 +1156,8 @@ JSONの企業名とシートの企業名が一致しない場合、警告が表�
           ]
         },
         {
-          label: "構成案を作成",
+          label: "構成案作成",
+          summary: "ヒアリング内容から構成案を作成",
           description: `ヒアリングシートの情報を元に、ペアソナ用の構成案を作成します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -1342,7 +1367,8 @@ Step4.
           ]
         },
         {
-          label: "構成案をワークスで共有",
+          label: "ワークス共有",
+          summary: "構成案をグループに共有・確認依頼",
           description: `作成した構成案をワークスグループに共有し、確認を依頼します。
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -1440,15 +1466,16 @@ Step4.
         { label: "企業カンペ", url: "https://drive.google.com/drive/folders/1lqQq8lrChumGrry96OOp73DrCQ8_ptH7?usp=drive_link", type: "drive" },
       ],
       flowSteps: [
-        { label: "構成案を確認" },
-        { label: "質問案を作成" },
+        { label: "構成案確認", summary: "撮影前に構成案を再確認" },
+        { label: "質問案作成", summary: "インタビュー用の質問を準備" },
         {
-          label: "企業カンペを作成",
+          label: "カンペ作成",
+          summary: "撮影用の企業カンペを作成",
           links: [
             { label: "カンペフォルダ", type: "link", url: "https://drive.google.com/drive/folders/1lqQq8lrChumGrry96OOp73DrCQ8_ptH7?usp=drive_link" }
           ]
         },
-        { label: "現地打合せ実施" },
+        { label: "現地打合せ", summary: "撮影場所の選定・確認" },
       ],
     },
     {
@@ -1470,9 +1497,9 @@ Step4.
 河合がローカルフォルダにデータダウンロードしドライブに元データ格納`,
       format: SHOOTING_CHECKLIST,
       flowSteps: [
-        { label: "撮影（縦動画9:16、HD60FPS）" },
-        { label: "撮影データチェック" },
-        { label: "共有ドライブに格納" },
+        { label: "撮影", summary: "縦動画9:16、HD60FPSで撮影" },
+        { label: "データチェック", summary: "撮影データの品質を確認" },
+        { label: "ドライブ格納", summary: "データを共有ドライブにアップロード" },
       ],
     },
     {
@@ -1491,11 +1518,12 @@ Step4.
         { label: "編集データ管理", url: "https://docs.google.com/spreadsheets/d/1-9OP13Z-VO5yq2gWZ-z2PGh1dcYPRxE6wzQ2h7JnqrM/edit?gid=1181257077#gid=1181257077", type: "sheet" },
       ],
       flowSteps: [
-        { label: "撮影データをダウンロード" },
-        { label: "Powerdirectorで編集" },
-        { label: "テロップ・BGM追加" },
+        { label: "データDL", summary: "撮影データをローカルにダウンロード" },
+        { label: "動画編集", summary: "Powerdirectorで動画を編集" },
+        { label: "テロップ追加", summary: "テロップ・BGMを追加" },
         {
-          label: "書き出し・格納",
+          label: "書き出し",
+          summary: "完成動画を書き出し・格納",
           links: [
             { label: "管理シート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-9OP13Z-VO5yq2gWZ-z2PGh1dcYPRxE6wzQ2h7JnqrM/edit?gid=1181257077#gid=1181257077" }
           ]
@@ -1546,19 +1574,21 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       ],
       flowSteps: [
         {
-          label: "ヒアリングシートを元にライティング",
+          label: "原稿執筆",
+          summary: "ヒアリング内容を元に原稿作成",
           links: [
             { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit?gid=547745536#gid=547745536" }
           ]
         },
         {
-          label: "動画をYouTube経由で挿入（Pairsona）または直接挿入（エンゲージ）",
+          label: "動画挿入",
+          summary: "動画をYouTubeまたは直接挿入",
           links: [
             { label: "Pairsona", type: "link", url: "https://pairsona.jp/" },
             { label: "エンゲージ", type: "link", url: "https://en-gage.net/company/logout/" }
           ]
         },
-        { label: "原稿リンク/スクショをワークスで共有" },
+        { label: "ワークス共有", summary: "原稿をグループに共有" },
       ],
     },
     {
@@ -1577,10 +1607,10 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
 修正箇所の修正対応
 キックオフの日程調整`,
       flowSteps: [
-        { label: "原稿リンクを準備" },
-        { label: "先方へ確認依頼メール送信" },
-        { label: "修正対応（必要な場合）" },
-        { label: "最終承認取得" },
+        { label: "リンク準備", summary: "原稿リンクを準備" },
+        { label: "確認依頼", summary: "先方へ確認依頼メールを送信" },
+        { label: "修正対応", summary: "フィードバックに基づき修正" },
+        { label: "承認取得", summary: "先方から最終承認を取得" },
       ],
     },
     {
@@ -1597,11 +1627,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       memo: `メールテンプレ`,
       simulation: `今後の運用担当者と次回FB日程の調整`,
       flowSteps: [
-        { label: "原稿の最終確認・公開準備" },
-        { label: "今後の担当者を共有" },
-        { label: "運用スケジュールを共有" },
-        { label: "次回FB日程を確定" },
-        { label: "議事録をワークスに共有" },
+        { label: "最終確認", summary: "原稿の最終確認と公開準備" },
+        { label: "担当者共有", summary: "今後の担当者を先方に共有" },
+        { label: "スケジュール共有", summary: "運用スケジュールを共有" },
+        { label: "FB日程確定", summary: "次回FB日程を確定" },
+        { label: "ワークス共有", summary: "議事録をグループに共有" },
       ],
     },
     {
@@ -1617,11 +1647,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       issues: "マニュアル",
       simulation: `応募対応フロー使用し応募者への連絡・企業への連絡`,
       flowSteps: [
-        { label: "応募を確認（エンゲージ/Pairsona）" },
-        { label: "応募者へ初回連絡（24時間以内）" },
-        { label: "企業へ応募報告" },
-        { label: "面接日程調整" },
-        { label: "結果報告" },
+        { label: "応募確認", summary: "エンゲージ/Pairsonaで応募を確認" },
+        { label: "初回連絡", summary: "応募者へ24時間以内に連絡" },
+        { label: "応募報告", summary: "企業へ応募状況を報告" },
+        { label: "日程調整", summary: "面接日程を調整" },
+        { label: "結果報告", summary: "面接結果を報告" },
       ],
     },
     {
@@ -1641,15 +1671,16 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
         { label: "週間データ集計シート", url: "https://docs.google.com/spreadsheets/d/1X-XFjj5823s9PCQ5oZs-_O2536yKl7uq1zXiQvtn5AM/edit?gid=63900268#gid=63900268", type: "sheet" },
       ],
       flowSteps: [
-        { label: "エンゲージで週間データ取得" },
+        { label: "データ取得", summary: "エンゲージで週間データを取得" },
         {
-          label: "スプレッドシートに記入",
+          label: "シート記入",
+          summary: "集計データをシートに記入",
           links: [
             { label: "集計シート", type: "link", url: "https://docs.google.com/spreadsheets/d/1X-XFjj5823s9PCQ5oZs-_O2536yKl7uq1zXiQvtn5AM/edit?gid=63900268#gid=63900268" }
           ]
         },
-        { label: "数値推移チェック" },
-        { label: "ワークスグループに共有" },
+        { label: "推移チェック", summary: "数値推移を確認" },
+        { label: "ワークス共有", summary: "集計データをグループに共有" },
       ],
     },
     {
@@ -1668,11 +1699,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
 FB議事録をFBグループに共有テンプレを使用し報告`,
       format: FB_REPORT_TEMPLATE,
       flowSteps: [
-        { label: "FB資料を3稼働日前までに作成・承認" },
-        { label: "FB実施（30分）" },
-        { label: "課題解決を当日内に完了" },
-        { label: "FB議事録をグループに共有" },
-        { label: "次回FB日程を確定" },
+        { label: "資料作成", summary: "FB資料を3稼働日前までに作成" },
+        { label: "FB実施", summary: "月次FBミーティング（30分）" },
+        { label: "課題解決", summary: "課題を当日内に解決" },
+        { label: "議事録共有", summary: "FB議事録をグループに共有" },
+        { label: "FB日程確定", summary: "次回FB日程を確定" },
       ],
     },
   ],

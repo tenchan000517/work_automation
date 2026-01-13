@@ -347,7 +347,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                                   rel="noopener noreferrer"
                                   className="flow-step-link-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
                                 >
-                                  📄 {link.label}
+                                  {link.label}
                                 </a>
                               ) : (
                                 <button
@@ -367,7 +367,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                                   )}
                                   className="flow-step-popup-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
                                 >
-                                  📋 {link.label}
+                                  {link.label}
                                 </button>
                               )
                             ))
