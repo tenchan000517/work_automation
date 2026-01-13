@@ -305,7 +305,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                   return (
                     <div key={index} className="flex flex-col sm:flex-row items-center gap-1 w-full sm:w-auto">
                       {/* ステップボックス */}
-                      <div className={`border rounded-lg px-2.5 py-2.5 w-full sm:w-36 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
+                      <div className={`border rounded-lg px-2.5 py-2.5 w-full sm:w-40 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
                         {/* ステップ番号 */}
                         <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-zinc-600 dark:bg-zinc-500 text-white flex items-center justify-center text-xs font-bold shadow-md">
                           {index + 1}
@@ -321,7 +321,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                           </button>
                         )}
                         {/* ラベル */}
-                        <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium leading-tight">
+                        <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium leading-tight ml-1">
                           {step.label}
                           {step.relatedTaskNo && getRelatedAssignee(step.relatedTaskNo, step.excludeSelf) && (
                             <span className="ml-1 text-blue-600 dark:text-blue-400">
