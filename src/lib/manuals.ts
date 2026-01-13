@@ -59,3 +59,45 @@ export function getAllManualsByProduct(productId: string): string[] {
     .filter((file) => file.endsWith(".md"))
     .sort();
 }
+
+/**
+ * 共通マニュアルを読み込む
+ * ファイル配置: docs/manuals/common/{name}.md
+ */
+export function getCommonManual(name: string): ManualData | null {
+  const commonDir = path.join(manualsDirectory, "common");
+
+  if (!fs.existsSync(commonDir)) {
+    return null;
+  }
+
+  const fileName = name.endsWith(".md") ? name : `${name}.md`;
+  const filePath = path.join(commonDir, fileName);
+
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const content = fs.readFileSync(filePath, "utf-8");
+
+  return {
+    content,
+    fileName,
+  };
+}
+
+/**
+ * 共通マニュアルの全ファイル一覧を取得
+ */
+export function getAllCommonManuals(): string[] {
+  const commonDir = path.join(manualsDirectory, "common");
+
+  if (!fs.existsSync(commonDir)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(commonDir)
+    .filter((file) => file.endsWith(".md"))
+    .sort();
+}

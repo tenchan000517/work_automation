@@ -269,13 +269,19 @@ tsunageru.tsの`manualDraft`をmdファイルに分離し、メンテナンス�
 
 **ファイル配置:**
 ```
-docs/manuals/tsunageru/
-├── 00-受注・ワークス立ち上げ.md
-├── 01-初回打ち合わせ日程調整.md
-├── 02-打ち合わせ前準備.md
-...
-└── 14-月次FB打合せ.md
+docs/manuals/
+├── common/          # 共通マニュアル（複数商材で共有）
+│   └── *.md
+└── tsunageru/       # 商材固有マニュアル
+    ├── 00-受注・ワークス立ち上げ.md
+    ├── 01-初回打ち合わせ日程調整.md
+    ...
+    └── 14-月次FB打合せ.md
 ```
+
+**読み込み関数:**
+- `getManualByTaskNo(productId, taskNo)` → 商材固有マニュアル
+- `getCommonManual(name)` → 共通マニュアル
 
 **使用パッケージ:**（インストール済み）
 ```bash
