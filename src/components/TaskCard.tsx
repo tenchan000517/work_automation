@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Task, ImageItem, RelatedLink, getAssigneeColor, getPriorityAssigneeColor, InputFieldConfig } from "@/lib/data";
 import { ContentModal } from "./ContentModal";
+import { ArrowRight, ArrowDown } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
@@ -105,10 +106,10 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
   const hasAnyDetail =
     task.memo ||
     task.simulation ||
-    task.manualDraft ||
-    task.overallFlow ||
+    task.manualDraft || task.hasManual ||
+    task.overallFlow || task.hasOverallFlow ||
     task.format ||
-    task.detailedFlow ||
+    task.detailedFlow || task.hasDetailedFlow ||
     task.nottaManual ||
     task.relatedSheetUrl ||
     (task.relatedLinks && task.relatedLinks.length > 0);
@@ -174,9 +175,47 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
       <div
         className={`rounded-lg border-2 ${cardColor.border} bg-white dark:bg-zinc-800 overflow-hidden`}
       >
-        {/* Header - 2行構成（グリッドで位置揃え） */}
-        <div className={`${cardColor.cardBgClass} px-5 pt-4 pb-3 mb-4`}>
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] items-center gap-x-6 gap-y-1">
+        {/* Header */}
+        <div className={`${cardColor.cardBgClass} px-4 sm:px-5 pt-4 pb-3 mb-4`}>
+          {/* モバイル: 縦並び / デスクトップ: グリッド */}
+          <div className="flex flex-col gap-3 sm:hidden">
+            {/* タスク名 */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded">
+                  No.{task.no}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {task.category}
+                </span>
+              </div>
+              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">
+                {task.name}
+              </h3>
+              {task.summary && (
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                  {task.summary}
+                </p>
+              )}
+            </div>
+            {/* 担当 */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-zinc-600 dark:text-zinc-300 font-medium">担当:</span>
+              <AssigneeBadges assignees={task.assignee} />
+            </div>
+            {/* 次の業務 */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-zinc-600 dark:text-zinc-300 font-medium">次:</span>
+              <ArrowDown className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {nextTaskName || task.nextTask || '-'}
+              </span>
+              <AssigneeBadges assignees={task.nextAssignee} />
+            </div>
+          </div>
+
+          {/* デスクトップ: グリッド */}
+          <div className="hidden sm:grid grid-cols-[auto_1fr_auto_auto_auto_auto] items-center gap-x-6 gap-y-1">
             {/* 上段: ラベル行 */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded">
@@ -192,11 +231,18 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
             <span className="text-sm text-zinc-600 dark:text-zinc-300 font-medium">次の業務</span>
             <div></div>
             {/* 下段: 値行 */}
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 col-span-2">
-              {task.name}
-            </h3>
+            <div className="col-span-2">
+              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {task.name}
+              </h3>
+              {task.summary && (
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                  {task.summary}
+                </p>
+              )}
+            </div>
             <AssigneeBadges assignees={task.assignee} />
-            <span className="text-zinc-400 dark:text-zinc-500 text-lg">⇒</span>
+            <ArrowRight className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
             <div className="flex items-center gap-2">
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {nextTaskName || task.nextTask || '-'}
@@ -208,7 +254,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
         </div>
 
         {/* 本体部分（白背景） */}
-        <div className="px-5 pb-5">
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5">
           {/* Basic Info Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <div>
@@ -247,7 +293,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                 フロー
               </p>
-              <div className="flex flex-wrap items-stretch gap-2">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-2">
                 {task.flowSteps.map((step, index) => {
                   const hasStepDetail = step.description || (step.images && step.images.length > 0);
                   // step.linksをEmbeddedLink形式に変換
@@ -258,7 +304,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                     type: link.type
                   }));
                   return (
-                    <div key={index} className="flex items-center gap-2">
+                    <div key={index} className="flex flex-col sm:flex-row items-center gap-2">
                       {/* ステップボックス */}
                       <div className={`border rounded-lg px-3 py-2 min-w-[140px] min-h-[70px] flex flex-col justify-between ${getFlowStepClass(step.label)} relative`}>
                         {/* インフォアイコン（詳細がある場合のみ表示） */}
@@ -320,7 +366,10 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                       </div>
                       {/* 矢印（最後のステップ以外） */}
                       {index < task.flowSteps!.length - 1 && (
-                        <span className="text-zinc-400 dark:text-zinc-500 text-xl font-bold">→</span>
+                        <>
+                          <ArrowRight className="hidden sm:block w-5 h-5 text-zinc-400 dark:text-zinc-500" />
+                          <ArrowDown className="sm:hidden w-5 h-5 text-zinc-400 dark:text-zinc-500" />
+                        </>
                       )}
                     </div>
                   );
@@ -334,7 +383,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
             <div className="mt-4 pt-3 border-t border-zinc-400 dark:border-zinc-600">
               <div className="flex flex-wrap gap-2">
                 {/* マニュアル - 別タブで開く */}
-                {task.manualDraft && (
+                {(task.manualDraft || task.hasManual) && (
                   <a
                     href={`/products/${productId}/tasks/${task.no}/manual`}
                     target="_blank"
@@ -346,7 +395,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                 )}
 
                 {/* 詳細フロー - 別タブで開く */}
-                {task.detailedFlow && (
+                {(task.detailedFlow || task.hasDetailedFlow) && (
                   <a
                     href={`/products/${productId}/tasks/${task.no}/flow`}
                     target="_blank"
@@ -358,7 +407,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                 )}
 
                 {/* 全体フロー - 別タブで開く */}
-                {task.overallFlow && (
+                {(task.overallFlow || task.hasOverallFlow) && (
                   <a
                     href={`/products/${productId}/tasks/${task.no}/overall-flow`}
                     target="_blank"

@@ -82,6 +82,7 @@ export interface Task {
   no: string;
   category: string;
   name: string;
+  summary?: string;       // 業務の簡潔な説明（カード表示用）
   assignee: string;
   nextTask?: string;      // 次の業務名
   nextAssignee: string;   // 次の担当
@@ -97,8 +98,10 @@ export interface Task {
   simulation?: string;
   manualDraft?: string;
   overallFlow?: string;
+  hasOverallFlow?: boolean; // 外部mdファイルにoverallFlowがある場合true
   format?: string;
   detailedFlow?: string;
+  hasDetailedFlow?: boolean; // 外部mdファイルにdetailedFlowがある場合true
   nottaManual?: string;     // NOTTAマニュアル
   relatedSheetUrl?: string; // 後方互換性のため残す（非推奨）
   relatedLinks?: RelatedLink[]; // 新しい複数URL対応フィールド
@@ -169,6 +172,7 @@ export interface Product {
   description: string;
   tasks: Task[];
   issues: string[];
+  hasOverallFlow?: boolean; // 商材レベルの全体フロー
 }
 
 // 各商材データのインポート

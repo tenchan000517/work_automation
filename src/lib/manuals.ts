@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 
 const manualsDirectory = path.join(process.cwd(), "docs", "manuals");
+const flowsDirectory = path.join(process.cwd(), "docs", "flows");
+const guidelinesDirectory = path.join(process.cwd(), "docs", "guidelines");
 
 export interface ManualData {
   content: string;
@@ -100,4 +102,64 @@ export function getAllCommonManuals(): string[] {
     .readdirSync(commonDir)
     .filter((file) => file.endsWith(".md"))
     .sort();
+}
+
+/**
+ * フローmdファイルを読み込む
+ * ファイル配置: docs/flows/{productId}/{flowName}.md
+ */
+export function getFlow(
+  productId: string,
+  flowName: string
+): ManualData | null {
+  const productDir = path.join(flowsDirectory, productId);
+
+  if (!fs.existsSync(productDir)) {
+    return null;
+  }
+
+  const fileName = flowName.endsWith(".md") ? flowName : `${flowName}.md`;
+  const filePath = path.join(productDir, fileName);
+
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const content = fs.readFileSync(filePath, "utf-8");
+
+  return {
+    content,
+    fileName,
+  };
+}
+
+/**
+ * ガイドラインmdファイルを読み込む
+ * ファイル配置: docs/guidelines/{productId}/{guidelineName}.md
+ */
+export function getGuideline(
+  productId: string,
+  guidelineName: string
+): ManualData | null {
+  const productDir = path.join(guidelinesDirectory, productId);
+
+  if (!fs.existsSync(productDir)) {
+    return null;
+  }
+
+  const fileName = guidelineName.endsWith(".md")
+    ? guidelineName
+    : `${guidelineName}.md`;
+  const filePath = path.join(productDir, fileName);
+
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const content = fs.readFileSync(filePath, "utf-8");
+
+  return {
+    content,
+    fileName,
+  };
 }

@@ -1,12 +1,55 @@
 # 業務効率化・マニュアル作成プロジェクト HANDOFF
 
+## 次回セッションへの引き継ぎ（2026-01-13）
+
+### フローステップのデザイン改善（未完了）
+
+**目的**: フローステップボックス（flowSteps）のデザインを改善する
+
+**現状のフローステップ:**
+```
+┌─────────┐ → ┌─────────┐ → ┌─────────┐
+│ラベル   │   │ラベル   │   │ラベル   │
+│[ボタン] │   │[ボタン] │   │[ボタン] │
+└─────────┘   └─────────┘   └─────────┘
+```
+
+**改善内容:**
+1. FlowStep型に `summary` フィールドを追加（簡潔な説明）
+2. PC: 正方形または2:3のアスペクト比
+3. モバイル: コンテナに対して横長
+4. サイズを統一して見映えを良くする
+5. lucide-reactの矢印アイコンを使用（ArrowRight / ArrowDown）
+
+**すでに完了した変更:**
+- `Task` 型に `summary` フィールド追加済み（業務カード用、残してOK）
+- `TaskCard.tsx` にlucide-reactの矢印アイコン導入済み（ArrowRight, ArrowDown）
+- 業務カードのヘッダーにsummary表示を追加済み
+
+**次にやること:**
+1. `FlowStep` 型に `summary` フィールドを追加（`src/lib/data/index.ts`）
+2. `TaskCard.tsx` のフローステップ部分のデザイン変更
+   - サイズ統一（min-width, min-height or aspect-ratio）
+   - summary表示追加
+   - グリッドレイアウト（PC: 2-3列、モバイル: 1列）
+3. TypeScriptエラー修正:
+   - `InputFieldConfig` のエクスポート確認
+   - `hasFlowSteps` 未使用変数の削除
+
+**参考ファイル:**
+- `src/components/TaskCard.tsx` - フローステップの表示部分（290行目付近）
+- `src/lib/data/index.ts` - FlowStep型定義
+
+---
+
 ## プロジェクト概要
 
 制作陣の業務効率化とマニュアル整備プロジェクト。
 9商材・52業務を対象に、AI活用による効率化とマニュアル改善を推進。
 
 **ガイドライン**:
-- `docs/manual-creation-guideline-v2.md` ★最新版（GASダイアログ設計指針）
+- `docs/manual-creation-guideline-v3.md` ★最新版（新商材作成の完全ガイド）
+- `docs/manual-creation-guideline-v2.md` UI仕様詳細（GASダイアログコンポーネント）
 - `docs/manual-creation-guideline.md` 旧版（データ構造・型定義の参照用）
 
 ---
@@ -163,7 +206,9 @@ src/lib/data/common/
     ├── reminder.ts               # リマインド
     ├── shooting-request.ts       # 撮影日程確認
     ├── shooting-instruction.ts   # 撮影指示
-    └── minutes-share.ts          # 議事録共有
+    ├── minutes-share.ts          # 議事録共有
+    ├── fb-report.ts              # FB報告テンプレート（3商材共通）
+    └── shooting-checklist.ts     # 撮影時チェックリスト（2商材共通）
 ```
 
 **テンプレート関数の使い方:**
@@ -175,6 +220,10 @@ createOrderNotificationTemplate("HP制作", "制作")
 // 引数なしで呼び出し
 createScheduleConfirmTemplate()
 createReminderTemplate()
+
+// 定数として直接参照（Task.formatで使用）
+format: FB_REPORT_TEMPLATE,      // ツナゲル/バツグン/HP共通
+format: SHOOTING_CHECKLIST,      // ツナゲル/バツグン共通
 ```
 
 ---
@@ -312,89 +361,129 @@ ManualMarkdownRenderer (Client Component)
 ```
 
 **残タスク:**
-- [ ] **マークダウンスタイル問題の修正**（優先）
-- [ ] 全15タスクのmdファイル作成（No.0〜14）
-- [ ] tsunageru.tsの`manualDraft`削除（任意）
+- [x] ~~マークダウンスタイル問題の修正~~ ✅完了
+- [x] ~~全15タスクのmdファイル作成（No.0〜14）~~ ✅2026-01-13完了
+- [x] ~~tsunageru.tsの`manualDraft`削除~~ ✅2026-01-13完了
 
-**次回セッションでやること:**
-1. マークダウンスタイルが効いていない問題を修正
-   - 確認URL: http://localhost:3000/manuals/common/notta
-   - 症状: 見出し、リスト等のマークダウン装飾が適用されていない
-   - 原因候補:
-     - Tailwind Typographyプラグイン未インストール（@tailwindcss/typography）
-     - proseクラスのスタイルが効いていない
-     - ManualMarkdownRenderer.tsxのスタイル不足
-2. 修正後、mdファイル分離作業を継続
+**マニュアルmd分離: 完了**
 
-**タスク一覧（tsunageru）:**
-| No | タスク名 | ファイル名 |
-|----|----------|-----------|
-| 0 | 受注・ワークス立ち上げ | 00-受注・ワークス立ち上げ.md |
-| 1 | 初回打ち合わせ日程調整 | 01-初回打ち合わせ日程調整.md |
-| 2 | 打ち合わせ前準備 | 02-打ち合わせ前準備.md |
-| 3 | オンライン初回打ち合わせ | 03-オンライン初回打ち合わせ.md |
-| 4 | 打ち合わせ後対応 | 04-打ち合わせ後対応.md |
-| 5 | ヒアリング内容整理 | 05-ヒアリング内容整理.md |
-| 6 | 企画・質問設計 | 06-企画・質問設計.md |
-| 7 | 撮影 | 07-撮影.md |
-| 8 | 編集 | 08-編集.md |
-| 9 | 原稿執筆 | 09-原稿執筆.md |
-| 10 | 企業担当へ確認依頼 | 10-企業担当へ確認依頼.md |
-| 11 | 今後の担当者の共有とスケジュール共有 | 11-今後の担当者の共有とスケジュール共有.md |
-| 12 | 企業・応募者へ連絡 | 12-企業・応募者へ連絡.md |
-| 13 | 週間データの集計と資料作成 | 13-週間データの集計と資料作成.md |
-| 14 | 月次FB打合せ | 14-月次FB打合せ.md |
+---
 
-**作業手順:**
-1. tsunageru.tsの該当タスクの`manualDraft`を確認
-2. `docs/manuals/tsunageru/{No}-{タスク名}.md` を作成
-3. 動作確認: `http://localhost:3000/products/tsunageru/tasks/{No}/manual`
-4. 「Markdown」バッジが表示されればOK
+## フロー・ガイドラインのmd分離（2026-01-13完了）
 
-**mdファイル記述例:**
-```markdown
-# 受注・ワークス立ち上げマニュアル
+tsunageru.tsの`overallFlow`, `detailedFlow`, `memo`, `format`（ガイドライン）を外部mdファイルに分離。
 
-## 目的
-受注後、制作チームが業務を開始できる状態を整える。
-
-## 作業手順
-
-### 1. 受注確定を確認
-
-### 2. ワークスで企業グループを新規作成
-
-<img src="/images/lineworks-sample.png" alt="ワークス画面" />
-
-### 3. フォーマットを送信
-
-<a href="https://docs.google.com/spreadsheets/d/xxx" target="_blank" class="btn-link">
-  ヒアリングシート
-</a>
-
-<button class="btn-copy" data-content="ここにコピーする内容を記述">
-  フォーマットをコピー
-</button>
-
-### 動画マニュアル
-
-<video controls width="100%">
-  <source src="/videos/tutorial.mp4" type="video/mp4">
-</video>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/xxxxx" frameborder="0" allowfullscreen></iframe>
+**ファイル配置:**
+```
+docs/
+├── flows/tsunageru/        # フロー
+│   ├── overall-flow.md     # ← Task 5 overallFlow
+│   ├── feedback-flow.md    # ← Task 14 memo
+│   └── monthly-fb-flow.md  # ← Task 14 detailedFlow
+└── guidelines/tsunageru/   # ガイドライン
+    └── job-posting-guideline.md  # ← Task 9 format（差別化求人原稿ガイドライン）
 ```
 
-**対応機能:**
-- マークダウン装飾（見出し、リスト、テーブル等）
-- 画像表示（`<img>`）
-- 動画埋め込み（`<video>`, YouTube `<iframe>`）
-- リンク（`<a>`、`class="btn-link"`でボタン風）
-- コピーボタン（`<button class="btn-copy" data-content="...">`）
-- 任意のHTML埋め込み（rehype-raw）
+**読み込み関数:**（lib/manuals.ts）
+- `getFlow(productId, flowName)` → フロー読み込み
+- `getGuideline(productId, guidelineName)` → ガイドライン読み込み
 
-**フォールバック動作:**
-mdファイルが存在しない場合は既存の`task.manualDraft`を表示（移行期間中も動作保証）
+**UI対応:**
+- `overall-flow/page.tsx` → Server Component化、mdファイル読み込み対応
+- `flow/page.tsx` → Server Component化、mdファイル読み込み対応
+
+**削減効果:**
+- tsunageru.ts: 2,438行 → 1,825行（613行削減）
+
+**フロー・ガイドラインmd分離: 完了**
+
+---
+
+## サイドメニュー実装（2026-01-13完了）
+
+商材ページ（`/products/[id]`）に開閉式サイドメニューを実装。
+
+**機能:**
+- 全体フロー（商材レベル）へのリンク
+- タスク一覧（アンカースクロール）
+- マニュアル一覧（別タブで開く）
+- フォーマット一覧（モーダル表示）
+
+**コンポーネント構成:**
+```
+src/components/
+├── Sidebar.tsx           # サイドメニュー本体
+├── SidebarSection.tsx    # アコーディオンセクション
+└── ProductPageLayout.tsx # 2カラムレイアウト管理
+```
+
+**特徴:**
+- デスクトップ: 固定幅（w-64）、左右スライド式
+- モバイル: 画面幅いっぱい、背景透過（95%）、スクロール後に自動閉じ
+- lucide-reactでアイコン統一
+
+**全体フローの配置変更:**
+- 以前: Task 5に`hasOverallFlow`を設定
+- 現在: 商材レベル（Product型）に`hasOverallFlow`を設定
+- URL: `/products/{productId}/overall-flow`
+
+**関連ファイル:**
+- `src/app/products/[id]/page.tsx` - 2カラムレイアウト、ヘッダー改修
+- `src/app/products/[id]/overall-flow/page.tsx` - 商材レベル全体フローページ
+- `src/lib/data/index.ts` - Product型に`hasOverallFlow`追加
+
+---
+
+## ボタン表示問題の解決（2026-01-13完了）
+
+**問題:**
+md分離後、TaskCardの「マニュアル」「全体フロー」「詳細フロー」ボタンが表示されなかった。
+
+**原因:**
+`hasAnyDetail`変数が`manualDraft`, `overallFlow`, `detailedFlow`の存在をチェックしていたが、`hasManual`, `hasOverallFlow`, `hasDetailedFlow`フラグをチェックしていなかった。
+
+**修正内容:**（TaskCard.tsx）
+```typescript
+// 修正前
+const hasAnyDetail =
+  task.manualDraft ||
+  task.overallFlow ||
+  task.detailedFlow || ...
+
+// 修正後
+const hasAnyDetail =
+  task.manualDraft || task.hasManual ||
+  task.overallFlow || task.hasOverallFlow ||
+  task.detailedFlow || task.hasDetailedFlow || ...
+
+// マニュアルボタン条件も修正
+{(task.manualDraft || task.hasManual) && (...)}
+```
+
+---
+
+## モバイル対応（2026-01-13完了）
+
+商材ページとTaskCardのレスポンシブ対応を実装。
+
+**対応内容:**
+- ヘッダー: アイコン・タイトルサイズ調整、descriptionはmd以上で表示
+- サイドメニュー: モバイルでは画面幅いっぱい、背景透過、スクロール後自動閉じ
+- TaskCardヘッダー: モバイルでは縦並びレイアウト
+- フローステップ: モバイルでは縦並び、矢印は「↓」に変更
+- 余白: モバイルでは小さめに調整
+
+---
+
+## 使用パッケージ
+
+```bash
+# マークダウンレンダリング
+npm install react-markdown remark-gfm rehype-raw
+
+# アイコン
+npm install lucide-react
+```
 
 ---
 
@@ -436,6 +525,18 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-13 | フローステップデザイン改善（途中）: Task型にsummary追加、lucide-react矢印導入 |
+| 2026-01-13 | ガイドラインV3作成（新商材作成の完全ガイド、設計思想・共通概念・ルール・作り方） |
+| 2026-01-13 | フォーマット共通化（FB_REPORT_TEMPLATE, SHOOTING_CHECKLIST）3商材で共有 |
+| 2026-01-13 | モバイル対応（ヘッダー、サイドメニュー、TaskCard、フローステップ） |
+| 2026-01-13 | サイドメニュー実装（Sidebar.tsx、SidebarSection.tsx、ProductPageLayout.tsx） |
+| 2026-01-13 | 全体フローを商材レベルに移動（/products/{id}/overall-flow） |
+| 2026-01-13 | lucide-reactインストール、アイコン統一 |
+| 2026-01-13 | ボタン表示問題解決（hasAnyDetailにフラグ追加、マニュアルボタン条件修正） |
+| 2026-01-13 | フロー・ガイドラインmd分離完了（docs/flows/, docs/guidelines/、613行削減） |
+| 2026-01-13 | tsunageru.tsのmanualDraft全削除完了（md分離作業完了） |
+| 2026-01-13 | 全15タスクのmdファイル作成完了（docs/manuals/tsunageru/に00〜14のマニュアル） |
+| 2026-01-13 | マークダウンスタイル問題修正（globals.css、ManualMarkdownRenderer.tsx更新、engineer-course準拠） |
 | 2026-01-13 | マニュアルmd分離実装（Server Component方式に変更、lib/manuals.ts、ManualMarkdownRenderer.tsx） |
 | 2026-01-13 | マニュアルmd分離の設計決定（react-markdown + rehype-raw、HTML埋め込み対応） |
 | 2026-01-13 | Next.jsサイト共通化（common/manuals, common/templates）、ワークススタンプルール追加 |

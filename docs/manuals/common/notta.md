@@ -24,7 +24,7 @@ Googleカレンダーを開き、該当の予定をクリックします。「Go
 
 ## Step 4: NOTTAにURLを貼り付け
 
-「Web会議の招待URL」欄にコピーしたURLを貼り付けます。「ビデオ通話のリンク: https://meet.google.com/...」と表示されればOKです。「文字起こしする」ボタンをクリックします。
+「Web会議の招待URL」欄にコピーしたURLを貼り付けます。「ビデオ通話のリンク: `https://meet.google.com/...`」と表示されればOKです。「文字起こしする」ボタンをクリックします。
 
 <img src="/images/notta-step4-url-paste.png" alt="NOTTAにURL貼り付け" />
 

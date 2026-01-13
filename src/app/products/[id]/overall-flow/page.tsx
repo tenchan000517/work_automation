@@ -1,24 +1,32 @@
 import { notFound } from "next/navigation";
-import { getTask } from "@/lib/data";
+import { getProduct, products } from "@/lib/data";
 import { getFlow } from "@/lib/manuals";
 import { ManualMarkdownRenderer, CopyAllButton } from "@/components/ManualMarkdownRenderer";
 
-export default async function OverallFlowPage({
+export function generateStaticParams() {
+  return products
+    .filter((p) => p.hasOverallFlow)
+    .map((product) => ({
+      id: product.id,
+    }));
+}
+
+export default async function ProductOverallFlowPage({
   params,
 }: {
-  params: Promise<{ id: string; taskNo: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { id: productId, taskNo } = await params;
+  const { id: productId } = await params;
 
-  // タスク情報を取得
-  const task = getTask(productId, taskNo);
-  if (!task) {
+  // 商材情報を取得
+  const product = getProduct(productId);
+  if (!product || !product.hasOverallFlow) {
     notFound();
   }
 
-  // mdファイルを取得（なければoverallFlowにフォールバック）
+  // mdファイルを取得
   const flow = getFlow(productId, "overall-flow");
-  const content = flow?.content || task.overallFlow;
+  const content = flow?.content;
 
   if (!content) {
     return (
@@ -30,8 +38,6 @@ export default async function OverallFlowPage({
     );
   }
 
-  const isMarkdown = !!flow?.content;
-
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 sticky top-0 z-10">
@@ -39,16 +45,14 @@ export default async function OverallFlowPage({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                No.{task.no} {task.category}
+                {product.name}
               </p>
               <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                {task.name} - 全体フロー
+                業務全体フロー
               </h1>
-              {isMarkdown && (
-                <span className="inline-block mt-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
-                  Markdown
-                </span>
-              )}
+              <span className="inline-block mt-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
+                Markdown
+              </span>
             </div>
             <CopyAllButton content={content} />
           </div>
@@ -57,13 +61,7 @@ export default async function OverallFlowPage({
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-          {isMarkdown ? (
-            <ManualMarkdownRenderer content={content} />
-          ) : (
-            <pre className="text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap font-mono leading-relaxed">
-              {content}
-            </pre>
-          )}
+          <ManualMarkdownRenderer content={content} />
         </div>
       </main>
     </div>

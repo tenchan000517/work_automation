@@ -11,11 +11,100 @@ interface ManualMarkdownRendererProps {
 
 export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps) {
   return (
-    <div className="prose prose-zinc dark:prose-invert max-w-none">
+    <div className="prose max-w-none break-words overflow-x-hidden w-full min-w-0">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
+          // 見出し
+          h1: ({ children, ...props }) => (
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4 break-words" {...props}>
+              {children}
+            </h1>
+          ),
+          h2: ({ children, ...props }) => (
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4 break-words border-b-2 border-zinc-200 dark:border-zinc-700 pb-2" {...props}>
+              {children}
+            </h2>
+          ),
+          h3: ({ children, ...props }) => (
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-6 mb-3 break-words" {...props}>
+              {children}
+            </h3>
+          ),
+          h4: ({ children, ...props }) => (
+            <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-4 mb-2 break-words" {...props}>
+              {children}
+            </h4>
+          ),
+          // 段落
+          p: ({ children, ...props }) => (
+            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed my-4 break-words" {...props}>
+              {children}
+            </p>
+          ),
+          // リスト
+          ul: ({ children, ...props }) => (
+            <ul className="list-disc list-outside space-y-2 my-4 ml-6 pl-0" {...props}>
+              {children}
+            </ul>
+          ),
+          ol: ({ children, ...props }) => (
+            <ol className="list-decimal list-outside space-y-2 my-4 ml-6 pl-0" {...props}>
+              {children}
+            </ol>
+          ),
+          li: ({ children, ...props }) => (
+            <li className="text-zinc-700 dark:text-zinc-300 pl-2 break-words" {...props}>
+              {children}
+            </li>
+          ),
+          // 引用
+          blockquote: ({ children, ...props }) => (
+            <blockquote
+              className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-900/20 text-zinc-700 dark:text-zinc-300 italic break-words"
+              {...props}
+            >
+              {children}
+            </blockquote>
+          ),
+          // テーブル
+          table: ({ children, ...props }) => (
+            <div className="overflow-x-auto my-4 w-full">
+              <table className="w-full border-collapse border border-zinc-300 dark:border-zinc-600" {...props}>
+                {children}
+              </table>
+            </div>
+          ),
+          th: ({ children, ...props }) => (
+            <th className="border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 px-4 py-2 text-left font-bold" {...props}>
+              {children}
+            </th>
+          ),
+          td: ({ children, ...props }) => (
+            <td className="border border-zinc-300 dark:border-zinc-600 px-4 py-2" {...props}>
+              {children}
+            </td>
+          ),
+          // コード
+          code: ({ inline, children, ...props }: { inline?: boolean; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) =>
+            inline ? (
+              <code
+                className="bg-zinc-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded text-sm font-mono break-all max-w-full font-semibold"
+                {...props}
+              >
+                {children}
+              </code>
+            ) : (
+              <code className="block text-zinc-100" {...props}>
+                {children}
+              </code>
+            ),
+          pre: ({ children, ...props }) => (
+            <pre className="my-4 rounded-lg overflow-hidden overflow-x-auto max-w-full bg-zinc-900 p-4" {...props}>
+              {children}
+            </pre>
+          ),
           // カスタムボタン対応
           button: ({ className, children, ...props }) => {
             const dataContent = (props as Record<string, unknown>)["data-content"] as string | undefined;
@@ -28,7 +117,7 @@ export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps)
             }
             return <button className={className} {...props}>{children}</button>;
           },
-          // リンクを新しいタブで開く
+          // リンク
           a: ({ href, children, className, ...props }) => {
             const isExternal = href?.startsWith("http");
             if (className?.includes("btn-link")) {
@@ -49,7 +138,7 @@ export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps)
                 href={href}
                 target={isExternal ? "_blank" : undefined}
                 rel={isExternal ? "noopener noreferrer" : undefined}
-                className="text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-blue-600 dark:text-blue-400 hover:underline break-all"
                 {...props}
               >
                 {children}

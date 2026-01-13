@@ -1,5 +1,85 @@
 @import "tailwindcss";
 
+/* Proseスタイリング（マークダウン用） */
+.prose {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.prose * {
+  max-width: 100% !important;
+}
+
+.prose h1 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose h2 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.prose h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose pre {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.prose code {
+  font-size: 0.875em;
+  overflow-wrap: break-word;
+  max-width: 100% !important;
+}
+
+.prose table {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: block !important;
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* コードブロックのスタイリング */
+pre {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+}
+
+pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  display: block;
+  overflow-x: auto;
+  color: #f3f4f6 !important;
+  font-weight: 400;
+}
+
+/* インラインコードのスタイリング */
+code:not(pre code) {
+  color: #dc2626 !important;
+  background-color: #f3f4f6 !important;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
