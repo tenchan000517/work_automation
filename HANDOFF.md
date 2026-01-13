@@ -299,9 +299,67 @@ ManualMarkdownRenderer (Client Component)
 ```
 
 **残タスク:**
-- [ ] サンプルmdファイル作成・動作確認
-- [ ] 全14タスクのmdファイル作成
+- [ ] 全15タスクのmdファイル作成（No.0〜14）
 - [ ] tsunageru.tsの`manualDraft`削除（任意）
+
+**タスク一覧（tsunageru）:**
+| No | タスク名 | ファイル名 |
+|----|----------|-----------|
+| 0 | 受注・ワークス立ち上げ | 00-受注・ワークス立ち上げ.md |
+| 1 | 初回打ち合わせ日程調整 | 01-初回打ち合わせ日程調整.md |
+| 2 | 打ち合わせ前準備 | 02-打ち合わせ前準備.md |
+| 3 | オンライン初回打ち合わせ | 03-オンライン初回打ち合わせ.md |
+| 4 | 打ち合わせ後対応 | 04-打ち合わせ後対応.md |
+| 5 | ヒアリング内容整理 | 05-ヒアリング内容整理.md |
+| 6 | 企画・質問設計 | 06-企画・質問設計.md |
+| 7 | 撮影 | 07-撮影.md |
+| 8 | 編集 | 08-編集.md |
+| 9 | 原稿執筆 | 09-原稿執筆.md |
+| 10 | 企業担当へ確認依頼 | 10-企業担当へ確認依頼.md |
+| 11 | 今後の担当者の共有とスケジュール共有 | 11-今後の担当者の共有とスケジュール共有.md |
+| 12 | 企業・応募者へ連絡 | 12-企業・応募者へ連絡.md |
+| 13 | 週間データの集計と資料作成 | 13-週間データの集計と資料作成.md |
+| 14 | 月次FB打合せ | 14-月次FB打合せ.md |
+
+**作業手順:**
+1. tsunageru.tsの該当タスクの`manualDraft`を確認
+2. `docs/manuals/tsunageru/{No}-{タスク名}.md` を作成
+3. 動作確認: `http://localhost:3000/products/tsunageru/tasks/{No}/manual`
+4. 「Markdown」バッジが表示されればOK
+
+**mdファイル記述例:**
+```markdown
+# 受注・ワークス立ち上げマニュアル
+
+## 目的
+受注後、制作チームが業務を開始できる状態を整える。
+
+## 作業手順
+
+### 1. 受注確定を確認
+
+### 2. ワークスで企業グループを新規作成
+
+<img src="/images/lineworks-sample.png" alt="ワークス画面" />
+
+### 3. フォーマットを送信
+
+<a href="https://docs.google.com/spreadsheets/d/xxx" target="_blank" class="btn-link">
+  ヒアリングシート
+</a>
+
+<button class="btn-copy" data-content="ここにコピーする内容を記述">
+  フォーマットをコピー
+</button>
+
+### 動画マニュアル
+
+<video controls width="100%">
+  <source src="/videos/tutorial.mp4" type="video/mp4">
+</video>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/xxxxx" frameborder="0" allowfullscreen></iframe>
+```
 
 **対応機能:**
 - マークダウン装飾（見出し、リスト、テーブル等）
