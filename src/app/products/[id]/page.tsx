@@ -23,7 +23,7 @@ export default async function ProductPage({
 
   return (
     <ProductPageLayout product={product}>
-        <div className="px-4 sm:px-8 lg:px-12 py-6 sm:py-8">
+        <div className="px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* サマリー */}
         <section className="mb-8">
           <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">

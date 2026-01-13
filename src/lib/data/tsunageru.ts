@@ -78,7 +78,7 @@ export const tsunageru: Product = {
       flowSteps: [
         {
           label: "グループ作成",
-          summary: "LINEWORKSで企業グループを立ち上げ",
+          summary: "LINEWORKSで企業グループを立ち上げる",
           description: `【ワークスでの企業グループ作成手順】
 
 1. LINEWORKSにログイン

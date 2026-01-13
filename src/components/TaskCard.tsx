@@ -303,9 +303,9 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                     type: link.type
                   }));
                   return (
-                    <div key={index} className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                    <div key={index} className="flex flex-col sm:flex-row items-center gap-1 w-full sm:w-auto">
                       {/* ステップボックス */}
-                      <div className={`border rounded-lg px-3 py-3 w-full sm:w-32 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
+                      <div className={`border rounded-lg px-3 py-3 w-full sm:w-36 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
                         {/* ステップ番号 */}
                         <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-zinc-600 dark:bg-zinc-500 text-white flex items-center justify-center text-xs font-bold shadow-md">
                           {index + 1}
@@ -345,7 +345,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                                   href={link.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flow-step-link-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
+                                  className="flow-step-link-btn inline-flex items-center justify-center w-full px-2 py-0.5 text-xs font-medium rounded transition-colors"
                                 >
                                   {link.label}
                                 </a>
@@ -365,7 +365,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                                     link.template,
                                     link.inputFields
                                   )}
-                                  className="flow-step-popup-btn inline-flex items-center px-2 py-0.5 text-xs font-medium rounded transition-colors"
+                                  className="flow-step-popup-btn inline-flex items-center justify-center w-full px-2 py-0.5 text-xs font-medium rounded transition-colors"
                                 >
                                   {link.label}
                                 </button>
