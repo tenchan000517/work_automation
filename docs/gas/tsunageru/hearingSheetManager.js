@@ -963,11 +963,21 @@ function setupTemplate() {
 
   // Part③ 処理データ（GASが自動保存するデータ）
   row = createSectionHeader(sheet, row, 'Part③ 処理データ（システム管理）');
-  row = createDataStorageRow(sheet, row, '撮影素材フォルダURL');
-  row = createDataStorageRow(sheet, row, 'メインフォルダURL');
-  row = createDataStorageRowLarge(sheet, row, '文字起こし原文', 5);
-  row = createDataStorageRowLarge(sheet, row, '構成案（原稿用）', 8);
-  row = createDataStorageRowLarge(sheet, row, '構成案（動画用）', 8);
+
+  // 設定シートからPart③構成を取得
+  const part3Config = getPart3ConfigFromSettings();
+  if (part3Config.length === 0) {
+    SpreadsheetApp.getUi().alert('エラー', '設定シートにPart③構成がありません。\n設定シートを作成してください。', SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
+
+  for (const item of part3Config) {
+    if (item.rows === 1) {
+      row = createDataStorageRow(sheet, row, item.label);
+    } else {
+      row = createDataStorageRowLarge(sheet, row, item.label, item.rows);
+    }
+  }
 
   // 罫線
   const lastRow = row;

@@ -1,0 +1,95 @@
+{
+  "description": "企業カンペ テンプレート構成（既存シートから分析）",
+  "analyzedFrom": "岡田さんシート",
+  "analyzedAt": "2026-01-13",
+
+  "structure": {
+    "row1": { "height": 76, "content": "空欄（余白）" },
+    "row2": { "height": 25, "content": "タイトル「撮影実施概要」", "merge": "B2:P2", "fontSize": 20, "fontWeight": "bold", "hAlign": "center" },
+    "row3": { "height": 25, "content": "空欄" },
+    "row4": { "height": 25, "content": "ヘッダー（項目/撮影内容/撮影本数/撮影工数/大枠）", "background": "#ffe598" },
+    "row5": { "height": 25, "content": "1⃣ 社員インタビュー" },
+    "row6": { "height": 25, "content": "2⃣ 社長インタビュー会社紹介" },
+    "row7-8": { "height": 25, "content": "空欄" },
+    "row9": { "height": 25, "content": "必要備品（太字）" },
+    "row10-11": { "height": 25, "content": "空欄" },
+    "row12": { "height": 25, "content": "動画台本1⃣ ヘッダー", "background": "#f7caac" },
+    "row13-16": { "height": "221-251", "content": "社員インタビューQ&A（4問）", "background": "#f7caac", "answerFontSize": 27 },
+    "row17": { "height": 25, "content": "空欄" },
+    "row18": { "height": 34, "content": "社長インタビュー ヘッダー", "background": "#c5e0b3" },
+    "row19-21": { "height": 91, "content": "社長インタビューQ&A（3問）", "background": "#c5e0b3" }
+  },
+
+  "colors": {
+    "header_yellow": "#ffe598",
+    "employee_interview_orange": "#f7caac",
+    "president_interview_green": "#c5e0b3",
+    "highlight_yellow": "#ffff00"
+  },
+
+  "columnWidths": {
+    "A": 60,
+    "B": 119,
+    "C": 161,
+    "D": 60,
+    "E": 97,
+    "F": 237
+  },
+
+  "mergedRanges": [
+    "B2:P2",
+    "C12:E12", "F12:P12",
+    "C13:E13", "F13:P13",
+    "C14:E14", "F14:P14",
+    "C15:E15", "F15:P15",
+    "C16:E16", "F16:P16",
+    "C17:E17",
+    "C18:E18", "F18:P18",
+    "C19:E19", "F19:P19",
+    "C20:E20", "F20:P20",
+    "C21:E21", "F21:P21"
+  ],
+
+  "cells": {
+    "B2": { "value": "撮影実施概要", "fontSize": 20, "fontWeight": "bold", "hAlign": "center" },
+    "B4": { "value": "項目", "background": "#ffe598", "fontSize": 11 },
+    "C4": { "value": "撮影内容", "background": "#ffe598", "fontSize": 11 },
+    "D4": { "value": "撮影本数", "background": "#ffe598", "fontSize": 11 },
+    "E4": { "value": "撮影工数(分)", "background": "#ffe598", "fontSize": 11 },
+    "F4": { "value": "大枠", "background": "#ffe598", "fontSize": 11 },
+    "B5": { "value": "1⃣", "fontSize": 11 },
+    "C5": { "value": "社員インタビュー", "fontSize": 11 },
+    "D5": { "value": "2本\n(2人分)", "fontSize": 11 },
+    "E5": { "value": "15", "fontSize": 11 },
+    "F5": { "value": "Q＆A方式", "fontSize": 11 },
+    "B6": { "value": "2⃣", "fontSize": 11 },
+    "C6": { "value": "社長インタビュー会社紹介", "fontSize": 11 },
+    "D6": { "value": "1本", "fontSize": 11 },
+    "E6": { "value": "10", "fontSize": 11 },
+    "F6": { "value": "Q＆A方式", "fontSize": 11 },
+    "B9": { "value": "必要備品", "fontSize": 11, "fontWeight": "bold" },
+    "C9": { "value": "制服等", "fontSize": 11 },
+    "B12": { "value": "動画台本1⃣", "background": "#f7caac", "fontSize": 11, "hAlign": "center" },
+    "C12": { "value": "クエスチョン", "background": "#f7caac", "fontSize": 11, "hAlign": "center" },
+    "F12": { "value": "アンサー例", "background": "#f7caac", "fontSize": 11, "hAlign": "center" }
+  },
+
+  "employeeInterviewQuestions": [
+    { "num": "①", "question": "入社理由について教えてください", "answer": "（回答例）" },
+    { "num": "②", "question": "仕事のやりがいについておしえてください", "answer": "（回答例）" },
+    { "num": "③", "question": "入社してよかったところ", "answer": "（回答例）" },
+    { "num": "④", "question": "今後の目標を教えてください", "answer": "（回答例）" }
+  ],
+
+  "presidentInterviewQuestions": [
+    { "num": "①", "question": "会社の歴史について教えてください。", "answer": "設立や経緯含めて30秒程度で回答してください" },
+    { "num": "②", "question": "事業内容についておしえてください。", "answer": "事業内容と会社として大切にしていることを30秒程度で回答してください" },
+    { "num": "③", "question": "今後の展望について教えてください", "answer": "会社としての長期的な目標や目指していることを30秒程度で回答してください" }
+  ],
+
+  "notes": {
+    "answerArea": "回答欄（F列）はサイズ27で大きく表示（タブレット表示用）",
+    "rowHeight": "回答行は高さ200px以上（内容に応じて調整）",
+    "mergeToP": "結合はP列まで（横に広く使う）"
+  }
+}

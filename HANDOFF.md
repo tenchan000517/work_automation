@@ -224,31 +224,604 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 ---
 
+## 本セッションの進捗（2026-01-12 続き④）
+
+### ✅ 完了: プロンプトシートにカテゴリ列を追加
+
+**対応内容:**
+- プロンプトシートにF列「カテゴリ」を追加
+- `PROMPT_MENU_FILTER`（ハードコード）を削除 → `PROMPT_MENU_CATEGORY`（カテゴリベース）に変更
+- プロンプト編集ダイアログにカテゴリ入力フィールドを追加
+- カテゴリ候補のdatalist（議事録、構成案、連絡）を追加
+
+**修正ファイル:**
+
+| ファイル | 修正内容 |
+|----------|----------|
+| settingsSheet.js | `initializePromptSheet()`: F列カテゴリ追加 |
+| settingsSheet.js | `showPromptEditDialog()`: カテゴリ読み込み追加 |
+| settingsSheet.js | `createPromptEditHTML()`: カテゴリ編集UI追加 |
+| settingsSheet.js | `savePrompts()`: 6列対応 |
+| promptDialog.js | `PROMPT_MENU_FILTER` → `PROMPT_MENU_CATEGORY`に変更 |
+| promptDialog.js | `getPromptList()`: カテゴリ取得追加 |
+| promptDialog.js | `createPromptSheet()`: F列カテゴリ追加 |
+| promptDialog.js | `addSamplePrompts()`: カテゴリ付きに変更 |
+| promptDialog.js | `showPromptUsage()`: カテゴリ説明追加 |
+
+**プロンプトシート構造（更新後）:**
+```
+A列: プロンプト名
+B列: 説明
+C列: 入力欄ラベル
+D列: プレースホルダー
+E列: テンプレート
+F列: カテゴリ ★新規
+```
+
+**カテゴリフィルタリング:**
+- 「４.📝 議事録作成・報告プロンプト」メニュー → カテゴリ=`議事録`のプロンプトのみ表示
+- 将来: 他メニューでも同様にカテゴリでフィルタリング可能
+
+---
+
+## 本セッションの進捗（2026-01-12 続き③）
+
+### ✅ 完了: compositionDraftGenerator.jsのドロップダウンUI対応
+
+**対象ダイアログ:**
+1. `createCompositionDialogHTML` - 構成案作成メインダイアログ
+2. `createConvertDialogHTML` - 変換ダイアログ（ペアソナ/エンゲージ変換等）
+
+**修正内容:**
+| 項目 | 変更前 | 変更後 |
+|------|--------|--------|
+| シート選択 | ラジオボタンリスト | ドロップダウン（`.company-select-*`） |
+| アコーディオン | `.show`クラス | `.open`クラス + `toggleAccordionById` |
+| 出力エリア | `<textarea readonly>` | `.preview-section` + `.preview-content` |
+| CI_UI_COMPONENTS | なし | 追加 |
+
+### ✅ 完了: 変換ダイアログの自動プレビュー
+
+**修正内容:**
+- 生成ボタンを削除
+- 構成案を貼り付け → プレビューに自動反映（`oninput="updatePreview()"`）
+- 企業選択時 → プレビュー内の`{{企業名}}`を自動置換
+- `selectedCompanyName`変数を追加して企業名を保持
+
+---
+
+## 本セッションの進捗（2026-01-12 続き⑤）
+
+### ✅ 完了: 議事録作成・ワークス投稿ダイアログに保存機能を追加
+
+**実装内容:**
+
+| ダイアログ | 保存対象 | 保存キー |
+|-----------|---------|---------|
+| 議事録作成 | 文字起こし原文 | `文字起こし原文` |
+| ワークス投稿 | 議事録（AIが作成） | `議事録` |
+
+**修正ファイル:**
+
+| ファイル | 修正内容 |
+|----------|----------|
+| hearingSheetManager.js | Part③に「議事録」セル（8行分）を追加 |
+| settingsSheet.js | PART3_MAPPINGに「議事録」キーを追加、行番号更新 |
+| settingsSheet.js | 設定シートにM-N列「保存キーマッピング」セクションを追加 |
+| settingsSheet.js | `getSaveKeyForPrompt()`、`getAllSaveKeyMappings()`関数を追加 |
+| promptDialog.js | 保存機能付きダイアログ（`getPromptDialogWithSaveHtml()`）を追加 |
+| promptDialog.js | ハードコードを削除 → 設定シートからマッピング取得に変更 |
+
+**Part③構造（更新後）:**
+```
+Part③ 処理データ（システム管理）
+├─ 行135: 撮影素材フォルダURL
+├─ 行136: メインフォルダURL
+├─ 行137-141: 文字起こし原文（5行分）
+├─ 行142-149: 議事録（8行分）★新規
+├─ 行150-157: 構成案（原稿用）（8行分）
+└─ 行158-165: 構成案（動画用）（8行分）
+```
+
+**設定シート構造（更新後）:**
+```
+A-B列: メンバー一覧
+D-F列: 業務担当者
+H-I列: フォルダ設定
+K列: 企業情報項目
+M-N列: 保存キーマッピング ★新規
+  ├── M列: プロンプト名
+  └── N列: 保存キー
+```
+
+**汎用性の向上:**
+- 保存キーマッピングを設定シートで管理
+- 他の8商材に展開する際は設定シートに追加するだけでOK
+- ガイドラインに「保存機能付きプロンプトダイアログの追加手順」を追記
+
+---
+
+## 本セッションの進捗（2026-01-12 続き⑨）
+
+### ✅ 完了: 構成案作成ダイアログに保存機能を追加
+
+**実装内容:**
+
+1. **Part③構成の変更（settingsSheet.js）**
+   - `構成案（原稿用）`、`構成案（動画用）` を削除
+   - `構成案`、`ペアソナ/エンゲージ`、`撮影指示書` を追加
+
+2. **構成案作成ダイアログ（createCompositionDialogHTML）**
+   - AI出力を貼り付けるテキストエリアを追加
+   - 「シートに保存」ボタンで `構成案` に保存
+   - 保存済みバッジ表示、企業選択時に自動読み込み
+
+3. **変換ダイアログ（createConvertDialogHTML）**
+   - 入力の読み込み元を `savedDraft`（構成案）に統一
+   - 保存先を各変換に応じて変更:
+     - ペアソナ/エンゲージ変換 → `ペアソナ/エンゲージ`
+     - 撮影指示書変換 → `撮影指示書`
+     - ワークス報告変換 → 保存なし（ボタン非表示）
+
+**新しいフロー:**
+```
+構成案作成ダイアログ
+    ↓ プロンプト生成 → AIに貼り付け
+    ↓ AI出力を貼り付け → 「シートに保存」
+    ↓ Part③「構成案」に保存
+    ↓
+    ├─→ ペアソナ/エンゲージ変換（構成案を自動読み込み → 保存可）
+    ├─→ ワークス報告変換（構成案を自動読み込み → 保存なし）
+    └─→ 撮影指示書変換（構成案を自動読み込み → 保存可）
+```
+
+**GAS適用時の対応:**
+1. 設定シートのP-Q列を手動更新（構成案/ペアソナ・エンゲージ/撮影指示書）
+2. テンプレート初期設定を再実行
+
+**修正ファイル:**
+- settingsSheet.js: DEFAULT_PART3_CONFIG変更
+- compositionDraftGenerator.js: 全面修正
+
+### ✅ 完了: 変換ダイアログにAI出力保存エリアを追加
+
+**問題:** 変換ダイアログ（ペアソナ/エンゲージ、撮影指示書）にAI出力を保存するフィールドがなかった
+
+**修正内容:**
+- AI出力を貼り付けるテキストエリアを追加
+- 「シートに保存」ボタンで `saveAiOutput()` を呼び出し
+- ワークス報告変換（saveKey=null）では非表示
+
+**変換ダイアログの構成（修正後）:**
+```
+1. 企業選択ドロップダウン
+2. 変換プロンプト（アコーディオン）
+3. 入力エリア: 構成案（自動読み込み）
+4. プレビュー: AIに貼り付けるプロンプト
+5. AI出力エリア: ← 新規追加
+   - テキストエリア「AIが出力した結果を貼り付け」
+   - 「シートに保存」ボタン
+```
+
+---
+
 ## 次回セッションでやること
 
-### 全GASの企業/シート選択UIをドロップダウン形式に統一
+### 1. 撮影関連情報の入力フロー整備 ★重要
 
-**完了済み:**
-- hearingSheetManager.js: フォーム回答選択ダイアログ ✅
-- createShootingFolder.js: 企業シート選択ダイアログ（`createSheetSelectDialogHTML`）✅
+**目的:**
+撮影日程確定報告ダイアログで、撮影関連情報（場所、駐車場、当日担当者等）を自動読み込みできるようにする。
 
-**未対応（要修正）:**
-| ファイル | 対象ダイアログ |
-|----------|---------------|
-| compositionDraftGenerator.js | 構成案作成ダイアログのシート選択 |
-| transcriptToHearingSheet.js | 文字起こし転記ダイアログのシート選択 |
-| contactFormats.js | 各種連絡フォーマットダイアログの企業選択 |
-| promptDialog.js | プロンプトダイアログ（該当があれば） |
+**フロー:**
+```
+① 日程調整メール
+   └→ 「撮影関連情報も打ち合わせ時に確認します」と記載
 
-**UIの仕様:**
-- ドロップダウン形式（クリックで展開/閉じる）
-- **アクティブバッジ（緑）**: 現在開いているシートに対応する項目に表示
-- **ソート順**: アクティブが最上段、残りは新しい順（スプレッドシートの下の行が上）
-- アクティブがあれば自動選択
-- ドロップダウン外クリックで閉じる
-- 「作成済み」等のステータスバッジがあれば表示
+② 初回打ち合わせ
+   └→ 撮影場所、駐車場、当日担当者、緊急連絡先等を聞く
 
-**参考実装:** `hearingSheetManager.js` の `createSelectionDialog()` 関数
+③ 議事録プロンプト
+   └→ AIが文字起こしから撮影関連情報も抽出して出力
+
+④ 文字起こし→ヒアリングシート転記
+   └→ 既存ロジック（transcriptToHearingSheet.js）に撮影関連項目を追加
+   └→ Part②に自動転記
+
+⑤ 手動編集
+   └→ 間違いがあれば修正可能
+
+⑥ 撮影日程確定報告ダイアログ
+   └→ Part②から自動読み込み
+```
+
+**追加が必要な項目:**
+- 撮影場所（本社/工場/その他）
+- 駐車場の有無・場所
+- 当日担当者（インタビュワーとは別、当日対応してくれる先方の方）
+- 緊急連絡先（当日何かあった時の電話番号）
+- 必要備品（制服等）
+- 撮影日時（日程確定後に入力）
+- 集合時間（日程確定後に入力）
+
+**対応内容:**
+
+| # | 対象 | 修正内容 |
+|---|------|----------|
+| 1 | ヒアリングシートテンプレート | Part②に「■ 撮影準備」セクション追加 |
+| 2 | 日程調整メール（contactFormats.js） | 撮影関連情報を聞く旨を追加 |
+| 3 | 議事録プロンプト（プロンプトシート） | 撮影関連情報の出力を追加 |
+| 4 | transcriptToHearingSheet.js | PART2_MAPPINGに撮影関連項目を追加 |
+| 5 | 撮影日程確定報告ダイアログ | Part②から読み込むように変更 |
+
+**Part②に追加するセクション:**
+```
+■ 撮影準備
+- 撮影場所:
+- 駐車場:
+- 当日担当者:
+- 緊急連絡先:
+- 必要備品:
+- 撮影日時:（日程確定後）
+- 集合時間:（日程確定後）
+```
+
+**関連ファイル:**
+- hearingSheetManager.js（テンプレート初期設定）
+- transcriptToHearingSheet.js（文字起こし転記）
+- contactFormats.js（日程調整メール、撮影日程確定報告）
+- プロンプトシート（議事録プロンプト）
+
+---
+
+### 2. 他ダイアログへの企業選択UI共通化の展開（継続）
+
+transcriptToHearingSheet.jsで共通化が完了。以下のファイルも順次置き換え：
+- compositionDraftGenerator.js（2箇所）
+- promptDialog.js（1箇所）
+- contactFormats.js（5箇所）
+- companyInfoManager.js（2箇所）
+
+---
+
+## 本セッションの進捗（2026-01-13 続き）
+
+### ✅ 完了: 企業カンペの修正（companyCueGenerator.js）
+
+**修正内容:**
+
+| 項目 | 変更前 | 変更後 |
+|------|--------|--------|
+| 列構成 | 4列（No/質問/回答/追加質問） | **5列**（+ 追加回答） |
+| 社員インタビューシート | ①②の2人分 | **1人分のみ**（コピーして使用） |
+| チェックリスト | □テキスト | **insertCheckboxes()** |
+| 回答フォントサイズ | 14pt | **27pt**（タブレット表示用） |
+| 回答列幅 | 300px | **500px** |
+| 行高さ | 70-80px | **200px** |
+
+**既存ファイルチェック機能を追加:**
+- 企業カンペ作成時に同名ファイルをチェック
+- 既存がある場合は確認ダイアログ表示
+- 「削除して新規作成」または「既存を使用」を選択可能
+
+**修正ファイル:**
+- companyCueGenerator.js
+- contactFormats.js（createCompanyCue関数）
+
+---
+
+### ✅ 完了: 撮影指示書の貼り付け・保存機能追加
+
+**対象:** 撮影日程確定報告ダイアログ（contactFormats.js）
+
+**変更前:** 撮影指示書は自動読み込みのみ（編集不可）
+
+**変更後:**
+- `<textarea>`で編集可能
+- 「シートに保存」ボタン追加
+- Part③の「撮影指示書」に保存
+- 保存済みバッジ表示
+- 企業カンペ作成・フォーマット生成時にtextareaの値を使用
+
+---
+
+## 本セッションの進捗（2026-01-13）
+
+### ✅ 完了: 撮影日程確定報告機能の実装（未テスト）
+
+**目的:**
+撮影日程確定後、撮影担当に撮影指示書+企業カンペを共有する
+
+**実装内容:**
+
+1. **サブフォルダ構成変更（settingsSheet.js）**
+   - `02_編集データ` → `02_企業カンペ` に変更
+
+2. **企業カンペ作成GAS（companyCueGenerator.js）新規作成**
+   - 企業カンペスプレッドシートを自動生成
+   - 02_企業カンペフォルダに保存
+   - 社員インタビュー（10問）、社長インタビュー（10問）
+   - 既存シートから取得した装飾を適用
+
+3. **撮影日程確定報告ダイアログ（contactFormats.js）**
+   - 企業選択 → 撮影指示書を自動読み込み（Part③から）
+   - 撮影日時・集合時間・場所・住所・アクセス等を入力
+   - 「企業カンペを作成」ボタン → 02_企業カンペフォルダに自動保存
+   - 連絡フォーマット生成（署名付き：ヒアリングシートURL、撮影素材フォルダURL、企業カンペURL）
+
+**作成したファイル:**
+- `companyCueGenerator.js` - 企業カンペ作成GAS
+- `companyCueTemplate.json` - テンプレート構成（参照用）
+- `sheetStructureReader.js` - シート構成読み取り（ユーティリティ）
+
+**注意:**
+- `file.moveTo(folder)` を使用（非推奨の `addFile/removeFile` ではなく）
+- テスト未実施、メニュー配置の検討が必要
+
+---
+
+### ✅ 完了: 企業カンペURLをPart③に保存
+
+**目的:**
+企業カンペ作成後、URLをヒアリングシートに保存して後続フローで再利用できるようにする
+
+**修正ファイル:**
+
+| ファイル | 修正内容 |
+|----------|----------|
+| settingsSheet.js | `DEFAULT_PART3_CONFIG` に `企業カンペURL`（rows: 1）を追加 |
+| companyCueGenerator.js | `createCompanyCueInFolder()` に `sheetName` 引数を追加、成功時に `savePart3DataForce()` でURL保存 |
+| contactFormats.js | 呼び出し時に `selectedSheetData.sheetName` を渡すように修正 |
+
+**保存フロー:**
+```
+撮影日程確定報告ダイアログ
+  └── 「企業カンペを作成」ボタン
+      ↓
+      createCompanyCueInFolder(companyName, mainFolderUrl, sheetName)
+      ↓
+      企業カンペスプレッドシート作成
+      ↓
+      savePart3DataForce(sheetName, '企業カンペURL', spreadsheetUrl)
+      ↓
+      Part③に保存完了
+```
+
+**GAS適用時の対応:**
+1. 3ファイルを上書き
+2. 設定シートのP-Q列に「企業カンペURL」行を手動追加
+3. テンプレート初期設定を再実行
+
+---
+
+### ✅ 完了: 撮影日程確定報告のメニュー配置
+
+**対応内容:**
+- 「５.📝 構成案作成」メニューに「📸 撮影日程確定報告」を追加
+- 「📨 連絡用フォーマット」メニューにも残す（両方に配置）
+- 同じ関数（`showShootingConfirmDialog`）を呼び出す形式
+
+**修正ファイル:**
+- compositionDraftGenerator.js: `addCompositionMenu()` に項目追加
+
+---
+
+### ✅ 完了: 企業カンペを3シート構成に変更
+
+**変更前:** 1シートに社員・社長インタビューが混在
+
+**変更後:** 3シート構成
+
+| シート名 | 内容 |
+|---------|------|
+| 社員インタビュー | 質問のみ（深掘りヒントなし）、社員人数分 |
+| 社長インタビュー | 質問のみ（深掘りヒントなし） |
+| インタビュイー | 対象者情報 + 撮影シーン + 深掘りヒント |
+
+**新機能:**
+- `parseInterviewees()` - 撮影指示書から「■ インタビュー対象者」を抽出
+- `parseShootingScenes()` - 撮影指示書から「■ 撮影シーン（チェックリスト）」を抽出
+
+**修正ファイル:**
+- companyCueGenerator.js: 全面書き換え（3シート構成対応）
+- contactFormats.js: `createCompanyCueInFolder()` 呼び出しに `shootingInstruction` を追加
+
+**インタビュイーシートの構成:**
+```
+■ インタビュー対象者
+  対象者1 | 氏名 | 役職 | 撮影場所 | 備考
+
+■ 撮影シーン（チェックリスト）
+  □ シーン1
+  □ シーン2
+
+■ 深掘りヒント（社員インタビュー）
+  ① ヒント...
+
+■ 深掘りヒント（社長インタビュー）
+  ① ヒント...
+```
+
+---
+
+## 本セッションの進捗（2026-01-12 続き⑧）
+
+### ✅ 完了: 企業選択UIの共通化
+
+**問題:**
+- 各ダイアログで企業選択UIが重複実装（12箇所以上）
+- 関数名の衝突でバグ発生（updateSelection関数名重複）
+
+**解決:**
+commonStyles.jsに企業選択UIの共通関数を追加し、各ダイアログから呼び出す設計に変更。
+
+**追加した共通関数（CI_UI_COMPONENTS内）:**
+- `initCompanyDropdown(config)` - 初期化
+- `toggleCompanyDropdown()` - 開閉
+- `renderCompanyDropdownItems()` - レンダリング
+- `selectCompanyItem(item, isActive)` - 選択処理
+- `updateCompanySelectDisplay(item, isActive)` - 表示更新
+- `showStatus(message, type, statusId)` - ステータス表示
+
+**使用方法:**
+```javascript
+initCompanyDropdown({
+  sheets: sheetData.companySheets,
+  activeSheetName: sheetData.activeSheetName,
+  isActiveCompanySheet: sheetData.isActiveCompanySheet,
+  savedDataKey: 'savedJson',  // 保存済みデータのキー
+  badgeLabel: '保存済',
+  onSelect: function(item, isActive) {
+    selectedSheetName = item.sheetName;
+    // 固有の処理...
+  }
+});
+```
+
+**適用済みファイル:**
+- transcriptToHearingSheet.js（2箇所: 文字起こしを整理、AI出力を転記）
+
+---
+
+### ✅ 完了: transcriptToHearingSheet.jsのUI統一
+
+- 「文字起こしを整理」ダイアログ: 企業選択UI・プレビューUI・ボタンを新形式に変更
+- 「AI出力を転記」ダイアログ: 企業選択UI・ボタンを新形式に変更、保存機能追加
+
+---
+
+### ✅ 完了: ヒアリング情報抽出ダイアログの改善
+
+- 文字起こし原文の自動取得（Part③から）
+- AI出力（JSON）の保存機能
+- 設定シートの更新済み（P-Q列、M-N列）
+
+---
+
+## 本セッションの進捗（2026-01-12 続き⑦）
+
+### ✅ 完了: 「議事録」行が作成されない問題の解決
+
+**原因:**
+- コード自体に問題はなかった
+- **テンプレート初期設定を再実行していなかった**だけ
+- 既存の「ヒアリングシート」テンプレートが古いまま → 企業シートにも「議事録」がない
+
+**フロー理解:**
+```
+1. 🎨 テンプレート初期設定
+   → 「ヒアリングシート」テンプレートを作成/更新
+   → Part③構成が設定シートから読み込まれる（議事録含む）
+
+2. 🆕 新規作成（フォーム回答から）
+   → テンプレートをコピーして企業シートを作成
+   → テンプレートの構成がそのまま引き継がれる
+```
+
+**重要:**
+- テンプレートが古い → コピーした企業シートも古い構成
+- テンプレートを更新 → **新規作成した企業シートのみ**新しい構成
+- 既存の企業シートは自動更新されない（必要なら手動追加 or 作り直し）
+
+**追加対応:**
+- `debugPart3Config()` 関数を追加（設定シートのPart③構成をログ出力）
+- ガイドラインにテンプレートフローを追記
+
+---
+
+### 本セッションで実施した大規模リファクタリング
+
+**設計変更:**
+- 設定シートをマスターとして、ヒアリングシートのPart③構成を管理
+- ハードコードを削除し、設定シート参照に統一
+
+**修正ファイル（計5ファイル）:**
+
+| ファイル | 修正内容 |
+|----------|----------|
+| settingsSheet.js | P-Q列にPart③構成を追加、`getPart3ConfigFromSettings()`追加、`PART3_LABELS`削除、`loadAllPart3Data()`を設定シート参照に変更 |
+| hearingSheetManager.js | テンプレート初期設定で`getPart3ConfigFromSettings()`を使用 |
+| createShootingFolder.js | ハードコード行番号(135)を`loadPart3Data()`に変更 |
+| compositionDraftGenerator.js | キー名を`構成案_原稿用`→`構成案（原稿用）`等に修正 |
+| contactFormats.js | ハードコード行番号フォールバックを削除 |
+
+**設定シート構造（更新後）:**
+```
+A-B列: メンバー一覧
+D-F列: 業務担当者
+H-I列: フォルダ設定
+K列:   企業情報項目
+M-N列: 保存キーマッピング（プロンプト名→Part③保存先）
+P-Q列: Part③構成（ラベル名、行数）★新規追加
+```
+
+---
+
+### 動作確認
+
+GASエディタに最新コードを反映し、以下を確認：
+1. 設定シート作成 → P-Q列にPart③構成が書き込まれる
+2. ヒアリングシートのテンプレート初期設定 → **全Part③ラベルが作成される**（議事録含む）
+3. 議事録作成ダイアログ → 企業選択UI + 保存ボタンが表示される
+4. 保存 → 企業シートPart③の正しい行に保存される
+5. 再度開く → 保存済みデータが読み込まれる
+
+---
+
+## 本セッションの進捗（2026-01-11 続き④）
+
+### ✅ 完了: transcriptToHearingSheet.js の整理
+
+**確認結果:**
+- compositionDraftGenerator.jsとの重複はPART2_MAPPING定数のみ
+- 機能自体は異なる（文字起こし整理 vs 構成案作成）
+- メニューは既にpromptDialog.jsに統合済み
+- 現状維持が適切（各ファイルで独立して動作）
+
+---
+
+### ✅ 完了: ダイアログUI最新化（企業選択・担当者選択）
+
+**修正したファイル:**
+
+| ファイル | 対象ダイアログ | 修正内容 |
+|----------|---------------|----------|
+| transcriptToHearingSheet.js | AI出力を転記 | 企業選択をドロップダウン形式に変更 |
+| contactFormats.js | 日程確定報告 | 企業選択・担当者選択をドロップダウン形式に変更 |
+| contactFormats.js | 撮影日程確認 | 企業選択・担当者選択をドロップダウン形式に変更 |
+| contactFormats.js | 参加者リマインド | 企業選択・担当者選択をドロップダウン形式に変更 |
+| contactFormats.js | 撮影指示連絡 | 企業選択・担当者選択をドロップダウン形式に変更 |
+| contactFormats.js | 議事録共有 | 企業選択・担当者選択をドロップダウン形式に変更 |
+
+**UI仕様:**
+- 企業選択: `.company-select-wrapper` / `.company-select-display` / `.company-select-dropdown`
+- 担当者選択: `.multi-select-wrapper` / `.multi-select-display` / `.multi-select-dropdown`
+- CI_UI_COMPONENTS追加（escapeHtml, copyToClipboard, toggleAccordion等）
+- コピー成功トースト追加
+
+---
+
+### ✅ 完了: 残りのドロップダウンUI対応
+
+**全ファイル対応完了:**
+- hearingSheetManager.js ✅
+- createShootingFolder.js ✅
+- compositionDraftGenerator.js ✅
+- transcriptToHearingSheet.js ✅
+- contactFormats.js ✅
+- promptDialog.js ✅（企業選択UIなし・対応不要）
+
+---
+
+### ✅ 完了: promptDialog.jsのプロンプトフィルタリング
+
+**問題:** 「４.📝 議事録作成・報告プロンプト」メニューにプロンプトシートの全プロンプトが表示されていた
+
+**修正:** `PROMPT_MENU_FILTER`定数を追加し、以下の3つのみ表示するようフィルタリング
+- 議事録作成
+- ワークス投稿
+- ヒアリング情報抽出
+
+**注意:** これは暫定対応。次回セッションでプロンプトシートにカテゴリ列を追加して動的管理に変更予定。
 
 ---
 
@@ -259,23 +832,11 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 |----------|----------|
 | companyInfoManager.js | ✅ 前回対応済み |
 | promptDialog.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル + `${CI_UI_COMPONENTS}` |
-| compositionDraftGenerator.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル（script部は維持※1） |
+| compositionDraftGenerator.js | ✅ `${CI_DIALOG_STYLES}` + `${CI_UI_COMPONENTS}` + 新形式UI |
 | contactFormats.js | ✅ `${CI_DIALOG_STYLES}${CONTACT_FORMATS_STYLES}` に置換 |
 | transcriptToHearingSheet.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル（2ダイアログ） |
 | createShootingFolder.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル（3ダイアログ） |
 | hearingSheetManager.js | ✅ `${CI_DIALOG_STYLES}` + 固有スタイル |
-
-**※1 compositionDraftGeneratorの注意点:**
-- `toggleAccordion`が`show`クラス＋独自実装（共通版は`open`クラス）
-- `showStatus`が固有の動作
-- script部分は変更せず、スタイル部分のみ共通化
-
-**適用方針（安全に進めた結果）:**
-1. 各ファイルの独自`<style>`を`${CI_DIALOG_STYLES}`に置換
-2. 共通スタイルで既にカバーされているスタイルは削除
-3. 固有のスタイル（各ファイル特有のUIパーツ）は残す
-4. script部分は基本的に維持（動作の違いによる不具合を避けるため）
-5. `${CI_UI_COMPONENTS}`は、共通関数（copyToClipboard, toggleAccordion）と競合しない場合のみ追加
 
 ---
 
@@ -347,11 +908,18 @@ docs/gas/tsunageru/
 **ファイル構成:**
 ```
 docs/gas/tsunageru/
-├── commonStyles.js        ← ★共通スタイル定義（新規）
-├── companyInfoManager.js  ← 共通スタイルを参照
-├── settingsSheet.js       ← 共通スタイルを参照可能
-├── promptDialog.js        ← 共通スタイルを参照可能
-└── ...
+├── commonStyles.js           ← 共通スタイル定義
+├── settingsSheet.js          ← 設定シート管理
+├── hearingSheetManager.js    ← ヒアリングシート統合管理（onOpen含む）
+├── companyInfoManager.js     ← キックオフ・企業情報入力
+├── transcriptToHearingSheet.js ← 文字起こし転記
+├── compositionDraftGenerator.js ← 構成案作成・変換
+├── createShootingFolder.js   ← 撮影フォルダ作成
+├── contactFormats.js         ← 連絡用フォーマット
+├── promptDialog.js           ← 議事録作成・報告プロンプト
+├── companyCueGenerator.js    ← ★企業カンペ作成（新規）
+├── sheetStructureReader.js   ← シート構成読み取り（ユーティリティ）
+└── companyCueTemplate.json   ← 企業カンペテンプレート構成（参照用）
 ```
 
 **使い方:**
@@ -994,6 +1562,30 @@ tsunageru.tsとGASファイル全8つの内容を記載。
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-13 | ✅ 企業カンペ: 5列化（追加回答列追加）、社員シート1人分のみ、チェックボックス化、27pt/200px対応 |
+| 2026-01-13 | ✅ 企業カンペ: 既存ファイルチェック+確認ダイアログ実装（削除して新規作成 or 既存を使用） |
+| 2026-01-13 | ✅ 撮影日程確定報告: 撮影指示書の貼り付け・保存機能追加（Part③に保存） |
+| 2026-01-13 | ✅ 次回タスク詳細化: 撮影関連情報の入力フロー整備（Part②連携、文字起こし転記対応） |
+| 2026-01-13 | ✅ 企業カンペを3シート構成に変更（社員インタビュー/社長インタビュー/インタビュイー） |
+| 2026-01-13 | ✅ 撮影日程確定報告を「５.構成案作成」メニューにも追加（両方に配置） |
+| 2026-01-13 | ✅ 企業カンペURLをPart③に保存する機能を追加（settingsSheet.js, companyCueGenerator.js, contactFormats.js） |
+| 2026-01-12 | ✅ 「議事録」行が作成されない問題を解決（原因: テンプレート初期設定の再実行が必要だった） |
+| 2026-01-12 | ✅ debugPart3Config()関数を追加（設定シートのPart③構成をログ出力） |
+| 2026-01-12 | ✅ ガイドラインにテンプレートと企業シートの関係フローを追記 |
+| 2026-01-12 | ✅ 大規模リファクタリング: 設定シートをマスターとしてPart③構成を管理、ハードコード削除 |
+| 2026-01-12 | ✅ settingsSheet.js: P-Q列にPart③構成追加、getPart3ConfigFromSettings()追加、PART3_LABELS削除 |
+| 2026-01-12 | ✅ hearingSheetManager.js: テンプレート初期設定で設定シートを参照 |
+| 2026-01-12 | ✅ compositionDraftGenerator.js: キー名を括弧形式に修正（構成案_原稿用→構成案（原稿用）） |
+| 2026-01-12 | ✅ createShootingFolder.js/contactFormats.js: ハードコード行番号フォールバックを削除 |
+| 2026-01-12 | ✅ 議事録作成・ワークス投稿ダイアログに保存機能を追加（企業選択UI + シートに保存 + 自動読み込み） |
+| 2026-01-12 | ✅ 設定シートにM-N列「保存キーマッピング」セクションを追加（汎用性向上） |
+| 2026-01-12 | ✅ Part③に「議事録」セル（8行分）を追加、PART3_MAPPING行番号更新 |
+| 2026-01-12 | ✅ ガイドラインに「保存機能付きプロンプトダイアログの追加手順」を追記 |
+| 2026-01-12 | ✅ プロンプトシートにF列「カテゴリ」追加、ハードコードフィルタ→カテゴリベースに変更 |
+| 2026-01-12 | ✅ promptDialog.js: プロンプトフィルタリング追加（議事録作成/ワークス投稿/ヒアリング情報抽出のみ表示） |
+| 2026-01-12 | ✅ contactFormats.js: 全5ダイアログを企業選択・担当者選択ドロップダウン形式に統一 |
+| 2026-01-12 | ✅ transcriptToHearingSheet.js: AI出力転記ダイアログを企業選択ドロップダウン形式に変更 |
+| 2026-01-12 | ✅ compositionDraftGenerator.js: ドロップダウンUI対応 + 変換ダイアログ自動プレビュー |
 | 2026-01-12 | ✅ 選択UIをドロップダウン形式に統一（hearingSheetManager.js, createShootingFolder.js） |
 | 2026-01-12 | ✅ 共通スタイル適用完了: 全7ファイルに`${CI_DIALOG_STYLES}`を適用 |
 | 2026-01-12 | ✅ 企業選択時の担当者自動入力修正: contactName取得+制作担当ヒント削除 |

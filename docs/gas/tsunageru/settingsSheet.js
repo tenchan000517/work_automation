@@ -61,7 +61,7 @@ const DEFAULT_TASKS = [
 const DEFAULT_FOLDER_SETTINGS = [
   { key: '親フォルダID', value: '', note: 'Google DriveのフォルダID' },
   { key: 'サブフォルダ1', value: '01_撮影素材', note: '' },
-  { key: 'サブフォルダ2', value: '02_編集データ', note: '' },
+  { key: 'サブフォルダ2', value: '02_企業カンペ', note: '' },
   { key: 'サブフォルダ3', value: '03_完成動画', note: '' },
 ];
 
@@ -85,6 +85,32 @@ const DEFAULT_COMPANY_INFO_HEADERS = [
   '■制作担当',
   'メイン担当',
   'サブ担当'
+];
+
+// デフォルト保存キーマッピング（プロンプト名 → Part③保存キー）
+// ここに登録されたプロンプトは保存機能付きダイアログになる
+// - saveKey: 出力の保存先（従来通り）
+// - inputKey: 入力の自動取得元・保存先（オプション）
+// ※初期化時のみ使用。その後は設定シートM-N-O列を参照
+const DEFAULT_SAVE_KEY_MAPPING = [
+  { promptName: '議事録作成', saveKey: '文字起こし原文' },
+  { promptName: 'ワークス投稿', saveKey: '議事録' },
+  { promptName: 'ヒアリング情報抽出', saveKey: 'ヒアリング抽出JSON', inputKey: '文字起こし原文' },
+];
+
+// デフォルトPart③構成（ヒアリングシートのPart③セクション）
+// ラベル名と行数を定義
+// ※初期化時のみ使用。その後は設定シートP-Q列を参照
+const DEFAULT_PART3_CONFIG = [
+  { label: '撮影素材フォルダURL', rows: 1 },
+  { label: 'メインフォルダURL', rows: 1 },
+  { label: '企業カンペURL', rows: 1 },
+  { label: '文字起こし原文', rows: 5 },
+  { label: '議事録', rows: 8 },
+  { label: 'ヒアリング抽出JSON', rows: 8 },
+  { label: '構成案', rows: 8 },
+  { label: 'ペアソナ/エンゲージ', rows: 8 },
+  { label: '撮影指示書', rows: 8 },
 ];
 
 
@@ -195,6 +221,24 @@ function initializeSettingsSheet() {
     }
   }
 
+  // ===== 保存キーマッピングセクション（M列〜N列） =====
+  sheet.getRange('M1').setValue('プロンプト名').setFontWeight('bold').setBackground('#00bcd4').setFontColor('#fff');
+  sheet.getRange('N1').setValue('保存キー').setFontWeight('bold').setBackground('#00bcd4').setFontColor('#fff');
+
+  const saveKeyData = DEFAULT_SAVE_KEY_MAPPING.map(m => [m.promptName, m.saveKey]);
+  if (saveKeyData.length > 0) {
+    sheet.getRange(2, 13, saveKeyData.length, 2).setValues(saveKeyData);
+  }
+
+  // ===== Part③構成セクション（P列〜Q列） =====
+  sheet.getRange('P1').setValue('Part③ラベル').setFontWeight('bold').setBackground('#607d8b').setFontColor('#fff');
+  sheet.getRange('Q1').setValue('行数').setFontWeight('bold').setBackground('#607d8b').setFontColor('#fff');
+
+  const part3Data = DEFAULT_PART3_CONFIG.map(p => [p.label, p.rows]);
+  if (part3Data.length > 0) {
+    sheet.getRange(2, 16, part3Data.length, 2).setValues(part3Data);
+  }
+
   // ===== 列幅調整 =====
   sheet.setColumnWidth(1, 100);  // メンバー名
   sheet.setColumnWidth(2, 120);  // 備考
@@ -207,13 +251,21 @@ function initializeSettingsSheet() {
   sheet.setColumnWidth(9, 280);  // 値
   sheet.setColumnWidth(10, 30);  // 区切り
   sheet.setColumnWidth(11, 140); // 企業情報項目
+  sheet.setColumnWidth(12, 30);  // 区切り
+  sheet.setColumnWidth(13, 120); // プロンプト名
+  sheet.setColumnWidth(14, 140); // 保存キー
+  sheet.setColumnWidth(15, 30);  // 区切り
+  sheet.setColumnWidth(16, 160); // Part③ラベル
+  sheet.setColumnWidth(17, 50);  // 行数
 
   ui.alert('完了',
     '設定シートを作成しました。\n\n' +
     '・メンバー一覧: A列〜B列\n' +
     '・業務担当者: D列〜F列（メニューから編集）\n' +
     '・フォルダ設定: H列〜I列\n' +
-    '・企業情報項目: K列（■で始まる項目はセクション区切り）\n\n' +
+    '・企業情報項目: K列（■で始まる項目はセクション区切り）\n' +
+    '・保存キーマッピング: M列〜N列（プロンプト名→Part③保存先）\n' +
+    '・Part③構成: P列〜Q列（ヒアリングシートのPart③セクション）\n\n' +
     '各項目はシートで直接編集できます。',
     ui.ButtonSet.OK
   );
@@ -364,7 +416,7 @@ function getSubfoldersFromSettings() {
     }
   }
 
-  return subfolders.length > 0 ? subfolders : ['01_撮影素材', '02_編集データ', '03_完成動画'];
+  return subfolders.length > 0 ? subfolders : ['01_撮影素材', '02_企業カンペ', '03_完成動画'];
 }
 
 
@@ -473,6 +525,141 @@ function getSettingsFromSheet() {
   settings['CC'] = ccMember ? ccMember.name : '';
 
   return settings;
+}
+
+
+/**
+ * プロンプト名から保存キーを取得
+ * 設定シートのM列〜N列から取得（設定シートで管理を強制）
+ * @param {string} promptName - プロンプト名
+ * @returns {string|null} 保存キー（マッピングがなければnull）
+ */
+function getSaveKeyForPrompt(promptName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+
+  if (!sheet) {
+    // 設定シートがなければnullを返す（保存機能なし）
+    console.log('getSaveKeyForPrompt: 設定シートが見つかりません。保存機能を使うには設定シートを作成してください。');
+    return null;
+  }
+
+  // M列〜N列から取得
+  const data = sheet.getRange('M2:N').getValues();
+
+  for (const row of data) {
+    const name = String(row[0] || '').trim();
+    const key = String(row[1] || '').trim();
+
+    if (name === promptName && key) {
+      return key;
+    }
+  }
+
+  // 見つからなければnullを返す（保存機能なし）
+  // ※設定シートのM-N列にマッピングを追加すると保存機能が有効になります
+  return null;
+}
+
+
+/**
+ * プロンプト名から入力キーを取得
+ * inputKeyがあれば入力欄に自動取得 + 保存が可能になる
+ * @param {string} promptName - プロンプト名
+ * @returns {string|null} 入力キー（マッピングがなければnull）
+ */
+function getInputKeyForPrompt(promptName) {
+  // 現在はDEFAULT_SAVE_KEY_MAPPINGから取得（設定シート拡張時に変更）
+  const mapping = DEFAULT_SAVE_KEY_MAPPING.find(m => m.promptName === promptName);
+  return mapping && mapping.inputKey ? mapping.inputKey : null;
+}
+
+
+/**
+ * 全保存キーマッピングを取得（設定シートから）
+ * @returns {Object[]} { promptName, saveKey } の配列（設定シートがなければ空配列）
+ */
+function getAllSaveKeyMappings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+
+  if (!sheet) {
+    return [];
+  }
+
+  const data = sheet.getRange('M2:N').getValues();
+  const mappings = [];
+
+  for (const row of data) {
+    const promptName = String(row[0] || '').trim();
+    const saveKey = String(row[1] || '').trim();
+
+    if (promptName && saveKey) {
+      mappings.push({ promptName, saveKey });
+    }
+  }
+
+  return mappings;
+}
+
+
+/**
+ * Part③構成をデバッグ表示（問題調査用）
+ * 実行後、「実行ログ」または「ログ」タブで結果を確認
+ */
+function debugPart3Config() {
+  const config = getPart3ConfigFromSettings();
+
+  console.log('=== Part③構成デバッグ ===');
+  console.log('件数: ' + config.length);
+
+  if (config.length === 0) {
+    console.log('⚠️ Part③構成が空です。設定シートのP-Q列を確認してください。');
+  } else {
+    config.forEach((item, i) => {
+      console.log((i + 1) + '. ' + item.label + ' (' + item.rows + '行)');
+    });
+  }
+
+  // 設定シートのP-Q列の生データも確認
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('設定');
+  if (sheet) {
+    const rawData = sheet.getRange('P1:Q10').getValues();
+    console.log('\n=== 設定シート P-Q列の生データ ===');
+    rawData.forEach((row, i) => {
+      console.log('行' + (i + 1) + ': P=' + row[0] + ', Q=' + row[1]);
+    });
+  } else {
+    console.log('⚠️ 設定シートが見つかりません');
+  }
+}
+
+/**
+ * Part③構成を設定シートから取得（P列〜Q列）
+ * @returns {Object[]} { label, rows } の配列（設定シートがなければ空配列）
+ */
+function getPart3ConfigFromSettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+
+  if (!sheet) {
+    return [];
+  }
+
+  const data = sheet.getRange('P2:Q').getValues();
+  const config = [];
+
+  for (const row of data) {
+    const label = String(row[0] || '').trim();
+    const rows = parseInt(row[1], 10);
+
+    if (label && rows > 0) {
+      config.push({ label, rows });
+    }
+  }
+
+  return config;
 }
 
 
@@ -1227,7 +1414,7 @@ function showPromptEditDialog() {
   let prompts = [];
 
   if (sheet) {
-    const data = sheet.getRange('A2:E').getValues();
+    const data = sheet.getRange('A2:F').getValues();
 
     for (const row of data) {
       const name = String(row[0] || '').trim();
@@ -1237,7 +1424,8 @@ function showPromptEditDialog() {
           description: String(row[1] || '').trim(),
           label: String(row[2] || '').trim(),
           placeholder: String(row[3] || '').trim(),
-          template: String(row[4] || '').trim()
+          template: String(row[4] || '').trim(),
+          category: String(row[5] || '').trim()
         });
       }
     }
@@ -1274,6 +1462,7 @@ function createPromptEditHTML(prompts) {
     .prompt-info { flex: 1; }
     .prompt-name { font-weight: bold; color: #333; }
     .prompt-desc { font-size: 12px; color: #666; margin-top: 2px; }
+    .prompt-category { font-size: 11px; color: #fff; background: #9c27b0; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
     .prompt-actions { display: flex; gap: 8px; }
     .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
     .btn-primary { background: #1a73e8; color: white; }
@@ -1310,7 +1499,7 @@ function createPromptEditHTML(prompts) {
     .modal h4 { margin: 0 0 15px 0; color: #333; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 13px; }
-    .form-group input, .form-group textarea {
+    .form-group input, .form-group textarea, .form-group select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
@@ -1354,6 +1543,17 @@ function createPromptEditHTML(prompts) {
       </div>
 
       <div class="form-group">
+        <label>カテゴリ</label>
+        <input type="text" id="inputCategory" list="categoryList" placeholder="例：議事録、構成案">
+        <datalist id="categoryList">
+          <option value="議事録">
+          <option value="構成案">
+          <option value="連絡">
+        </datalist>
+        <div class="hint">メニューでのフィルタリングに使用（同じカテゴリのプロンプトが同じメニューに表示）</div>
+      </div>
+
+      <div class="form-group">
         <label>入力欄のラベル</label>
         <input type="text" id="inputLabel" placeholder="例：ヒアリング内容">
       </div>
@@ -1390,7 +1590,10 @@ function createPromptEditHTML(prompts) {
       container.innerHTML = prompts.map((p, i) => \`
         <div class="prompt-item">
           <div class="prompt-info">
-            <div class="prompt-name">\${escapeHtml(p.name)}</div>
+            <div class="prompt-name">
+              \${escapeHtml(p.name)}
+              \${p.category ? '<span class="prompt-category">' + escapeHtml(p.category) + '</span>' : ''}
+            </div>
             <div class="prompt-desc">\${escapeHtml(p.description) || '（説明なし）'}</div>
           </div>
           <div class="prompt-actions">
@@ -1411,6 +1614,7 @@ function createPromptEditHTML(prompts) {
       document.getElementById('editIndex').value = '-1';
       document.getElementById('inputName').value = '';
       document.getElementById('inputDescription').value = '';
+      document.getElementById('inputCategory').value = '';
       document.getElementById('inputLabel').value = '';
       document.getElementById('inputPlaceholder').value = '';
       document.getElementById('inputTemplate').value = '';
@@ -1423,6 +1627,7 @@ function createPromptEditHTML(prompts) {
       document.getElementById('editIndex').value = index;
       document.getElementById('inputName').value = p.name;
       document.getElementById('inputDescription').value = p.description;
+      document.getElementById('inputCategory').value = p.category || '';
       document.getElementById('inputLabel').value = p.label;
       document.getElementById('inputPlaceholder').value = p.placeholder;
       document.getElementById('inputTemplate').value = p.template;
@@ -1450,6 +1655,7 @@ function createPromptEditHTML(prompts) {
       const prompt = {
         name: name,
         description: document.getElementById('inputDescription').value.trim(),
+        category: document.getElementById('inputCategory').value.trim(),
         label: document.getElementById('inputLabel').value.trim(),
         placeholder: document.getElementById('inputPlaceholder').value.trim(),
         template: template
@@ -1514,21 +1720,29 @@ function createPromptEditHTML(prompts) {
 // ================================================================================
 
 /**
- * Part③ 処理データのセル位置マッピング
- * ※行番号はテンプレート作成後に調整が必要な場合があります
+ * Part③のデータ行を動的に検索
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - 対象シート
+ * @param {string} label - 検索するラベル（B列の値）
+ * @returns {number|null} 行番号（見つからない場合はnull）
  */
-const PART3_MAPPING = {
-  '撮影素材フォルダURL': { row: 135, col: 3 },
-  'メインフォルダURL': { row: 136, col: 3 },
-  '文字起こし原文': { row: 137, col: 3 },
-  '構成案_原稿用': { row: 142, col: 3 },
-  '構成案_動画用': { row: 150, col: 3 },
-};
+function findPart3Row(sheet, label) {
+  // B列を取得（最大200行まで検索）
+  const data = sheet.getRange('B1:B200').getValues();
+
+  for (let i = 0; i < data.length; i++) {
+    const cellValue = String(data[i][0] || '').trim();
+    if (cellValue === label) {
+      return i + 1; // 行番号は1始まり
+    }
+  }
+
+  return null;
+}
 
 /**
- * Part③のデータをシートに保存
+ * Part③のデータをシートに保存（動的行検索版）
  * @param {string} sheetName - 企業シート名
- * @param {string} key - PART3_MAPPINGのキー
+ * @param {string} key - ラベル名（例: '議事録', '文字起こし原文'）
  * @param {string} value - 保存する値
  * @param {boolean} confirmOverwrite - 上書き確認を行うか（デフォルト: true）
  * @returns {Object} { success, overwritten, error }
@@ -1543,19 +1757,24 @@ function savePart3Data(sheetName, key, value, confirmOverwrite) {
     return { success: false, error: 'シート「' + sheetName + '」が見つかりません' };
   }
 
-  const mapping = PART3_MAPPING[key];
-  if (!mapping) {
-    return { success: false, error: '不明なキー: ' + key };
+  // 動的に行番号を検索
+  const row = findPart3Row(sheet, key);
+  if (!row) {
+    return { success: false, error: 'ラベル「' + key + '」がシート内に見つかりません。テンプレート初期設定を実行してください。' };
   }
 
+  const col = 3; // C列（値のセル）
+
   try {
-    const existingValue = sheet.getRange(mapping.row, mapping.col).getValue();
+    // 保存前に行の高さを取得
+    const originalRowHeight = sheet.getRowHeight(row);
+
+    const existingValue = sheet.getRange(row, col).getValue();
     const existingStr = String(existingValue || '').trim();
     const newStr = String(value || '').trim();
 
     // 既存データがあり、上書き確認が必要な場合
     if (confirmOverwrite && existingStr && existingStr !== newStr) {
-      // 上書き確認が必要であることを返す
       return {
         success: false,
         needConfirm: true,
@@ -1564,7 +1783,10 @@ function savePart3Data(sheetName, key, value, confirmOverwrite) {
     }
 
     // 保存実行
-    sheet.getRange(mapping.row, mapping.col).setValue(value);
+    sheet.getRange(row, col).setValue(value);
+
+    // 行の高さを元に戻す
+    sheet.setRowHeight(row, originalRowHeight);
 
     return {
       success: true,
@@ -1584,9 +1806,9 @@ function savePart3DataForce(sheetName, key, value) {
 }
 
 /**
- * Part③のデータをシートから読み込み
+ * Part③のデータをシートから読み込み（動的行検索版）
  * @param {string} sheetName - 企業シート名
- * @param {string} key - PART3_MAPPINGのキー
+ * @param {string} key - ラベル名（例: '議事録', '文字起こし原文'）
  * @returns {Object} { success, value, error }
  */
 function loadPart3Data(sheetName, key) {
@@ -1597,13 +1819,16 @@ function loadPart3Data(sheetName, key) {
     return { success: false, error: 'シート「' + sheetName + '」が見つかりません', value: '' };
   }
 
-  const mapping = PART3_MAPPING[key];
-  if (!mapping) {
-    return { success: false, error: '不明なキー: ' + key, value: '' };
+  // 動的に行番号を検索
+  const row = findPart3Row(sheet, key);
+  if (!row) {
+    return { success: false, error: 'ラベル「' + key + '」がシート内に見つかりません', value: '' };
   }
 
+  const col = 3; // C列（値のセル）
+
   try {
-    const value = sheet.getRange(mapping.row, mapping.col).getValue();
+    const value = sheet.getRange(row, col).getValue();
     return {
       success: true,
       value: String(value || '')
@@ -1614,7 +1839,7 @@ function loadPart3Data(sheetName, key) {
 }
 
 /**
- * Part③の全データをシートから読み込み
+ * Part③の全データをシートから読み込み（設定シート参照版）
  * @param {string} sheetName - 企業シート名
  * @returns {Object} { success, data: { key: value, ... }, error }
  */
@@ -1626,12 +1851,22 @@ function loadAllPart3Data(sheetName) {
     return { success: false, error: 'シート「' + sheetName + '」が見つかりません', data: {} };
   }
 
+  // 設定シートからPart③構成を取得
+  const part3Config = getPart3ConfigFromSettings();
+  if (part3Config.length === 0) {
+    return { success: false, error: '設定シートにPart③構成がありません', data: {} };
+  }
+
   try {
     const data = {};
-    for (const key in PART3_MAPPING) {
-      const mapping = PART3_MAPPING[key];
-      const value = sheet.getRange(mapping.row, mapping.col).getValue();
-      data[key] = String(value || '');
+    for (const item of part3Config) {
+      const row = findPart3Row(sheet, item.label);
+      if (row) {
+        const value = sheet.getRange(row, 3).getValue();
+        data[item.label] = String(value || '');
+      } else {
+        data[item.label] = '';
+      }
     }
     return { success: true, data: data };
   } catch (error) {
@@ -1648,29 +1883,30 @@ function savePrompts(prompts) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(PROMPT_SHEET_NAME);
 
-    // シートがなければ作成
+    // シートがなければ作成（カテゴリ列追加）
     if (!sheet) {
       sheet = ss.insertSheet(PROMPT_SHEET_NAME);
-      // ヘッダー追加
-      sheet.getRange('A1:E1').setValues([['プロンプト名', '説明', '入力欄ラベル', 'プレースホルダー', 'テンプレート']]);
-      sheet.getRange('A1:E1').setFontWeight('bold').setBackground('#4285f4').setFontColor('#fff');
+      // ヘッダー追加（F列カテゴリ追加）
+      sheet.getRange('A1:F1').setValues([['プロンプト名', '説明', '入力欄ラベル', 'プレースホルダー', 'テンプレート', 'カテゴリ']]);
+      sheet.getRange('A1:F1').setFontWeight('bold').setBackground('#4285f4').setFontColor('#fff');
       sheet.setColumnWidth(1, 150);
       sheet.setColumnWidth(2, 200);
       sheet.setColumnWidth(3, 120);
       sheet.setColumnWidth(4, 150);
       sheet.setColumnWidth(5, 400);
+      sheet.setColumnWidth(6, 100);
     }
 
-    // 既存データをクリア（ヘッダー以外）
+    // 既存データをクリア（ヘッダー以外、6列に拡張）
     const lastRow = sheet.getLastRow();
     if (lastRow > 1) {
-      sheet.getRange(2, 1, lastRow - 1, 5).clearContent();
+      sheet.getRange(2, 1, lastRow - 1, 6).clearContent();
     }
 
-    // 新しいデータを書き込み
+    // 新しいデータを書き込み（カテゴリ列追加）
     if (prompts.length > 0) {
-      const data = prompts.map(p => [p.name, p.description, p.label, p.placeholder, p.template]);
-      sheet.getRange(2, 1, data.length, 5).setValues(data);
+      const data = prompts.map(p => [p.name, p.description, p.label, p.placeholder, p.template, p.category || '']);
+      sheet.getRange(2, 1, data.length, 6).setValues(data);
     }
 
     return { success: true };
@@ -1707,20 +1943,20 @@ function initializePromptSheet() {
     sheet = ss.insertSheet(PROMPT_SHEET_NAME);
   }
 
-  // ヘッダー設定
-  const headers = ['プロンプト名', '説明', '入力欄ラベル', 'プレースホルダー', 'テンプレート'];
+  // ヘッダー設定（F列にカテゴリを追加）
+  const headers = ['プロンプト名', '説明', '入力欄ラベル', 'プレースホルダー', 'テンプレート', 'カテゴリ'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length)
     .setFontWeight('bold')
     .setBackground('#4285f4')
     .setFontColor('#fff');
 
-  // デフォルトプロンプトを追加
+  // デフォルトプロンプトを追加（カテゴリ付き）
   const defaultPrompts = [
-    ['構成案作成', 'ヒアリング内容から構成案を作成', 'ヒアリング内容', 'ここにヒアリング内容を貼り付け...', '以下のヒアリング内容から、採用動画の構成案を作成してください。\n\n{{input}}'],
-    ['原稿生成', '構成案から原稿を生成', '構成案', 'ここに構成案を貼り付け...', '以下の構成案から、採用動画の原稿を作成してください。\n\n{{input}}'],
+    ['構成案作成', 'ヒアリング内容から構成案を作成', 'ヒアリング内容', 'ここにヒアリング内容を貼り付け...', '以下のヒアリング内容から、採用動画の構成案を作成してください。\n\n{{input}}', '構成案'],
+    ['原稿生成', '構成案から原稿を生成', '構成案', 'ここに構成案を貼り付け...', '以下の構成案から、採用動画の原稿を作成してください。\n\n{{input}}', '構成案'],
   ];
-  sheet.getRange(2, 1, defaultPrompts.length, 5).setValues(defaultPrompts);
+  sheet.getRange(2, 1, defaultPrompts.length, 6).setValues(defaultPrompts);
 
   // 列幅調整
   sheet.setColumnWidth(1, 150);  // プロンプト名
@@ -1728,6 +1964,7 @@ function initializePromptSheet() {
   sheet.setColumnWidth(3, 120);  // 入力欄ラベル
   sheet.setColumnWidth(4, 180);  // プレースホルダー
   sheet.setColumnWidth(5, 400);  // テンプレート
+  sheet.setColumnWidth(6, 100);  // カテゴリ
 
   // 行の高さを自動調整
   sheet.setRowHeights(2, defaultPrompts.length, 60);
@@ -1738,7 +1975,8 @@ function initializePromptSheet() {
     '・B列: 説明\n' +
     '・C列: 入力欄ラベル\n' +
     '・D列: プレースホルダー\n' +
-    '・E列: テンプレート（{{input}}が入力値に置換）\n\n' +
+    '・E列: テンプレート（{{input}}が入力値に置換）\n' +
+    '・F列: カテゴリ（メニューのフィルタ用）\n\n' +
     'メニュー「プロンプト編集」からダイアログで編集できます。',
     ui.ButtonSet.OK
   );

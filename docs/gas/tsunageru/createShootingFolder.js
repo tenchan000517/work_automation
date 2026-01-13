@@ -337,7 +337,7 @@ function showSuccessDialog(companyName, result) {
         </div>
         <pre id="worksTemplate" style="color: #999;">（担当者を選択するとテンプレートが生成されます）</pre>
         <div style="margin-top: 10px;">
-          <button class="btn-copy" onclick="copyWorksTemplate()" id="copyWorksBtn" disabled>📋 テンプレートをコピー</button>
+          <button class="btn-copy" onclick="copyWorksTemplate()" id="copyWorksBtn" disabled>📋 コピー</button>
         </div>
 
         <!-- プレーンテンプレート（アコーディオン） -->
@@ -768,7 +768,7 @@ function showRecentFolders() {
           </div>
         </div>
         <div class="template-content" id="templateContent" style="color: #999;">（担当者を選択してください）</div>
-        <button class="btn-copy" onclick="copyTemplate()" id="copyTemplateBtn" disabled>📋 テンプレートをコピー</button>
+        <button class="btn-copy" onclick="copyTemplate()" id="copyTemplateBtn" disabled>📋 コピー</button>
       </div>
 
       <div style="margin-top: 20px; text-align: right;">
@@ -1019,8 +1019,8 @@ function getCompanySheetListForFolder() {
       // Part③のフォルダURLを確認（既に作成済みか）
       let hasFolder = false;
       try {
-        const folderUrl = sheet.getRange(135, 3).getValue();  // 撮影素材フォルダURL
-        hasFolder = !!folderUrl;
+        const folderResult = loadPart3Data(name, '撮影素材フォルダURL');
+        hasFolder = folderResult.success && !!folderResult.value;
       } catch (e) {
         hasFolder = false;
       }

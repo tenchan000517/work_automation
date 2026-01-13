@@ -225,300 +225,256 @@ function getCompanySheetListWithNames() {
 }
 
 function createTranscriptPromptHTML(sheetData, template) {
+  // テンプレート内の特殊文字をエスケープ
   const escapedTemplate = template
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
 
   const sheetDataJson = JSON.stringify(sheetData);
-  const templateJson = JSON.stringify(template);
 
   return `
 <!DOCTYPE html>
 <html>
 <head>
+  <base target="_top">
   ${CI_DIALOG_STYLES}
   <style>
     /* transcriptPrompt固有スタイル */
-    h3 { margin-top: 0; color: #1a73e8; }
-    textarea { width: 100%; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; }
-    button { padding: 12px 24px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .primary { background: #1a73e8; color: white; }
-    .primary:hover { background: #1557b0; }
-    .secondary { background: #f1f3f4; color: #333; }
-    .secondary:hover { background: #e8eaed; }
-    .success { background: #34a853; color: white; }
-    .save-btn { background: #ff9800; color: white; padding: 8px 16px; font-size: 13px; }
+    .input-textarea {
+      width: 100%;
+      height: 140px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      resize: vertical;
+      font-family: monospace;
+    }
+    .input-textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .save-btn { background: #ff9800; color: white; }
     .save-btn:hover { background: #f57c00; }
-    .msg { padding: 10px; border-radius: 6px; margin-top: 10px; display: none; }
-    .msg.success { background: #e6f4ea; color: #1e7e34; display: block; }
-    .msg.error { background: #fce8e6; color: #c5221f; display: block; }
-    .msg.info { background: #e3f2fd; color: #1565c0; display: block; }
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-    .accordion { background: #f1f3f4; border: none; padding: 12px 16px; width: 100%; text-align: left; cursor: pointer; border-radius: 6px; margin-bottom: 10px; }
-    .accordion:hover { background: #e8eaed; }
-    .accordion-content.show { display: block; }
-    /* シート選択UI */
-    .sheet-select-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
-    .sheet-select-title { font-weight: bold; margin-bottom: 10px; color: #333; }
-    .sheet-list { max-height: 120px; overflow-y: auto; }
-    .sheet-option { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; }
-    .sheet-option:hover { background: #e3f2fd; }
-    .sheet-option.selected { background: #bbdefb; }
-    .sheet-option.has-data { border-left: 3px solid #ff9800; }
-    .sheet-option input[type="radio"] { margin-right: 10px; width: 16px; height: 16px; }
-    .sheet-option label { cursor: pointer; flex: 1; }
-    .saved-badge { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
-    .company-name-display { background: #e8f0fe; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; }
+    .badge-saved { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .company-info { background: #e8f0fe; padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-size: 13px; }
   </style>
 </head>
 <body>
-  <h3>📋 文字起こしを整理</h3>
+  <div class="copy-success" id="copySuccess">コピーしました</div>
 
-  <!-- シート選択UI -->
-  <div class="sheet-select-box">
-    <div class="sheet-select-title">📄 対象企業を選択</div>
-    <div id="sheetList" class="sheet-list"></div>
-    <div id="companyNameDisplay" class="company-name-display"></div>
-  </div>
-
-  <button class="accordion" onclick="toggleAccordion(this)">▶ プロンプトテンプレートを表示</button>
-  <div class="accordion-content">
-    <pre style="white-space: pre-wrap; font-size: 12px;">${escapedTemplate}</pre>
-    <button class="secondary" onclick="copyTemplate()">📋 テンプレートのみコピー</button>
-  </div>
-
-  <div class="section">
-    <div class="section-title">
-      文字起こしを貼り付け
-      <button class="save-btn" onclick="saveTranscript()">💾 シートに保存</button>
+  <!-- 企業選択ドロップダウン -->
+  <div class="input-section">
+    <span class="input-label">対象企業を選択</span>
+    <div class="company-select-wrapper">
+      <div class="company-select-display" id="companySelectDisplay" onclick="toggleCompanyDropdown()">
+        <span class="placeholder">企業シートを選択してください</span>
+      </div>
+      <div class="company-select-dropdown" id="companySelectDropdown"></div>
     </div>
-    <textarea id="transcriptInput" class="input-area" placeholder="NOTTAからダウンロードした文字起こしテキストを貼り付けてください..."></textarea>
+    <div class="company-info" id="companyInfo" style="display:none;"></div>
+  </div>
+
+  <!-- テンプレート表示（アコーディオン） -->
+  <div class="accordion">
+    <div class="accordion-header" onclick="toggleAccordionById('arrow', 'accordionContent')">
+      <div class="accordion-title">
+        <span class="accordion-arrow" id="arrow">▶</span>
+        <span>テンプレートを表示</span>
+      </div>
+      <button class="btn btn-blue" onclick="event.stopPropagation(); copyTemplate()">
+        コピー
+      </button>
+    </div>
+    <div class="accordion-content" id="accordionContent">
+      <div class="template-text" id="templateText"></div>
+    </div>
+  </div>
+
+  <!-- 入力エリア -->
+  <div class="input-section">
+    <div class="input-header">
+      <label class="input-label" style="margin-bottom:0;">文字起こしを貼り付け</label>
+      <button class="btn save-btn" onclick="saveTranscript()">💾 シートに保存</button>
+    </div>
+    <textarea
+      class="input-textarea"
+      id="transcriptInput"
+      placeholder="NOTTAからダウンロードした文字起こしテキストを貼り付けてください..."
+      oninput="updatePreview()"
+    ></textarea>
     <div class="note">※ 60分程度の打ち合わせの文字起こしを想定 ｜ 保存すると次回自動読み込み</div>
   </div>
 
-  <div class="btn-group">
-    <button class="primary" onclick="generatePrompt()">🔄 プロンプト生成</button>
-    <button class="success" onclick="copyOutput()">📋 完成版をコピー</button>
-    <button class="secondary" onclick="clearAll()">クリア</button>
+  <!-- プレビュー -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <span class="preview-title">完成版プロンプト（AIに貼り付け）</span>
+      <button class="btn btn-green" onclick="copyOutput()" id="copyResultBtn" disabled>
+        コピー
+      </button>
+    </div>
+    <div class="preview-content" id="previewContent">
+      <span class="preview-placeholder">上の入力欄に文字起こしを貼り付けると、ここにプレビューが表示されます</span>
+    </div>
   </div>
 
-  <div id="msg" class="msg"></div>
-
-  <div class="section" style="margin-top: 15px;">
-    <div class="section-title">完成版プロンプト（AIに貼り付け）</div>
-    <textarea id="outputArea" class="output-area" readonly placeholder="上の「プロンプト生成」ボタンをクリックすると、ここに完成版が表示されます"></textarea>
+  <!-- フッター -->
+  <div class="footer">
+    <button class="btn btn-gray" onclick="clearAll()">クリア</button>
+    <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
   </div>
+
+  <div class="status" id="status"></div>
+
+  ${CI_UI_COMPONENTS}
 
   <script>
-    const template = ${templateJson};
+    // 定数
+    const template = \`${escapedTemplate}\`;
     const sheetData = ${sheetDataJson};
     let selectedCompanyName = '';
     let selectedSheetName = '';
 
     // 初期化
-    document.addEventListener('DOMContentLoaded', function() {
-      renderSheetList();
-    });
+    window.onload = function() {
+      document.getElementById('templateText').textContent = template;
 
-    function renderSheetList() {
-      const container = document.getElementById('sheetList');
-      const sheets = sheetData.companySheets;
-      const activeSheet = sheetData.activeSheetName;
-      const isActiveCompanySheet = sheetData.isActiveCompanySheet;
+      // 共通関数で企業選択ドロップダウンを初期化
+      initCompanyDropdown({
+        sheets: sheetData.companySheets,
+        activeSheetName: sheetData.activeSheetName,
+        isActiveCompanySheet: sheetData.isActiveCompanySheet,
+        savedDataKey: 'savedTranscript',
+        badgeLabel: '保存済',
+        onSelect: function(item, isActive) {
+          const currentInput = document.getElementById('transcriptInput').value.trim();
 
-      if (sheets.length === 0) {
-        container.innerHTML = '<div style="color:#666;padding:10px;">企業シートがありません</div>';
+          // 保存済みデータがあれば読み込み確認
+          if (item.savedTranscript && currentInput && currentInput !== item.savedTranscript) {
+            if (!confirm('保存済みの文字起こしを読み込みますか？\\n（現在の入力は破棄されます）')) {
+              selectedSheetName = item.sheetName;
+              selectedCompanyName = item.companyName;
+              updateCompanyInfo();
+              return;
+            }
+          }
+
+          selectedSheetName = item.sheetName;
+          selectedCompanyName = item.companyName;
+          updateCompanyInfo();
+
+          // 保存済みデータを読み込む
+          if (item.savedTranscript) {
+            document.getElementById('transcriptInput').value = item.savedTranscript;
+            showStatus('保存済みの文字起こしを読み込みました', 'info');
+            updatePreview();
+          }
+        }
+      });
+    };
+
+    // 企業名表示を更新
+    function updateCompanyInfo() {
+      const companyInfo = document.getElementById('companyInfo');
+      if (selectedCompanyName) {
+        companyInfo.innerHTML = '🏢 企業名: <strong>' + escapeHtml(selectedCompanyName) + '</strong>（プロンプトに自動挿入されます）';
+        companyInfo.style.display = 'block';
+      } else {
+        companyInfo.style.display = 'none';
+      }
+    }
+
+    // プレビュー更新
+    function updatePreview() {
+      const input = document.getElementById('transcriptInput').value;
+      const preview = document.getElementById('previewContent');
+      const copyBtn = document.getElementById('copyResultBtn');
+
+      if (input.trim() && selectedCompanyName) {
+        const companyHeader = '【対象企業】' + selectedCompanyName + '\\n\\n';
+        const result = companyHeader + template.replace('{{input}}', input);
+        preview.textContent = result;
+        preview.classList.remove('preview-placeholder');
+        copyBtn.disabled = false;
+      } else if (input.trim()) {
+        preview.innerHTML = '<span class="preview-placeholder">企業を選択してください</span>';
+        copyBtn.disabled = true;
+      } else {
+        preview.innerHTML = '<span class="preview-placeholder">上の入力欄に文字起こしを貼り付けると、ここにプレビューが表示されます</span>';
+        copyBtn.disabled = true;
+      }
+    }
+
+    // テンプレートをコピー
+    function copyTemplate() {
+      copyToClipboard(template);
+    }
+
+    // 完成版をコピー
+    function copyOutput() {
+      const input = document.getElementById('transcriptInput').value;
+      if (!input.trim()) {
+        showStatus('文字起こしを入力してください', 'error');
         return;
       }
-
-      let html = '';
-
-      // アクティブシートが企業シートの場合、一番上に表示
-      if (isActiveCompanySheet) {
-        const activeSheetData = sheets.find(s => s.sheetName === activeSheet);
-        selectedCompanyName = activeSheetData ? activeSheetData.companyName : '';
-        selectedSheetName = activeSheet;
-        html += createSheetOption(activeSheetData, true, true);
-
-        // 保存済みデータがあれば読み込む
-        if (activeSheetData && activeSheetData.savedTranscript) {
-          document.getElementById('transcriptInput').value = activeSheetData.savedTranscript;
-          showMsg('保存済みの文字起こしを読み込みました', 'info');
-        }
-
-        // 他のシート
-        sheets.filter(s => s.sheetName !== activeSheet).forEach(sheet => {
-          html += createSheetOption(sheet, false, false);
-        });
-      } else {
-        // アクティブシートが企業シートでない場合、最初のシートを選択
-        const firstSheet = sheets[0];
-        selectedCompanyName = firstSheet ? firstSheet.companyName : '';
-        selectedSheetName = firstSheet ? firstSheet.sheetName : '';
-        sheets.forEach((sheet, index) => {
-          html += createSheetOption(sheet, index === 0, false);
-        });
-
-        // 最初のシートの保存済みデータを読み込む
-        if (firstSheet && firstSheet.savedTranscript) {
-          document.getElementById('transcriptInput').value = firstSheet.savedTranscript;
-          showMsg('保存済みの文字起こしを読み込みました', 'info');
-        }
+      if (!selectedCompanyName) {
+        showStatus('企業を選択してください', 'error');
+        return;
       }
-
-      container.innerHTML = html;
-      updateCompanyNameDisplay();
-    }
-
-    function createSheetOption(sheet, isSelected, isActive) {
-      const checked = isSelected ? 'checked' : '';
-      const selectedClass = isSelected ? 'selected' : '';
-      const hasDataClass = sheet.hasSavedData ? 'has-data' : '';
-      const activeBadge = isActive ? '<span class="active-badge">アクティブ</span>' : '';
-      const savedBadge = sheet.hasSavedData ? '<span class="saved-badge">保存済み</span>' : '';
-
-      return \`
-        <div class="sheet-option \${selectedClass} \${hasDataClass}" onclick="selectSheet('\${escapeHtml(sheet.sheetName)}', '\${escapeHtml(sheet.companyName)}', '\${escapeHtml(sheet.savedTranscript || '')}', this)">
-          <input type="radio" name="targetSheet" value="\${escapeHtml(sheet.sheetName)}" \${checked}>
-          <label>\${escapeHtml(sheet.sheetName)}\${activeBadge}\${savedBadge}</label>
-        </div>
-      \`;
-    }
-
-    function selectSheet(sheetName, companyName, savedTranscript, element) {
-      document.querySelectorAll('.sheet-option').forEach(el => el.classList.remove('selected'));
-      document.querySelectorAll('.sheet-option input[type="radio"]').forEach(el => el.checked = false);
-
-      element.classList.add('selected');
-      element.querySelector('input[type="radio"]').checked = true;
-      selectedCompanyName = companyName;
-      selectedSheetName = sheetName;
-      updateCompanyNameDisplay();
-
-      // 保存済みデータがあれば読み込む（現在の入力があれば確認）
-      const currentInput = document.getElementById('transcriptInput').value.trim();
-      if (savedTranscript) {
-        if (currentInput && currentInput !== savedTranscript) {
-          if (confirm('保存済みの文字起こしを読み込みますか？\\n（現在の入力は破棄されます）')) {
-            document.getElementById('transcriptInput').value = savedTranscript;
-            showMsg('保存済みの文字起こしを読み込みました', 'info');
-          }
-        } else {
-          document.getElementById('transcriptInput').value = savedTranscript;
-          showMsg('保存済みの文字起こしを読み込みました', 'info');
-        }
-      }
-    }
-
-    function updateCompanyNameDisplay() {
-      const display = document.getElementById('companyNameDisplay');
-      if (selectedCompanyName) {
-        display.innerHTML = '🏢 企業名: <strong>' + escapeHtml(selectedCompanyName) + '</strong>（プロンプトに自動挿入されます）';
-        display.style.display = 'block';
-      } else {
-        display.style.display = 'none';
-      }
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function toggleAccordion(btn) {
-      const content = btn.nextElementSibling;
-      const isOpen = content.classList.contains('show');
-      content.classList.toggle('show');
-      btn.textContent = (isOpen ? '▶' : '▼') + ' プロンプトテンプレートを表示';
-    }
-
-    function copyTemplate() {
-      navigator.clipboard.writeText(template).then(() => {
-        showMsg('テンプレートをコピーしました', 'success');
-      });
+      const companyHeader = '【対象企業】' + selectedCompanyName + '\\n\\n';
+      const result = companyHeader + template.replace('{{input}}', input);
+      copyToClipboard(result);
     }
 
     function saveTranscript() {
       if (!selectedSheetName) {
-        showMsg('企業シートを選択してください', 'error');
+        showStatus('企業シートを選択してください', 'error');
         return;
       }
       const input = document.getElementById('transcriptInput').value.trim();
       if (!input) {
-        showMsg('文字起こしを入力してください', 'error');
+        showStatus('文字起こしを入力してください', 'error');
         return;
       }
 
       google.script.run
         .withSuccessHandler(function(result) {
           if (result.success) {
-            showMsg('💾 文字起こしを企業シートに保存しました', 'success');
+            showStatus('💾 文字起こしを企業シートに保存しました', 'success');
           } else if (result.needConfirm) {
             if (confirm('既存のデータを上書きしますか？')) {
               google.script.run
                 .withSuccessHandler(function(r) {
-                  if (r.success) showMsg('💾 文字起こしを上書き保存しました', 'success');
-                  else showMsg('保存エラー: ' + r.error, 'error');
+                  if (r.success) showStatus('💾 文字起こしを上書き保存しました', 'success');
+                  else showStatus('保存エラー: ' + r.error, 'error');
                 })
                 .savePart3DataForce(selectedSheetName, '文字起こし原文', input);
             }
           } else {
-            showMsg('保存エラー: ' + result.error, 'error');
+            showStatus('保存エラー: ' + result.error, 'error');
           }
         })
         .withFailureHandler(function(error) {
-          showMsg('保存エラー: ' + error.message, 'error');
+          showStatus('保存エラー: ' + error.message, 'error');
         })
         .savePart3Data(selectedSheetName, '文字起こし原文', input, true);
     }
 
-    function generatePrompt() {
-      if (!selectedCompanyName) {
-        showMsg('企業を選択してください', 'error');
-        return;
-      }
-      const input = document.getElementById('transcriptInput').value.trim();
-      if (!input) {
-        showMsg('文字起こしを入力してください', 'error');
-        return;
-      }
-
-      // 企業名をプロンプトに追加
-      const companyHeader = '【対象企業】' + selectedCompanyName + '\\n\\n';
-      const output = companyHeader + template.replace('{{input}}', input);
-
-      document.getElementById('outputArea').value = output;
-      showMsg('プロンプトを生成しました。「完成版をコピー」でAIに貼り付けてください', 'success');
-    }
-
-    function copyOutput() {
-      const output = document.getElementById('outputArea').value;
-      if (!output) {
-        showMsg('先にプロンプトを生成してください', 'error');
-        return;
-      }
-      navigator.clipboard.writeText(output).then(() => {
-        showMsg('コピーしました！AIに貼り付けて実行してください', 'success');
-      });
-    }
-
     function clearAll() {
       document.getElementById('transcriptInput').value = '';
-      document.getElementById('outputArea').value = '';
-      showMsg('', '');
+      document.getElementById('previewContent').innerHTML = '<span class="preview-placeholder">上の入力欄に文字起こしを貼り付けると、ここにプレビューが表示されます</span>';
+      document.getElementById('copyResultBtn').disabled = true;
+      showStatus('クリアしました', 'info');
     }
 
-    function showMsg(text, type) {
-      const msg = document.getElementById('msg');
-      msg.textContent = text;
-      msg.className = 'msg ' + type;
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
     }
   </script>
 </body>
@@ -528,16 +484,62 @@ function createTranscriptPromptHTML(sheetData, template) {
 
 // ===== 2. AI出力を転記 =====
 function showTransferFromAIDialog() {
-  // 企業シート一覧を取得
-  const sheetData = getCompanySheetList();
+  // 企業シート一覧を取得（保存済みJSONデータ付き）
+  const sheetData = getCompanySheetListWithSavedJson();
   const html = HtmlService.createHtmlOutput(createTransferFromAIHTML(sheetData))
-    .setWidth(900)
+    .setWidth(700)
     .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, '📥 AI出力を転記');
 }
 
 /**
- * 企業シート一覧を取得
+ * 企業シート一覧を取得（保存済みJSONデータ付き）
+ * Part③から「ヒアリング抽出JSON」を取得
+ */
+function getCompanySheetListWithSavedJson() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+
+  const allSheets = ss.getSheets();
+  const companySheets = [];
+
+  allSheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    if (!isExcludedSheet(sheetName)) {
+      const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+
+      // Part③から保存済みJSONを取得
+      let savedJson = '';
+      try {
+        const result = loadPart3Data(sheetName, 'ヒアリング抽出JSON');
+        if (result.success) {
+          savedJson = result.value;
+        }
+      } catch (e) {
+        savedJson = '';
+      }
+
+      companySheets.push({
+        sheetName: sheetName,
+        companyName: companyName || sheetName,
+        savedJson: savedJson,
+        hasSavedJson: !!savedJson
+      });
+    }
+  });
+
+  const isActiveCompanySheet = companySheets.some(s => s.sheetName === activeSheetName);
+
+  return {
+    activeSheetName: activeSheetName,
+    isActiveCompanySheet: isActiveCompanySheet,
+    companySheets: companySheets
+  };
+}
+
+/**
+ * 企業シート一覧を取得（シンプル版 - 後方互換用）
  * settingsSheet.js の isExcludedSheet() を使用
  */
 function getCompanySheetList() {
@@ -562,30 +564,36 @@ function getCompanySheetList() {
 }
 
 function createTransferFromAIHTML(sheetData) {
-  // シート一覧をJSON文字列に変換
   const sheetDataJson = JSON.stringify(sheetData);
 
   return `
 <!DOCTYPE html>
 <html>
 <head>
+  <base target="_top">
   ${CI_DIALOG_STYLES}
   <style>
     /* transferFromAI固有スタイル */
-    h3 { margin-top: 0; color: #1a73e8; }
-    textarea { width: 100%; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-    button { padding: 10px 20px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .primary { background: #1a73e8; color: white; }
-    .primary:hover { background: #1557b0; }
-    .secondary { background: #f1f3f4; color: #333; }
-    .danger { background: #ea4335; color: white; }
-    .success { background: #34a853; color: white; }
-    .msg { padding: 10px; border-radius: 6px; margin: 10px 0; }
-    .msg.success { background: #e6f4ea; color: #1e7e34; }
-    .msg.error { background: #fce8e6; color: #c5221f; }
-    .msg.warning { background: #fef7e0; color: #856404; }
+    .input-textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 12px;
+      resize: vertical;
+      font-family: monospace;
+    }
+    .input-textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .save-btn { background: #ff9800; color: white; }
+    .save-btn:hover { background: #f57c00; }
+    .badge-saved { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
     .diff-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .diff-table th, .diff-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    .diff-table th, .diff-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
     .diff-table th { background: #f8f9fa; position: sticky; top: 0; }
     .diff-table tr:nth-child(even) { background: #f8f9fa; }
     .diff-row { cursor: pointer; }
@@ -593,57 +601,60 @@ function createTransferFromAIHTML(sheetData) {
     .diff-row.selected { background: #bbdefb !important; }
     .diff-row.conflict { background: #fff3e0 !important; }
     .current-val { color: #666; font-size: 11px; }
-    .new-val { color: #1a73e8; }
-    .diff-container { max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; }
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
-    .sheet-info { background: #e8f0fe; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
-    .checkbox-col { width: 40px; text-align: center; }
-    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
-    .action-btns { position: sticky; bottom: 0; background: white; padding: 15px 0; border-top: 1px solid #ddd; }
-    .edit-input { width: 100%; padding: 4px; font-size: 12px; }
-    /* シート選択UI */
-    .sheet-select-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
-    .sheet-select-title { font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px; }
-    .sheet-list { max-height: 150px; overflow-y: auto; }
-    .sheet-option { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; }
-    .sheet-option:hover { background: #e3f2fd; }
-    .sheet-option.selected { background: #bbdefb; }
-    .sheet-option input[type="radio"] { margin-right: 10px; width: 16px; height: 16px; }
-    .sheet-option label { cursor: pointer; flex: 1; }
-    .no-sheets-msg { color: #666; font-style: italic; padding: 10px; }
-    .sheet-warning { background: #fff3e0; border: 1px solid #ffcc80; padding: 10px; border-radius: 6px; margin-top: 10px; color: #e65100; display: none; }
+    .diff-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; }
+    .sheet-info { background: #e8f0fe; padding: 10px; border-radius: 6px; margin-bottom: 12px; }
+    .checkbox-col { width: 35px; text-align: center; }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .edit-input { width: 100%; padding: 4px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; }
+    .sheet-warning { background: #fff3e0; border: 1px solid #ffcc80; padding: 10px; border-radius: 6px; margin-top: 8px; color: #e65100; display: none; }
+    .input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   </style>
 </head>
 <body>
-  <h3>📥 AI出力を転記</h3>
+  <div class="copy-success" id="copySuccess">コピーしました</div>
 
   <div id="step1">
-    <!-- シート選択UI -->
-    <div class="sheet-select-box">
-      <div class="sheet-select-title">
-        📄 転記先シートを選択
+    <!-- 企業選択ドロップダウン -->
+    <div class="input-section">
+      <span class="input-label">転記先企業を選択</span>
+      <div class="company-select-wrapper">
+        <div class="company-select-display" id="companySelectDisplay" onclick="event.stopPropagation(); toggleCompanyDropdown()">
+          <span class="placeholder">企業シートを選択してください</span>
+        </div>
+        <div class="company-select-dropdown" id="companySelectDropdown"></div>
       </div>
-      <div id="sheetList" class="sheet-list"></div>
       <div id="sheetWarning" class="sheet-warning"></div>
     </div>
 
-    <div class="section">
-      <div class="section-title">AIが出力したJSONを貼り付け</div>
-      <textarea id="jsonInput" class="input-area" placeholder='{"企業名": "株式会社○○", "会社紹介": {...}, ...}'></textarea>
+    <!-- JSON入力エリア -->
+    <div class="input-section">
+      <div class="input-header">
+        <label class="input-label" style="margin-bottom:0;">AIが出力したJSONを貼り付け</label>
+        <button class="btn save-btn" onclick="saveJson()">💾 シートに保存</button>
+      </div>
+      <textarea
+        class="input-textarea"
+        id="jsonInput"
+        placeholder='{"企業名": "株式会社○○", "会社紹介": {...}, ...}'
+      ></textarea>
+      <div class="note">※ コードブロック（\`\`\`json）で囲まれていても自動除去します</div>
     </div>
-    <div class="btn-group">
-      <button class="primary" onclick="parseAndCompare()">🔍 解析して比較</button>
-      <button class="secondary" onclick="google.script.host.close()">閉じる</button>
+
+    <!-- フッター -->
+    <div class="footer">
+      <button class="btn btn-blue" onclick="parseAndCompare()">🔍 解析して比較</button>
+      <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
     </div>
-    <div id="parseMsg" class="msg" style="display:none;"></div>
+
+    <div class="status" id="status"></div>
   </div>
 
   <div id="step2" style="display:none;">
     <div class="sheet-info" id="sheetInfo"></div>
 
-    <div id="confirmMsg" class="msg warning" style="display:none;"></div>
+    <div id="confirmMsg" class="status warning" style="display:none;"></div>
 
-    <div class="section-title">転記内容の確認（チェックした項目のみ転記）</div>
+    <div class="input-label">転記内容の確認（チェックした項目のみ転記）</div>
     <div class="diff-container">
       <table class="diff-table">
         <thead>
@@ -658,86 +669,65 @@ function createTransferFromAIHTML(sheetData) {
       </table>
     </div>
 
-    <div class="action-btns">
-      <div class="btn-group">
-        <button class="success" onclick="executeTransfer()">✅ チェック項目を転記</button>
-        <button class="secondary" onclick="goBack()">← 戻る</button>
-        <button class="secondary" onclick="google.script.host.close()">閉じる</button>
-      </div>
+    <!-- フッター -->
+    <div class="footer" style="margin-top:12px;">
+      <button class="btn btn-green" onclick="executeTransfer()">✅ チェック項目を転記</button>
+      <button class="btn btn-gray" onclick="goBack()">← 戻る</button>
+      <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
     </div>
-    <div id="resultMsg" class="msg" style="display:none;"></div>
+
+    <div class="status" id="resultStatus"></div>
   </div>
 
+  ${CI_UI_COMPONENTS}
+
   <script>
+    // 定数
+    const sheetData = ${sheetDataJson};
     let parsedData = null;
     let diffItems = [];
     let selectedSheetName = '';
-    const sheetData = ${sheetDataJson};
+    let selectedCompanyData = null;
 
-    // 初期化：シート一覧を表示
-    document.addEventListener('DOMContentLoaded', function() {
-      renderSheetList();
-    });
+    // 初期化
+    window.onload = function() {
+      // 共通関数で企業選択ドロップダウンを初期化
+      initCompanyDropdown({
+        sheets: sheetData.companySheets,
+        activeSheetName: sheetData.activeSheetName,
+        isActiveCompanySheet: sheetData.isActiveCompanySheet,
+        savedDataKey: 'savedJson',
+        badgeLabel: '保存済',
+        onSelect: function(item, isActive) {
+          const currentInput = document.getElementById('jsonInput').value.trim();
 
-    function renderSheetList() {
-      const container = document.getElementById('sheetList');
-      const sheets = sheetData.companySheets;
-      const activeSheet = sheetData.activeSheetName;
-      const isActiveCompanySheet = sheetData.isActiveCompanySheet;
+          // 保存済みJSONがあれば読み込み確認
+          if (item.savedJson && currentInput && currentInput !== item.savedJson) {
+            if (!confirm('保存済みのJSONを読み込みますか？\\n（現在の入力は破棄されます）')) {
+              selectedSheetName = item.sheetName;
+              selectedCompanyData = item;
+              updateWarning(item, isActive);
+              return;
+            }
+          }
 
-      if (sheets.length === 0) {
-        container.innerHTML = '<div class="no-sheets-msg">転記可能なシートがありません</div>';
-        return;
-      }
+          selectedSheetName = item.sheetName;
+          selectedCompanyData = item;
+          updateWarning(item, isActive);
 
-      let html = '';
+          // 保存済みJSONを読み込む
+          if (item.savedJson) {
+            document.getElementById('jsonInput').value = item.savedJson;
+            showStatus('保存済みのJSONを読み込みました', 'info');
+          }
+        }
+      });
+    };
 
-      // アクティブシートが企業シートの場合、一番上に表示
-      if (isActiveCompanySheet) {
-        selectedSheetName = activeSheet;
-        html += createSheetOption(activeSheet, true, true);
-
-        // 他のシート
-        sheets.filter(s => s !== activeSheet).forEach(sheetName => {
-          html += createSheetOption(sheetName, false, false);
-        });
-      } else {
-        // アクティブシートが企業シートでない場合、最初のシートを選択
-        selectedSheetName = sheets[0] || '';
-        sheets.forEach((sheetName, index) => {
-          html += createSheetOption(sheetName, index === 0, false);
-        });
-      }
-
-      container.innerHTML = html;
-    }
-
-    function createSheetOption(sheetName, isSelected, isActive) {
-      const checked = isSelected ? 'checked' : '';
-      const selectedClass = isSelected ? 'selected' : '';
-      const activeBadge = isActive ? '<span class="active-badge">アクティブ</span>' : '';
-
-      return \`
-        <div class="sheet-option \${selectedClass}" onclick="selectSheet('\${escapeHtml(sheetName)}', this)">
-          <input type="radio" name="targetSheet" value="\${escapeHtml(sheetName)}" \${checked}>
-          <label>\${escapeHtml(sheetName)}\${activeBadge}</label>
-        </div>
-      \`;
-    }
-
-    function selectSheet(sheetName, element) {
-      // 前の選択を解除
-      document.querySelectorAll('.sheet-option').forEach(el => el.classList.remove('selected'));
-      document.querySelectorAll('.sheet-option input[type="radio"]').forEach(el => el.checked = false);
-
-      // 新しい選択を設定
-      element.classList.add('selected');
-      element.querySelector('input[type="radio"]').checked = true;
-      selectedSheetName = sheetName;
-
-      // アクティブシートと異なる場合は警告を表示
+    // アクティブシートと異なる場合の警告表示
+    function updateWarning(item, isActive) {
       const warning = document.getElementById('sheetWarning');
-      if (sheetData.isActiveCompanySheet && sheetName !== sheetData.activeSheetName) {
+      if (sheetData.isActiveCompanySheet && item.sheetName !== sheetData.activeSheetName) {
         warning.innerHTML = '⚠️ アクティブなシート（' + escapeHtml(sheetData.activeSheetName) + '）とは異なるシートが選択されています。';
         warning.style.display = 'block';
       } else {
@@ -745,44 +735,87 @@ function createTransferFromAIHTML(sheetData) {
       }
     }
 
-    function parseAndCompare() {
-      // シートが選択されているか確認
-      if (!selectedSheetName) {
-        showParseMsg('転記先シートを選択してください', 'error');
-        return;
-      }
-
-      const jsonStr = document.getElementById('jsonInput').value.trim();
-      if (!jsonStr) {
-        showParseMsg('JSONを入力してください', 'error');
-        return;
-      }
-
-      // JSON部分を抽出（コードブロックで囲まれている場合も対応）
+    // JSONをクリーンにする（コードブロック除去）
+    function cleanJsonString(jsonStr) {
       let cleanJson = jsonStr.trim();
-      // コードブロック記号（バッククォート3つ）
-      const codeBlockMarker = String.fromCharCode(96, 96, 96); // \`\`\`
+      const codeBlockMarker = String.fromCharCode(96, 96, 96);
       const codeBlockJsonMarker = codeBlockMarker + 'json';
-      // 先頭のコードブロック記号を除去
+
       if (cleanJson.startsWith(codeBlockJsonMarker)) {
         cleanJson = cleanJson.substring(codeBlockJsonMarker.length);
       } else if (cleanJson.startsWith(codeBlockMarker)) {
         cleanJson = cleanJson.substring(codeBlockMarker.length);
       }
-      // 末尾のコードブロック記号を除去
       if (cleanJson.endsWith(codeBlockMarker)) {
         cleanJson = cleanJson.substring(0, cleanJson.length - codeBlockMarker.length);
       }
-      cleanJson = cleanJson.trim();
+      return cleanJson.trim();
+    }
+
+    // JSONを保存
+    function saveJson() {
+      if (!selectedSheetName) {
+        showStatus('企業シートを選択してください', 'error');
+        return;
+      }
+      const jsonStr = document.getElementById('jsonInput').value.trim();
+      if (!jsonStr) {
+        showStatus('JSONを入力してください', 'error');
+        return;
+      }
+
+      // JSON形式チェック
+      try {
+        JSON.parse(cleanJsonString(jsonStr));
+      } catch (e) {
+        showStatus('JSONの形式が正しくありません: ' + e.message, 'error');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showStatus('💾 JSONを企業シートに保存しました', 'success');
+          } else if (result.needConfirm) {
+            if (confirm('既存のデータを上書きしますか？')) {
+              google.script.run
+                .withSuccessHandler(function(r) {
+                  if (r.success) showStatus('💾 JSONを上書き保存しました', 'success');
+                  else showStatus('保存エラー: ' + r.error, 'error');
+                })
+                .savePart3DataForce(selectedSheetName, 'ヒアリング抽出JSON', jsonStr);
+            }
+          } else {
+            showStatus('保存エラー: ' + result.error, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          showStatus('保存エラー: ' + error.message, 'error');
+        })
+        .savePart3Data(selectedSheetName, 'ヒアリング抽出JSON', jsonStr, true);
+    }
+
+    function parseAndCompare() {
+      if (!selectedSheetName) {
+        showStatus('転記先シートを選択してください', 'error');
+        return;
+      }
+
+      const jsonStr = document.getElementById('jsonInput').value.trim();
+      if (!jsonStr) {
+        showStatus('JSONを入力してください', 'error');
+        return;
+      }
+
+      const cleanJson = cleanJsonString(jsonStr);
 
       try {
         parsedData = JSON.parse(cleanJson);
       } catch (e) {
-        showParseMsg('JSONの解析に失敗しました: ' + e.message, 'error');
+        showStatus('JSONの解析に失敗しました: ' + e.message, 'error');
         return;
       }
 
-      // サーバーに送って現在の値と比較（選択されたシート名を渡す）
       google.script.run
         .withSuccessHandler(handleCompareResult)
         .withFailureHandler(handleError)
@@ -790,34 +823,26 @@ function createTransferFromAIHTML(sheetData) {
     }
 
     function handleCompareResult(result) {
-      // エラーの場合は処理を止める
       if (!result.success) {
-        showParseMsg(result.error, 'error');
+        showStatus(result.error, 'error');
         return;
       }
 
-      // 企業名不一致の警告（続行は可能）
       if (result.needConfirm && result.mismatchWarning) {
         document.getElementById('confirmMsg').innerHTML =
-          '<strong>⚠️ 企業名が一致しません</strong><br><br>' +
-          '【シートの企業名】' + escapeHtml(result.sheetCompanyName) + '<br>' +
-          '【JSONの企業名】' + escapeHtml(result.jsonCompanyName) + '<br><br>' +
-          '<span style="color:#c5221f;">正しい企業のシートを開いていますか？</span><br>' +
-          '別の企業に転記する場合は、<strong>そのシートを開いてから再実行</strong>してください。<br><br>' +
-          'このまま転記する場合は下の項目を確認してください。';
+          '<strong>⚠️ 企業名が一致しません</strong><br>' +
+          '【シート】' + escapeHtml(result.sheetCompanyName) + '<br>' +
+          '【JSON】' + escapeHtml(result.jsonCompanyName);
         document.getElementById('confirmMsg').style.display = 'block';
       }
 
-      // シート情報を表示
       document.getElementById('sheetInfo').innerHTML =
-        '📄 <strong>転記先:</strong> ' + result.sheetName +
-        (result.sheetCompanyName ? ' （' + result.sheetCompanyName + '）' : '');
+        '📄 <strong>転記先:</strong> ' + escapeHtml(result.sheetName) +
+        (result.sheetCompanyName ? ' （' + escapeHtml(result.sheetCompanyName) + '）' : '');
 
-      // 差分テーブルを生成
       diffItems = result.diffItems || [];
       renderDiffTable();
 
-      // Step2を表示
       document.getElementById('step1').style.display = 'none';
       document.getElementById('step2').style.display = 'block';
     }
@@ -834,9 +859,9 @@ function createTransferFromAIHTML(sheetData) {
         tr.innerHTML = \`
           <td class="checkbox-col">
             <input type="checkbox" id="cb_\${index}" \${item.newValue ? 'checked' : ''}
-                   onchange="updateSelection(\${index}, this.checked)">
+                   onchange="updateCheckboxSelection(\${index}, this.checked)">
           </td>
-          <td>\${item.label}</td>
+          <td>\${escapeHtml(item.label)}</td>
           <td class="current-val">\${escapeHtml(item.currentValue || '(空)')}</td>
           <td>
             <input type="text" class="edit-input" id="val_\${index}"
@@ -849,15 +874,6 @@ function createTransferFromAIHTML(sheetData) {
       });
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
     function toggleAll(checked) {
       diffItems.forEach((item, index) => {
         if (item.newValue) {
@@ -867,7 +883,7 @@ function createTransferFromAIHTML(sheetData) {
       });
     }
 
-    function updateSelection(index, checked) {
+    function updateCheckboxSelection(index, checked) {
       diffItems[index].selected = checked;
     }
 
@@ -876,20 +892,18 @@ function createTransferFromAIHTML(sheetData) {
     }
 
     function executeTransfer() {
-      // 選択された項目のみ抽出
       const selectedItems = diffItems
         .filter((item, index) => document.getElementById('cb_' + index).checked)
-        .map((item, index) => ({
+        .map((item) => ({
           key: item.key,
-          value: document.getElementById('val_' + (diffItems.indexOf(item))).value
+          value: document.getElementById('val_' + diffItems.indexOf(item)).value
         }));
 
       if (selectedItems.length === 0) {
-        showResultMsg('転記する項目を選択してください', 'error');
+        showResultStatus('転記する項目を選択してください', 'error');
         return;
       }
 
-      // 選択されたシート名も渡す
       google.script.run
         .withSuccessHandler(handleTransferResult)
         .withFailureHandler(handleError)
@@ -898,10 +912,10 @@ function createTransferFromAIHTML(sheetData) {
 
     function handleTransferResult(result) {
       if (result.success) {
-        showResultMsg('✅ ' + result.count + '件の項目を転記しました', 'success');
+        showResultStatus('✅ ' + result.count + '件の項目を転記しました', 'success');
         setTimeout(() => google.script.host.close(), 2000);
       } else {
-        showResultMsg('❌ 転記に失敗: ' + result.error, 'error');
+        showResultStatus('❌ 転記に失敗: ' + result.error, 'error');
       }
     }
 
@@ -911,22 +925,20 @@ function createTransferFromAIHTML(sheetData) {
       document.getElementById('confirmMsg').style.display = 'none';
     }
 
-    function showParseMsg(text, type) {
-      const msg = document.getElementById('parseMsg');
-      msg.textContent = text;
-      msg.className = 'msg ' + type;
-      msg.style.display = 'block';
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
     }
 
-    function showResultMsg(text, type) {
-      const msg = document.getElementById('resultMsg');
-      msg.innerHTML = text;
-      msg.className = 'msg ' + type;
-      msg.style.display = 'block';
+    function showResultStatus(message, type) {
+      const status = document.getElementById('resultStatus');
+      status.innerHTML = message;
+      status.className = 'status ' + type;
     }
 
     function handleError(error) {
-      showParseMsg('エラー: ' + error.message, 'error');
+      showStatus('エラー: ' + error.message, 'error');
     }
   </script>
 </body>

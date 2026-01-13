@@ -585,5 +585,216 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// ================================================================================
+// ===== 企業選択ドロップダウン共通関数 =====
+// ================================================================================
+
+/**
+ * 企業選択ドロップダウンの設定を保持するグローバル変数
+ */
+let _companySelectConfig = null;
+
+/**
+ * 企業選択ドロップダウンを初期化
+ * @param {Object} config - 設定オブジェクト
+ * @param {string} config.displayId - 表示部分のID（デフォルト: 'companySelectDisplay'）
+ * @param {string} config.dropdownId - ドロップダウンのID（デフォルト: 'companySelectDropdown'）
+ * @param {Array} config.sheets - 企業シート配列（{sheetName, companyName, ...}）
+ * @param {string} config.activeSheetName - アクティブシート名
+ * @param {boolean} config.isActiveCompanySheet - アクティブシートが企業シートか
+ * @param {string} config.savedDataKey - 保存済みデータのキー（例: 'savedJson', 'savedTranscript'）
+ * @param {Function} config.onSelect - 選択時コールバック function(item, isActive)
+ * @param {string} config.badgeLabel - 保存済バッジのラベル（デフォルト: '保存済'）
+ */
+function initCompanyDropdown(config) {
+  _companySelectConfig = Object.assign({
+    displayId: 'companySelectDisplay',
+    dropdownId: 'companySelectDropdown',
+    sheets: [],
+    activeSheetName: '',
+    isActiveCompanySheet: false,
+    savedDataKey: null,
+    onSelect: null,
+    badgeLabel: '保存済'
+  }, config);
+
+  renderCompanyDropdownItems();
+}
+
+/**
+ * ドロップダウンの開閉
+ */
+function toggleCompanyDropdown() {
+  const config = _companySelectConfig;
+  if (!config) return;
+
+  const display = document.getElementById(config.displayId);
+  const dropdown = document.getElementById(config.dropdownId);
+  if (!display || !dropdown) return;
+
+  const isOpen = dropdown.classList.contains('show');
+  if (isOpen) {
+    dropdown.classList.remove('show');
+    display.classList.remove('active');
+  } else {
+    dropdown.classList.add('show');
+    display.classList.add('active');
+  }
+}
+
+/**
+ * ドロップダウンの項目をレンダリング
+ */
+function renderCompanyDropdownItems() {
+  const config = _companySelectConfig;
+  if (!config) return;
+
+  const dropdown = document.getElementById(config.dropdownId);
+  if (!dropdown) return;
+
+  const sheets = config.sheets;
+  const activeSheet = config.activeSheetName;
+  const isActiveCompanySheet = config.isActiveCompanySheet;
+
+  if (!sheets || sheets.length === 0) {
+    dropdown.innerHTML = '<div style="color:#666;padding:12px;">企業シートがありません</div>';
+    return;
+  }
+
+  dropdown.innerHTML = '';
+
+  // ソート: アクティブ最上段、残りは逆順（新しいものが上）
+  const sorted = [...sheets].sort((a, b) => {
+    const aIsActive = a.sheetName === activeSheet && isActiveCompanySheet;
+    const bIsActive = b.sheetName === activeSheet && isActiveCompanySheet;
+    if (aIsActive && !bIsActive) return -1;
+    if (!aIsActive && bIsActive) return 1;
+    return -1;
+  });
+
+  sorted.forEach((item) => {
+    const isActive = item.sheetName === activeSheet && isActiveCompanySheet;
+    const div = document.createElement('div');
+    div.className = 'company-select-item' + (isActive ? ' selected' : '');
+
+    const activeBadge = isActive ? '<span class="badge-active">アクティブ</span>' : '';
+
+    // 保存済みバッジ（savedDataKeyで指定されたキーをチェック）
+    let savedBadge = '';
+    if (config.savedDataKey) {
+      const hasSaved = item[config.savedDataKey] || item['hasSaved' + config.savedDataKey.charAt(0).toUpperCase() + config.savedDataKey.slice(1)];
+      if (hasSaved || item.hasSavedData) {
+        savedBadge = '<span class="badge-saved">' + escapeHtml(config.badgeLabel) + '</span>';
+      }
+    }
+
+    const companyNote = item.companyName && item.companyName !== item.sheetName
+      ? ' <span style="color:#666;font-size:12px;">(' + escapeHtml(item.companyName) + ')</span>' : '';
+
+    div.innerHTML =
+      '<span class="check-icon">' + (isActive ? '✓' : '') + '</span>' +
+      '<span class="company-name">' + escapeHtml(item.sheetName) + companyNote + '</span>' +
+      activeBadge +
+      savedBadge;
+
+    div.onclick = function(e) {
+      e.stopPropagation();
+      selectCompanyItem(item, isActive);
+      toggleCompanyDropdown();
+    };
+
+    dropdown.appendChild(div);
+
+    // アクティブがあれば自動選択
+    if (isActive) {
+      selectCompanyItem(item, true);
+    }
+  });
+}
+
+/**
+ * 企業を選択
+ * @param {Object} item - 選択された企業データ
+ * @param {boolean} isActive - アクティブシートかどうか
+ */
+function selectCompanyItem(item, isActive) {
+  const config = _companySelectConfig;
+  if (!config) return;
+
+  // 選択状態の表示を更新
+  updateCompanySelectDisplay(item, isActive);
+
+  // コールバック呼び出し
+  if (config.onSelect) {
+    config.onSelect(item, isActive);
+  }
+}
+
+/**
+ * 選択状態の表示を更新
+ * @param {Object} item - 選択された企業データ
+ * @param {boolean} isActive - アクティブシートかどうか
+ */
+function updateCompanySelectDisplay(item, isActive) {
+  const config = _companySelectConfig;
+  if (!config) return;
+
+  const display = document.getElementById(config.displayId);
+  if (!display) return;
+
+  const activeBadge = isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+
+  // 保存済みバッジ
+  let savedBadge = '';
+  if (config.savedDataKey) {
+    const hasSaved = item[config.savedDataKey] || item['hasSaved' + config.savedDataKey.charAt(0).toUpperCase() + config.savedDataKey.slice(1)];
+    if (hasSaved || item.hasSavedData) {
+      savedBadge = '<span class="badge-saved" style="margin-left:8px;">' + escapeHtml(config.badgeLabel) + '</span>';
+    }
+  }
+
+  display.innerHTML =
+    '<span class="selected-check">✓</span>' +
+    '<span class="selected-name">' + escapeHtml(item.sheetName) + '</span>' +
+    activeBadge +
+    savedBadge;
+
+  // ドロップダウン内の選択状態を更新
+  const dropdown = document.getElementById(config.dropdownId);
+  if (dropdown) {
+    dropdown.querySelectorAll('.company-select-item').forEach(el => {
+      el.classList.remove('selected');
+      const checkIcon = el.querySelector('.check-icon');
+      if (checkIcon) checkIcon.textContent = '';
+    });
+
+    dropdown.querySelectorAll('.company-select-item').forEach(el => {
+      const nameEl = el.querySelector('.company-name');
+      if (nameEl) {
+        const name = nameEl.textContent.split('(')[0].trim();
+        if (name === item.sheetName) {
+          el.classList.add('selected');
+          const checkIcon = el.querySelector('.check-icon');
+          if (checkIcon) checkIcon.textContent = '✓';
+        }
+      }
+    });
+  }
+}
+
+/**
+ * ステータスメッセージを表示
+ * @param {string} message - メッセージ
+ * @param {string} type - タイプ（'success', 'error', 'info'）
+ * @param {string} statusId - ステータス要素のID（デフォルト: 'status'）
+ */
+function showStatus(message, type, statusId) {
+  const status = document.getElementById(statusId || 'status');
+  if (status) {
+    status.textContent = message;
+    status.className = 'status ' + type;
+  }
+}
 <\/script>
 `;

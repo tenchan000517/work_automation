@@ -146,6 +146,8 @@ function addCompositionMenu(ui) {
     .addItem('📤 ワークス報告用に変換', 'showWorksReportConvertDialog')
     .addItem('📤 撮影指示書に変換', 'showShootingInstructionConvertDialog')
     .addSeparator()
+    .addItem('📸 撮影日程確定報告', 'showShootingConfirmDialog')  // contactFormats.jsで定義
+    .addSeparator()
     .addItem('🔧 シートデータ確認', 'showSheetDataDebug')
     .addToUi();
 }
@@ -420,14 +422,17 @@ function getCompanySheetListForComposition() {
         companyName = '';
       }
 
-      // Part③から保存済み構成案を取得
-      let savedDraftGenko = '';
-      let savedDraftDouga = '';
+      // Part③から保存済みデータを取得
+      let savedDraft = '';  // 構成案
+      let savedPairsona = '';  // ペアソナ/エンゲージ
+      let savedShooting = '';  // 撮影指示書
       try {
-        const genkoResult = loadPart3Data(name, '構成案_原稿用');
-        if (genkoResult.success) savedDraftGenko = genkoResult.value;
-        const dougaResult = loadPart3Data(name, '構成案_動画用');
-        if (dougaResult.success) savedDraftDouga = dougaResult.value;
+        const draftResult = loadPart3Data(name, '構成案');
+        if (draftResult.success) savedDraft = draftResult.value;
+        const pairsonaResult = loadPart3Data(name, 'ペアソナ/エンゲージ');
+        if (pairsonaResult.success) savedPairsona = pairsonaResult.value;
+        const shootingResult = loadPart3Data(name, '撮影指示書');
+        if (shootingResult.success) savedShooting = shootingResult.value;
       } catch (e) {
         // ignore
       }
@@ -436,9 +441,10 @@ function getCompanySheetListForComposition() {
         sheetName: name,
         companyName: String(companyName).trim(),
         isActive: name === activeSheetName,
-        savedDraftGenko: savedDraftGenko,
-        savedDraftDouga: savedDraftDouga,
-        hasSavedData: !!savedDraftGenko || !!savedDraftDouga
+        savedDraft: savedDraft,  // 構成案
+        savedPairsona: savedPairsona,  // ペアソナ/エンゲージ
+        savedShooting: savedShooting,  // 撮影指示書
+        hasSavedData: !!savedDraft
       });
     }
   }
@@ -486,120 +492,200 @@ function createCompositionDialogHTML(sheetList, template) {
   ${CI_DIALOG_STYLES}
   <style>
     /* compositionDraftGenerator固有スタイル */
-    h3 { margin: 0 0 15px 0; color: #1a73e8; }
-    .sheet-list { max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; }
-    .sheet-item { padding: 8px; margin: 4px 0; border-radius: 4px; cursor: pointer; display: flex; align-items: center; }
-    .sheet-item:hover { background: #f0f0f0; }
-    .sheet-item.selected { background: #e3f2fd; border: 1px solid #1a73e8; }
-    .sheet-item input[type="radio"] { margin-right: 10px; }
-    .company-name { color: #666; font-size: 12px; margin-left: 10px; }
-    .output-area { width: 100%; height: 250px; font-family: monospace; font-size: 12px; resize: vertical; }
-    .btn-success { background: #4caf50; color: white; }
-    .btn-success:hover { background: #388e3c; }
     .loading { display: none; color: #1a73e8; margin-left: 10px; }
-    .accordion-header { background: #f5f5f5; padding: 10px 15px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-    .accordion-header:hover { background: #e0e0e0; }
-    .accordion-content.show { display: block; }
-    pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; }
+    .template-pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 150px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; margin-top: 12px; }
+    .save-btn { background: #ff9800; color: white; }
+    .save-btn:hover { background: #f57c00; }
+    .badge-saved { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .ai-output-section { margin-top: 16px; }
+    .ai-output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .ai-output-textarea { width: 100%; height: 200px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; font-family: monospace; resize: vertical; }
+    .ai-output-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
   </style>
 </head>
 <body>
-  <div class="section">
-    <div class="section-title">📄 対象企業を選択</div>
-    <div class="sheet-list" id="sheetList"></div>
+  <div class="copy-success" id="copySuccess">コピーしました</div>
+
+  <!-- 企業選択ドロップダウン -->
+  <div class="input-section">
+    <span class="input-label">対象企業を選択</span>
+    <div class="company-select-wrapper">
+      <div class="company-select-display" id="companySelectDisplay" onclick="toggleCompanyDropdown()">
+        <span class="placeholder">企業シートを選択してください</span>
+      </div>
+      <div class="company-select-dropdown" id="companySelectDropdown"></div>
+    </div>
   </div>
 
-  <div class="info-box" id="companyInfo">
-    <strong>🏢 選択中：</strong><span id="selectedCompany">（シートを選択してください）</span>
-  </div>
-
+  <!-- プロンプトテンプレート（アコーディオン） -->
   <div class="accordion">
-    <div class="accordion-header" onclick="toggleAccordion()">
-      <span>📝 構成案作成プロンプト（クリックで展開）</span>
-      <span id="accordionIcon">▶</span>
+    <div class="accordion-header" onclick="toggleAccordionById('arrow', 'accordionContent')">
+      <span class="accordion-title">構成案作成プロンプトを表示</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-blue" onclick="event.stopPropagation();copyTemplate()">コピー</button>
+        <span class="accordion-arrow" id="arrow">▶</span>
+      </div>
     </div>
     <div class="accordion-content" id="accordionContent">
-      <button class="btn btn-secondary" onclick="copyTemplate()">📋 テンプレートのみコピー</button>
-      <pre id="templatePreview"></pre>
+      <pre class="template-pre" id="templatePreview"></pre>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">📤 出力</div>
-    <textarea class="output-area" id="outputArea" readonly placeholder="「プロンプトを生成」ボタンをクリックすると、ここに完成版プロンプトが表示されます"></textarea>
+  <!-- プレビューセクション（生成したプロンプト） -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <span class="preview-title">プレビュー（AIに貼り付けるプロンプト）</span>
+      <button class="btn btn-green" id="copyBtn" onclick="copyOutput()" style="display:none;">コピー</button>
+    </div>
+    <div class="preview-content" id="previewContent">
+      <span class="preview-placeholder">「プロンプトを生成」をクリックすると、ここに完成版プロンプトが表示されます</span>
+    </div>
   </div>
 
-  <div>
-    <button class="btn btn-primary" onclick="generatePrompt()">🚀 プロンプトを生成</button>
-    <button class="btn btn-success" onclick="copyOutput()" id="copyBtn" disabled>📋 完成版をコピー</button>
-    <button class="btn btn-secondary" onclick="google.script.host.close()">閉じる</button>
-    <span class="loading" id="loading">⏳ 処理中...</span>
+  <!-- アクション -->
+  <div class="actions">
+    <button class="btn btn-primary" onclick="generatePrompt()">プロンプトを生成</button>
+    <span class="loading" id="loading">処理中...</span>
+  </div>
+
+  <!-- AI出力保存セクション -->
+  <div class="ai-output-section">
+    <div class="ai-output-header">
+      <span class="input-label" style="margin-bottom:0;">AIが出力した構成案を貼り付け</span>
+      <button class="btn save-btn" onclick="saveDraft()">シートに保存</button>
+    </div>
+    <textarea class="ai-output-textarea" id="aiOutputArea" placeholder="AIが出力した構成案をここに貼り付けてください。&#10;&#10;保存すると、変換ダイアログで自動的に読み込まれます。"></textarea>
+  </div>
+
+  <div class="footer" style="margin-top:16px;">
+    <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
   </div>
 
   <div class="status" id="status"></div>
+
+  ${CI_UI_COMPONENTS}
 
   <script>
     const sheetList = ${sheetListJson};
     const template = \`${escapedTemplate}\`;
     let selectedSheetName = '';
+    let selectedSavedDraft = '';
+    let generatedPrompt = '';
 
     // 初期化
     window.onload = function() {
-      renderSheetList();
+      renderCompanyDropdown();
       document.getElementById('templatePreview').textContent = template;
     };
 
-    function renderSheetList() {
-      const container = document.getElementById('sheetList');
-      container.innerHTML = '';
+    function toggleCompanyDropdown() {
+      const display = document.getElementById('companySelectDisplay');
+      const dropdown = document.getElementById('companySelectDropdown');
+      const isOpen = dropdown.classList.contains('show');
 
-      // アクティブシートを先頭に
+      if (isOpen) {
+        dropdown.classList.remove('show');
+        display.classList.remove('active');
+      } else {
+        dropdown.classList.add('show');
+        display.classList.add('active');
+      }
+    }
+
+    function renderCompanyDropdown() {
+      const dropdown = document.getElementById('companySelectDropdown');
+      dropdown.innerHTML = '';
+
+      // ソート: アクティブ最上段、残りは新しい順
       const sorted = [...sheetList].sort((a, b) => {
-        if (a.isActive) return -1;
-        if (b.isActive) return 1;
-        return 0;
+        if (a.isActive && !b.isActive) return -1;
+        if (!a.isActive && b.isActive) return 1;
+        return -1; // 配列後方（新しい）を上に
       });
 
-      sorted.forEach((item, index) => {
+      sorted.forEach((item) => {
         const div = document.createElement('div');
-        div.className = 'sheet-item' + (item.isActive ? ' selected' : '');
-        div.innerHTML = \`
-          <input type="radio" name="sheet" value="\${item.sheetName}" \${item.isActive ? 'checked' : ''}>
-          <span>\${item.sheetName}</span>
-          \${item.isActive ? '<span class="active-badge">アクティブ</span>' : ''}
-          \${item.companyName ? '<span class="company-name">（' + item.companyName + '）</span>' : ''}
-        \`;
-        div.onclick = function() {
-          selectSheet(item.sheetName, item.companyName || item.sheetName);
-          document.querySelectorAll('.sheet-item').forEach(el => el.classList.remove('selected'));
-          div.classList.add('selected');
-          div.querySelector('input').checked = true;
-        };
-        container.appendChild(div);
+        div.className = 'company-select-item' + (item.isActive ? ' selected' : '');
 
+        const activeBadge = item.isActive ? '<span class="badge-active">アクティブ</span>' : '';
+        const savedBadge = item.savedDraft ? '<span class="badge-saved">保存済</span>' : '';
+        const companyNote = item.companyName && item.companyName !== item.sheetName
+          ? ' <span style="color:#666;font-size:12px;">(' + escapeHtml(item.companyName) + ')</span>' : '';
+
+        div.innerHTML = \`
+          <span class="check-icon">\${item.isActive ? '✓' : ''}</span>
+          <span class="company-name">\${escapeHtml(item.sheetName)}\${companyNote}</span>
+          \${activeBadge}
+          \${savedBadge}
+        \`;
+
+        div.onclick = function(e) {
+          e.stopPropagation();
+          selectCompany(item);
+          toggleCompanyDropdown();
+        };
+
+        dropdown.appendChild(div);
+
+        // アクティブがあれば自動選択
         if (item.isActive) {
-          selectedSheetName = item.sheetName;
-          document.getElementById('selectedCompany').textContent = item.companyName || item.sheetName;
+          selectCompany(item);
         }
       });
     }
 
-    function selectSheet(sheetName, companyName) {
-      selectedSheetName = sheetName;
-      document.getElementById('selectedCompany').textContent = companyName;
+    function selectCompany(item) {
+      const currentInput = document.getElementById('aiOutputArea').value.trim();
+
+      // 保存済みデータがあり、現在の入力と異なる場合は確認
+      if (item.savedDraft && currentInput && currentInput !== item.savedDraft) {
+        if (!confirm('保存済みの構成案を読み込みますか？\\n（現在の入力は破棄されます）')) {
+          updateSelection(item);
+          return;
+        }
+      }
+
+      updateSelection(item);
+
+      // 保存済みデータを読み込む
+      if (item.savedDraft) {
+        document.getElementById('aiOutputArea').value = item.savedDraft;
+        showStatus('保存済みの構成案を読み込みました', 'info');
+      }
     }
 
-    function toggleAccordion() {
-      const content = document.getElementById('accordionContent');
-      const icon = document.getElementById('accordionIcon');
-      content.classList.toggle('show');
-      icon.textContent = content.classList.contains('show') ? '▼' : '▶';
+    function updateSelection(item) {
+      selectedSheetName = item.sheetName;
+      selectedSavedDraft = item.savedDraft || '';
+
+      // 表示を更新
+      const display = document.getElementById('companySelectDisplay');
+      const activeBadge = item.isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+      const savedBadge = item.savedDraft ? '<span class="badge-saved" style="margin-left:8px;">保存済</span>' : '';
+      display.innerHTML = \`
+        <span class="selected-check">✓</span>
+        <span class="selected-name">\${escapeHtml(item.sheetName)}</span>
+        \${activeBadge}
+        \${savedBadge}
+      \`;
+
+      // ドロップダウン内の選択状態を更新
+      document.querySelectorAll('.company-select-item').forEach(el => {
+        el.classList.remove('selected');
+        el.querySelector('.check-icon').textContent = '';
+      });
+      const items = document.querySelectorAll('.company-select-item');
+      items.forEach(el => {
+        const name = el.querySelector('.company-name').textContent.split('(')[0].trim();
+        if (name === item.sheetName) {
+          el.classList.add('selected');
+          el.querySelector('.check-icon').textContent = '✓';
+        }
+      });
     }
 
     function copyTemplate() {
-      navigator.clipboard.writeText(template).then(() => {
-        showStatus('テンプレートをコピーしました', 'success');
-      });
+      copyToClipboard(template);
     }
 
     function generatePrompt() {
@@ -609,16 +695,16 @@ function createCompositionDialogHTML(sheetList, template) {
       }
 
       document.getElementById('loading').style.display = 'inline';
-      document.getElementById('copyBtn').disabled = true;
+      document.getElementById('copyBtn').style.display = 'none';
 
       google.script.run
         .withSuccessHandler(function(result) {
           document.getElementById('loading').style.display = 'none';
           if (result.success) {
-            const fullPrompt = template.replace('{{input}}', JSON.stringify(result.data, null, 2));
-            document.getElementById('outputArea').value = fullPrompt;
-            document.getElementById('copyBtn').disabled = false;
-            showStatus('プロンプトを生成しました。「完成版をコピー」してAIに貼り付けてください。', 'success');
+            generatedPrompt = template.replace('{{input}}', JSON.stringify(result.data, null, 2));
+            document.getElementById('previewContent').innerHTML = '<pre style="margin:0;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow-y:auto;">' + escapeHtml(generatedPrompt) + '</pre>';
+            document.getElementById('copyBtn').style.display = 'inline-block';
+            showStatus('プロンプトを生成しました。「コピー」してAIに貼り付けてください。', 'success');
           } else {
             showStatus('エラー: ' + result.error, 'error');
           }
@@ -631,10 +717,53 @@ function createCompositionDialogHTML(sheetList, template) {
     }
 
     function copyOutput() {
-      const output = document.getElementById('outputArea').value;
-      navigator.clipboard.writeText(output).then(() => {
-        showStatus('✅ コピー完了！AIに貼り付けて実行してください。', 'success');
-      });
+      if (generatedPrompt) {
+        copyToClipboard(generatedPrompt);
+      }
+    }
+
+    function saveDraft() {
+      if (!selectedSheetName) {
+        showStatus('企業シートを選択してください', 'error');
+        return;
+      }
+      const input = document.getElementById('aiOutputArea').value.trim();
+      if (!input) {
+        showStatus('構成案を入力してください', 'error');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showStatus('構成案をシートに保存しました', 'success');
+            selectedSavedDraft = input;
+            // バッジを更新
+            const display = document.getElementById('companySelectDisplay');
+            if (!display.innerHTML.includes('badge-saved')) {
+              display.innerHTML = display.innerHTML.replace('</span>\\n      ', '</span>\\n        <span class="badge-saved" style="margin-left:8px;">保存済</span>\\n      ');
+            }
+          } else if (result.needConfirm) {
+            if (confirm('既存のデータを上書きしますか？')) {
+              google.script.run
+                .withSuccessHandler(function(r) {
+                  if (r.success) {
+                    showStatus('構成案を上書き保存しました', 'success');
+                    selectedSavedDraft = input;
+                  } else {
+                    showStatus('保存エラー: ' + r.error, 'error');
+                  }
+                })
+                .savePart3DataForce(selectedSheetName, '構成案', input);
+            }
+          } else {
+            showStatus('保存エラー: ' + result.error, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          showStatus('保存エラー: ' + error.message, 'error');
+        })
+        .savePart3Data(selectedSheetName, '構成案', input, true);
     }
 
     function showStatus(message, type) {
@@ -779,11 +908,14 @@ function showConvertDialog(promptName, title, description) {
   // 企業シート一覧を取得（保存済みデータ含む）
   const sheetList = getCompanySheetListForComposition();
 
-  // 保存キーを決定（原稿用か動画用か）
-  let saveKey = '構成案_原稿用';  // デフォルト
-  if (promptName === '撮影指示書変換') {
-    saveKey = '構成案_動画用';
+  // 保存キーを決定（変換後の出力の保存先）
+  let saveKey = null;  // デフォルトは保存なし
+  if (promptName === 'ペアソナ/エンゲージ変換') {
+    saveKey = 'ペアソナ/エンゲージ';
+  } else if (promptName === '撮影指示書変換') {
+    saveKey = '撮影指示書';
   }
+  // ワークス報告変換は saveKey = null（保存なし）
 
   const html = HtmlService.createHtmlOutput(createConvertDialogHTML(promptData, title, description, sheetList, saveKey))
     .setWidth(900)
@@ -803,7 +935,8 @@ function createConvertDialogHTML(promptData, title, description, sheetList, save
     .replace(/\$/g, '\\$');
 
   const sheetListJson = JSON.stringify(sheetList || []);
-  const saveKeyJson = JSON.stringify(saveKey || '構成案_原稿用');
+  const saveKeyJson = saveKey ? JSON.stringify(saveKey) : 'null';
+  const hasSaveKey = !!saveKey;
 
   return `
 <!DOCTYPE html>
@@ -813,186 +946,270 @@ function createConvertDialogHTML(promptData, title, description, sheetList, save
   ${CI_DIALOG_STYLES}
   <style>
     /* createConvertDialog固有スタイル */
-    h3 { margin: 0 0 10px 0; color: #1a73e8; }
-    .input-area { width: 100%; height: 180px; font-family: monospace; font-size: 12px; resize: vertical; margin-bottom: 10px; }
-    .output-area { width: 100%; height: 200px; font-family: monospace; font-size: 12px; resize: vertical; background: #f9f9f9; }
-    .btn-success { background: #4caf50; color: white; }
-    .btn-success:hover { background: #388e3c; }
-    .btn-save { background: #ff9800; color: white; padding: 8px 16px; font-size: 13px; }
-    .btn-save:hover { background: #f57c00; }
     .status.info { display: block; background: #e3f2fd; color: #1565c0; }
-    .accordion-header { background: #f5f5f5; padding: 10px 15px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-    .accordion-header:hover { background: #e0e0e0; }
-    .accordion-content.show { display: block; }
-    pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 150px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; }
-    /* シート選択UI */
-    .sheet-select-box { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd; }
-    .sheet-select-title { font-weight: bold; margin-bottom: 8px; color: #333; font-size: 13px; }
-    .sheet-list { max-height: 100px; overflow-y: auto; }
-    .sheet-option { display: flex; align-items: center; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-bottom: 3px; font-size: 13px; }
-    .sheet-option:hover { background: #e3f2fd; }
-    .sheet-option.selected { background: #bbdefb; }
-    .sheet-option.has-data { border-left: 3px solid #ff9800; }
-    .sheet-option input[type="radio"] { margin-right: 8px; }
-    .badge { font-size: 10px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
-    .badge-saved { background: #ff9800; color: white; }
+    .template-pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; max-height: 120px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px; margin-top: 12px; }
+    .btn-orange { background: #ff9800; color: white; }
+    .btn-orange:hover { background: #f57c00; }
+    .badge-saved { background: #ff9800; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .badge-draft { background: #4caf50; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <h3>${title}</h3>
+  <div class="copy-success" id="copySuccess">コピーしました</div>
+
+  <h3 style="margin:0 0 8px 0;color:#1a73e8;">${title}</h3>
   <p class="description">${description}</p>
 
-  <!-- シート選択UI -->
-  <div class="sheet-select-box">
-    <div class="sheet-select-title">📄 対象企業（保存先）を選択</div>
-    <div id="sheetList" class="sheet-list"></div>
+  <!-- 企業選択ドロップダウン -->
+  <div class="input-section">
+    <span class="input-label">対象企業を選択</span>
+    <div class="company-select-wrapper">
+      <div class="company-select-display" id="companySelectDisplay" onclick="toggleCompanyDropdown()">
+        <span class="placeholder">企業シートを選択してください</span>
+      </div>
+      <div class="company-select-dropdown" id="companySelectDropdown"></div>
+    </div>
   </div>
 
+  <!-- 変換プロンプト（アコーディオン） -->
   <div class="accordion">
-    <div class="accordion-header" onclick="toggleAccordion()">
-      <span>📝 変換プロンプトを確認（クリックで展開）</span>
-      <span id="accordionIcon">▶</span>
+    <div class="accordion-header" onclick="toggleAccordionById('arrow', 'accordionContent')">
+      <span class="accordion-title">変換プロンプトを表示</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-blue" onclick="event.stopPropagation();copyTemplate()">コピー</button>
+        <span class="accordion-arrow" id="arrow">▶</span>
+      </div>
     </div>
     <div class="accordion-content" id="accordionContent">
-      <pre id="templatePreview"></pre>
+      <pre class="template-pre" id="templatePreview"></pre>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">
-      📥 ${inputLabel}
-      <button class="btn-save" onclick="saveDraft()">💾 シートに保存</button>
+  <!-- 入力セクション（構成案） -->
+  <div class="input-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span class="input-label" style="margin-bottom:0;">${inputLabel}</span>
     </div>
-    <textarea class="input-area" id="inputArea" placeholder="${inputPlaceholder}"></textarea>
-    <button class="btn btn-primary" onclick="generateConvertPrompt()">🔄 変換プロンプトを生成</button>
+    <textarea style="width:100%;height:100px;font-family:monospace;font-size:12px;resize:vertical;padding:10px;border:1px solid #ddd;border-radius:6px;" id="inputArea" placeholder="${inputPlaceholder}" oninput="updatePreview()"></textarea>
   </div>
 
-  <div class="section">
-    <div class="section-title">📤 出力（AIに貼り付けるプロンプト）</div>
-    <textarea class="output-area" id="outputArea" readonly placeholder="「変換プロンプトを生成」をクリックすると、ここに完成版プロンプトが表示されます"></textarea>
+  <!-- プレビューセクション -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <span class="preview-title">プレビュー（AIに貼り付けるプロンプト）</span>
+      <button class="btn btn-green" id="copyBtn" onclick="copyOutput()" style="display:none;">コピー</button>
+    </div>
+    <div class="preview-content" id="previewContent">
+      <span class="preview-placeholder">構成案を入力すると、ここにプロンプトが表示されます</span>
+    </div>
   </div>
 
-  <div>
-    <button class="btn btn-success" onclick="copyOutput()" id="copyBtn" disabled>📋 完成版をコピー</button>
-    <button class="btn btn-secondary" onclick="google.script.host.close()">閉じる</button>
+  <!-- AI出力保存セクション -->
+  ${hasSaveKey ? `
+  <div class="input-section" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span class="input-label" style="margin-bottom:0;">AIが出力した結果を貼り付け</span>
+      <button class="btn btn-orange" onclick="saveAiOutput()">シートに保存</button>
+    </div>
+    <textarea style="width:100%;height:120px;font-family:monospace;font-size:12px;resize:vertical;padding:10px;border:1px solid #ddd;border-radius:6px;" id="aiOutputArea" placeholder="AIが出力した変換結果をここに貼り付けてください。"></textarea>
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
   </div>
 
   <div class="status" id="status"></div>
+
+  ${CI_UI_COMPONENTS}
 
   <script>
     const template = \`${escapedTemplate}\`;
     const sheetList = ${sheetListJson};
     const saveKey = ${saveKeyJson};
     let selectedSheetName = '';
+    let selectedCompanyName = '';
+    let selectedSavedData = '';
+    let generatedPrompt = '';
 
     window.onload = function() {
       document.getElementById('templatePreview').textContent = template;
-      renderSheetList();
+      renderCompanyDropdown();
     };
 
-    function renderSheetList() {
-      const container = document.getElementById('sheetList');
+    // プレビュー更新（入力時・企業選択時に自動呼び出し）
+    function updatePreview() {
+      const input = document.getElementById('inputArea').value.trim();
 
-      if (!sheetList || sheetList.length === 0) {
-        container.innerHTML = '<div style="color:#666;padding:8px;">企業シートがありません</div>';
+      if (!input) {
+        document.getElementById('previewContent').innerHTML = '<span class="preview-placeholder">構成案を入力すると、ここにプロンプトが表示されます</span>';
+        document.getElementById('copyBtn').style.display = 'none';
+        generatedPrompt = '';
         return;
       }
 
-      // アクティブシートを先頭に
-      const sorted = [...sheetList].sort((a, b) => {
-        if (a.isActive) return -1;
-        if (b.isActive) return 1;
-        return 0;
-      });
+      // テンプレートに入力を埋め込み
+      let prompt = template.replace('{{input}}', input);
 
-      let html = '';
-      sorted.forEach((item, index) => {
-        const isFirst = index === 0;
-        if (isFirst) selectedSheetName = item.sheetName;
+      // 企業名プレースホルダーを置換
+      if (selectedCompanyName) {
+        prompt = prompt.replace(/\\{\\{企業名\\}\\}/g, selectedCompanyName);
+      }
 
-        const selectedClass = isFirst ? 'selected' : '';
-        const hasDataClass = item.hasSavedData ? 'has-data' : '';
-        const activeBadge = item.isActive ? '<span class="badge badge-active">アクティブ</span>' : '';
-        const savedBadge = item.hasSavedData ? '<span class="badge badge-saved">保存済</span>' : '';
-        const savedData = saveKey === '構成案_動画用' ? item.savedDraftDouga : item.savedDraftGenko;
+      generatedPrompt = prompt;
+      document.getElementById('previewContent').innerHTML = '<pre style="margin:0;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow-y:auto;">' + escapeHtml(generatedPrompt) + '</pre>';
+      document.getElementById('copyBtn').style.display = 'inline-block';
+    }
 
-        html += \`
-          <div class="sheet-option \${selectedClass} \${hasDataClass}" onclick="selectSheet('\${escapeHtml(item.sheetName)}', '\${escapeHtml(savedData || '')}', this)">
-            <input type="radio" name="targetSheet" value="\${escapeHtml(item.sheetName)}" \${isFirst ? 'checked' : ''}>
-            <label>\${escapeHtml(item.sheetName)}\${activeBadge}\${savedBadge}</label>
-          </div>
-        \`;
-      });
+    function toggleCompanyDropdown() {
+      const display = document.getElementById('companySelectDisplay');
+      const dropdown = document.getElementById('companySelectDropdown');
+      const isOpen = dropdown.classList.contains('show');
 
-      container.innerHTML = html;
-
-      // 最初のシートの保存済みデータを読み込む
-      const firstSheet = sorted[0];
-      const savedData = saveKey === '構成案_動画用' ? firstSheet.savedDraftDouga : firstSheet.savedDraftGenko;
-      if (savedData) {
-        document.getElementById('inputArea').value = savedData;
-        showStatus('保存済みの構成案を読み込みました', 'info');
+      if (isOpen) {
+        dropdown.classList.remove('show');
+        display.classList.remove('active');
+      } else {
+        dropdown.classList.add('show');
+        display.classList.add('active');
       }
     }
 
-    function selectSheet(sheetName, savedData, element) {
-      document.querySelectorAll('.sheet-option').forEach(el => el.classList.remove('selected'));
-      document.querySelectorAll('.sheet-option input[type="radio"]').forEach(el => el.checked = false);
+    function renderCompanyDropdown() {
+      const dropdown = document.getElementById('companySelectDropdown');
+      dropdown.innerHTML = '';
 
-      element.classList.add('selected');
-      element.querySelector('input[type="radio"]').checked = true;
-      selectedSheetName = sheetName;
+      if (!sheetList || sheetList.length === 0) {
+        dropdown.innerHTML = '<div style="color:#666;padding:12px;">企業シートがありません</div>';
+        return;
+      }
 
-      // 保存済みデータがあれば読み込む
+      // ソート: アクティブ最上段、残りは新しい順
+      const sorted = [...sheetList].sort((a, b) => {
+        if (a.isActive && !b.isActive) return -1;
+        if (!a.isActive && b.isActive) return 1;
+        return -1;
+      });
+
+      sorted.forEach((item) => {
+        // 入力の読み込み元は savedDraft（構成案）
+        const draftData = item.savedDraft || '';
+        const div = document.createElement('div');
+        div.className = 'company-select-item' + (item.isActive ? ' selected' : '');
+
+        const activeBadge = item.isActive ? '<span class="badge-active">アクティブ</span>' : '';
+        const draftBadge = draftData ? '<span class="badge-draft">構成案あり</span>' : '';
+
+        div.innerHTML = \`
+          <span class="check-icon">\${item.isActive ? '✓' : ''}</span>
+          <span class="company-name">\${escapeHtml(item.sheetName)}</span>
+          \${activeBadge}
+          \${draftBadge}
+        \`;
+
+        div.onclick = function(e) {
+          e.stopPropagation();
+          selectCompany(item);
+          toggleCompanyDropdown();
+        };
+
+        dropdown.appendChild(div);
+
+        // アクティブがあれば自動選択
+        if (item.isActive) {
+          selectCompany(item);
+        }
+      });
+    }
+
+    function selectCompany(item) {
       const currentInput = document.getElementById('inputArea').value.trim();
-      if (savedData) {
-        if (currentInput && currentInput !== savedData) {
-          if (confirm('保存済みの構成案を読み込みますか？\\n（現在の入力は破棄されます）')) {
-            document.getElementById('inputArea').value = savedData;
-            showStatus('保存済みの構成案を読み込みました', 'info');
-          }
-        } else {
-          document.getElementById('inputArea').value = savedData;
-          showStatus('保存済みの構成案を読み込みました', 'info');
+      const draftData = item.savedDraft || '';
+
+      // 構成案データがあれば読み込み確認
+      if (draftData && currentInput && currentInput !== draftData) {
+        if (!confirm('保存済みの構成案を読み込みますか？\\n（現在の入力は破棄されます）')) {
+          // キャンセルの場合は選択だけ変更
+          updateSelection(item);
+          updatePreview();
+          return;
         }
       }
+
+      updateSelection(item);
+
+      // 構成案データを読み込む
+      if (draftData) {
+        document.getElementById('inputArea').value = draftData;
+        showStatus('保存済みの構成案を読み込みました', 'info');
+      }
+
+      // プレビューを更新
+      updatePreview();
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    function updateSelection(item) {
+      selectedSheetName = item.sheetName;
+      selectedCompanyName = item.companyName || item.sheetName;
+      selectedSavedData = item.savedDraft || '';
+
+      // 表示を更新
+      const display = document.getElementById('companySelectDisplay');
+      const activeBadge = item.isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+      const draftBadge = item.savedDraft ? '<span class="badge-draft" style="margin-left:8px;">構成案あり</span>' : '';
+      display.innerHTML = \`
+        <span class="selected-check">✓</span>
+        <span class="selected-name">\${escapeHtml(item.sheetName)}</span>
+        \${activeBadge}
+        \${draftBadge}
+      \`;
+
+      // ドロップダウン内の選択状態を更新
+      document.querySelectorAll('.company-select-item').forEach(el => {
+        el.classList.remove('selected');
+        el.querySelector('.check-icon').textContent = '';
+      });
+      const items = document.querySelectorAll('.company-select-item');
+      items.forEach(el => {
+        const name = el.querySelector('.company-name').textContent;
+        if (name === item.sheetName) {
+          el.classList.add('selected');
+          el.querySelector('.check-icon').textContent = '✓';
+        }
+      });
     }
 
-    function toggleAccordion() {
-      const content = document.getElementById('accordionContent');
-      const icon = document.getElementById('accordionIcon');
-      content.classList.toggle('show');
-      icon.textContent = content.classList.contains('show') ? '▼' : '▶';
+    function copyTemplate() {
+      copyToClipboard(template);
     }
 
-    function saveDraft() {
+    function saveAiOutput() {
+      if (!saveKey) {
+        showStatus('この変換では保存機能は利用できません', 'error');
+        return;
+      }
       if (!selectedSheetName) {
         showStatus('企業シートを選択してください', 'error');
         return;
       }
-      const input = document.getElementById('inputArea').value.trim();
-      if (!input) {
-        showStatus('構成案を入力してください', 'error');
+      const aiOutput = document.getElementById('aiOutputArea').value.trim();
+      if (!aiOutput) {
+        showStatus('AI出力を入力してください', 'error');
         return;
       }
 
       google.script.run
         .withSuccessHandler(function(result) {
           if (result.success) {
-            showStatus('💾 構成案を企業シートに保存しました', 'success');
+            showStatus('「' + saveKey + '」に保存しました', 'success');
           } else if (result.needConfirm) {
             if (confirm('既存のデータを上書きしますか？')) {
               google.script.run
                 .withSuccessHandler(function(r) {
-                  if (r.success) showStatus('💾 構成案を上書き保存しました', 'success');
+                  if (r.success) showStatus('「' + saveKey + '」に上書き保存しました', 'success');
                   else showStatus('保存エラー: ' + r.error, 'error');
                 })
-                .savePart3DataForce(selectedSheetName, saveKey, input);
+                .savePart3DataForce(selectedSheetName, saveKey, aiOutput);
             }
           } else {
             showStatus('保存エラー: ' + result.error, 'error');
@@ -1001,28 +1218,13 @@ function createConvertDialogHTML(promptData, title, description, sheetList, save
         .withFailureHandler(function(error) {
           showStatus('保存エラー: ' + error.message, 'error');
         })
-        .savePart3Data(selectedSheetName, saveKey, input, true);
-    }
-
-    function generateConvertPrompt() {
-      const input = document.getElementById('inputArea').value.trim();
-
-      if (!input) {
-        showStatus('構成案を入力してください', 'error');
-        return;
-      }
-
-      const fullPrompt = template.replace('{{input}}', input);
-      document.getElementById('outputArea').value = fullPrompt;
-      document.getElementById('copyBtn').disabled = false;
-      showStatus('変換プロンプトを生成しました。「完成版をコピー」してAIに貼り付けてください。', 'success');
+        .savePart3Data(selectedSheetName, saveKey, aiOutput, true);
     }
 
     function copyOutput() {
-      const output = document.getElementById('outputArea').value;
-      navigator.clipboard.writeText(output).then(() => {
-        showStatus('✅ コピー完了！AIに貼り付けて実行してください。', 'success');
-      });
+      if (generatedPrompt) {
+        copyToClipboard(generatedPrompt);
+      }
     }
 
     function showStatus(message, type) {
