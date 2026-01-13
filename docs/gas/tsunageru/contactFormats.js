@@ -1,11 +1,11 @@
 /**
- * 連絡用フォーマット GAS
+ * 連絡フォーマット GAS
  *
  * Next.js（tsunageru.ts）のpopupと同じテンプレートをGASダイアログから使用
  * 企業シート選択でURL等を自動入力できるメリットを活かす
  *
  * 【メニュー構造】
- * 📨 連絡用フォーマット（ナンバリングなし）
+ * 📨 連絡フォーマット（ナンバリングなし）
  *   ├── 日程確定報告
  *   ├── ─────────────
  *   ├── 撮影日程確認
@@ -22,7 +22,7 @@
 // ================================================================================
 
 function addContactFormatsMenu(ui) {
-  ui.createMenu('📨 連絡用フォーマット')
+  ui.createMenu('📨 連絡フォーマット')
     .addItem('📩 日程調整・フォーム記入メール', 'showScheduleEmailDialog')  // companyInfoManager.js で定義
     .addItem('📋 日程確定報告', 'showScheduleConfirmDialog')
     .addSeparator()
@@ -136,6 +136,55 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/**
+ * Part②の撮影準備セクションからデータを取得
+ * @param {string} sheetName - シート名
+ * @returns {Object} 撮影準備データ
+ */
+function getShootingPrepDataFromSheet(sheetName) {
+  const result = {
+    shootingLocation: '',
+    parking: '',
+    dayOfContact: '',
+    emergencyContact: '',
+    requiredEquipment: '',
+    shootingDateTime: '',
+    meetingTime: ''
+  };
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return result;
+
+    // B列（ラベル列）を取得して撮影準備項目を探す
+    const lastRow = sheet.getLastRow();
+    const labelRange = sheet.getRange(1, 2, lastRow, 1).getValues();
+    const valueRange = sheet.getRange(1, 3, lastRow, 1).getValues();
+
+    const labelMap = {
+      '撮影場所': 'shootingLocation',
+      '駐車場': 'parking',
+      '当日担当者': 'dayOfContact',
+      '緊急連絡先': 'emergencyContact',
+      '必要備品': 'requiredEquipment',
+      '撮影日時': 'shootingDateTime',
+      '集合時間': 'meetingTime'
+    };
+
+    for (let i = 0; i < labelRange.length; i++) {
+      const label = String(labelRange[i][0]).trim();
+      if (labelMap[label]) {
+        result[labelMap[label]] = String(valueRange[i][0] || '').trim();
+      }
+    }
+  } catch (e) {
+    Logger.log('getShootingPrepDataFromSheet error: ' + e.message);
+  }
+
+  return result;
 }
 
 
@@ -1601,7 +1650,7 @@ function showShootingConfirmDialog() {
   const defaultShooter = settings['撮影担当'] || '川崎';
   const defaultCC = settings['CC'] || '青柳';
 
-  // 企業シートごとのPart③データを取得
+  // 企業シートごとのPart②・Part③データを取得
   const sheetDataList = companySheets.map(sheetName => {
     let shootingInstruction = '';
     let folderUrl = '';
@@ -1609,6 +1658,7 @@ function showShootingConfirmDialog() {
     let hearingSheetUrl = getCurrentSheetUrl(sheetName);
     let companyCueUrl = '';
 
+    // Part③から取得
     try {
       if (typeof loadPart3Data === 'function') {
         const instructionResult = loadPart3Data(sheetName, '撮影指示書');
@@ -1624,6 +1674,9 @@ function showShootingConfirmDialog() {
       // ignore
     }
 
+    // Part②の撮影準備セクションから取得
+    const shootingPrep = getShootingPrepDataFromSheet(sheetName);
+
     return {
       sheetName: sheetName,
       shootingInstruction: shootingInstruction,
@@ -1631,7 +1684,15 @@ function showShootingConfirmDialog() {
       mainFolderUrl: mainFolderUrl,
       hearingSheetUrl: hearingSheetUrl,
       companyCueUrl: companyCueUrl,
-      hasInstruction: !!shootingInstruction
+      hasInstruction: !!shootingInstruction,
+      // Part②撮影準備データ
+      shootingLocation: shootingPrep.shootingLocation,
+      parking: shootingPrep.parking,
+      dayOfContact: shootingPrep.dayOfContact,
+      emergencyContact: shootingPrep.emergencyContact,
+      requiredEquipment: shootingPrep.requiredEquipment,
+      shootingDateTime: shootingPrep.shootingDateTime,
+      meetingTime: shootingPrep.meetingTime
     };
   });
 
@@ -1881,6 +1942,12 @@ function createShootingConfirmHTML(sheetDataList, members, defaultShooter, defau
 
       // フィールドに自動入力
       document.getElementById('company').value = data.sheetName;
+
+      // Part②撮影準備データを自動入力
+      if (data.shootingDateTime) document.getElementById('shootingDate').value = data.shootingDateTime;
+      if (data.meetingTime) document.getElementById('meetingTime').value = data.meetingTime;
+      if (data.shootingLocation) document.getElementById('location').value = data.shootingLocation;
+      if (data.parking) document.getElementById('access').value = data.parking;
 
       // 撮影指示書を表示
       const instructionBox = document.getElementById('instructionBox');

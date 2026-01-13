@@ -139,7 +139,7 @@ const PART2_MAPPING = {
 
 // ===== メニュー追加 =====
 function addCompositionMenu(ui) {
-  ui.createMenu('５.📝 構成案作成')
+  ui.createMenu('４.📝 構成案作成')
     .addItem('📋 構成案を作成（プロンプト生成）', 'showCompositionPromptDialog')
     .addSeparator()
     .addItem('📤 ペアソナ/エンゲージ形式に変換', 'showPairsonaConvertDialog')

@@ -1,4 +1,26 @@
 import type { Product, RelatedLink, FlowStep } from "./index";
+import {
+  // マニュアル系
+  WORKS_REACTION_MANUAL,
+  WORKS_REACTION_SHORT,
+  GAS_AUTH_MANUAL,
+  GAS_AUTH_IMAGES,
+  NOTTA_START_MANUAL,
+  NOTTA_START_IMAGES,
+  NOTTA_END_MANUAL,
+  NOTTA_END_IMAGES,
+  NOTTA_PREP_CHECK,
+  NOTTA_PREP_IMAGES,
+  NOTTA_LAYOUT_TIP,
+  NOTTA_LAYOUT_IMAGE,
+  // テンプレート関数
+  createOrderNotificationTemplate,
+  createScheduleConfirmTemplate,
+  createReminderTemplate,
+  createShootingRequestTemplate,
+  createShootingInstructionTemplate,
+  createMinutesShareTemplate,
+} from "./common";
 
 export const tsunageru: Product = {
   id: "tsunageru",
@@ -133,26 +155,7 @@ export const tsunageru: Product = {
 ============================
 メイン担当:
 サブ担当:` },
-            {
-              label: "投稿フォーマット",
-              type: "popup",
-              hasInputField: true,
-              inputSectionTitle: "投稿フォーマット",
-              inputNote: "宛先・CC・企業名を入力してください（@を付けてください）",
-              inputFields: [
-                { id: "mention", label: "宛先（複数可）", placeholder: "@河合 @中尾文香", defaultValue: "@河合 @中尾文香" },
-                { id: "cc", label: "CC（複数可）", placeholder: "@青柳", defaultValue: "@青柳" },
-                { id: "company", label: "企業名", placeholder: "株式会社○○" }
-              ],
-              template: `{{mention}} cc:{{cc}}
-新規受注です。
-{{company}}様、ツナゲル12ヶ月契約。
-
-初回打ち合わせはカレンダーを見て調整しますので、
-予定の記入漏れがある方は記入してください。
-
-詳細は上記フォーマットをご確認ください。`
-            }
+            createOrderNotificationTemplate("ツナゲル", "12ヶ月")
           ]
         },
       ],
@@ -272,48 +275,12 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 3. ワークスに貼り付けて送信`,
           images: [{ url: "/images/works-schedule-share.png", caption: "ワークスでの日程共有の例" }],
           links: [
-            {
-              label: "投稿フォーマット",
-              type: "popup",
-              hasInputField: true,
-              inputSectionTitle: "ワークス投稿フォーマット",
-              inputNote: "各項目を入力してください",
-              inputFields: [
-                { id: "mention", label: "宛先", placeholder: "@河合 cc:@青柳", defaultValue: "@河合 cc:@青柳" },
-                { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" },
-                { id: "meetUrl", label: "Meet URL", placeholder: "https://meet.google.com/xxx-xxxx-xxx" }
-              ],
-              template: `{{mention}}
-初回打ち合わせの日程が確定しました。
-
-【企業名】{{company}}
-【日時】{{datetime}}
-【Meet URL】{{meetUrl}}
-
-カレンダー登録済みです。
-確認したらリアクションお願いします。`
-            }
+            createScheduleConfirmTemplate()
           ]
         },
         {
           label: "リアクション確認",
-          description: `メンションされた人（河合）がリアクション（スタンプや返信）で確認したことを伝えます。
-
-━━━━━━━━━━━━━━━━━━━━
-■ 確認する側（河合）のアクション
-━━━━━━━━━━━━━━━━━━━━
-
-・スタンプでリアクション（👍 等）
-・または「確認しました」と返信
-
-━━━━━━━━━━━━━━━━━━━━
-■ なぜリアクションが必要？
-━━━━━━━━━━━━━━━━━━━━
-
-・情報が伝わったことの確認
-・カレンダー登録漏れの防止
-・当日の「聞いてない」を防ぐ`
+          description: WORKS_REACTION_MANUAL,
         },
       ],
     },
@@ -426,30 +393,12 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 ・企業名が正しく入っているか
 ・（パターンAの場合）Part①の黄色セルにデータがあるか
 
-━━━━━━━━━━━━━━━━━━━━
-■ 🔐 初回のみ：認証が必要です
-━━━━━━━━━━━━━━━━━━━━
-
-初めてGASを使う場合、以下の認証フローが表示されます。
-（2回目以降は表示されません）
-
-① 「認証が必要です」→「OK」をクリック
-② 「アカウントを選択」→ 自分のアカウントを選択
-③ 「このアプリはGoogleで確認されていません」
-   → 左下の「詳細」をクリック
-④ 「無題のプロジェクト（安全ではないページ）に移動」をクリック
-⑤ アクセス権の確認 →「続行」をクリック
-
-※この警告は社内用GASでは正常です。安心して進めてください。`,
+${GAS_AUTH_MANUAL}`,
           images: [
             { url: "/images/gas-menu.png", caption: "STEP 1: メニュー「📋ヒアリングシート」を開く" },
             { url: "/images/gas-form-select-dialog.png", caption: "STEP 2: パターンA - フォーム回答から企業を選択" },
             { url: "/images/gas-manual-create.png", caption: "STEP 2: パターンB - 手動で企業名を入力" },
-            { url: "/images/gas-auth-1.png", caption: "【初回のみ】認証① - 「認証が必要です」→「OK」" },
-            { url: "/images/gas-auth-2.png", caption: "【初回のみ】認証② - アカウントを選択" },
-            { url: "/images/gas-auth-3.png", caption: "【初回のみ】認証③ - 左下「詳細」をクリック" },
-            { url: "/images/gas-auth-4.png", caption: "【初回のみ】認証④ - 「安全ではないページに移動」をクリック" },
-            { url: "/images/gas-auth-5.png", caption: "【初回のみ】認証⑤ - 「許可」をクリック" }
+            ...GAS_AUTH_IMAGES,
           ],
           links: [
             { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit" }
@@ -506,34 +455,7 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 2. 企業名・日程を入力
 3. ワークスに貼り付けて送信`,
           links: [
-            {
-              label: "連絡フォーマット",
-              type: "popup",
-              hasInputField: true,
-              inputSectionTitle: "撮影日程確認フォーマット",
-              inputNote: "各項目を入力してください",
-              inputFields: [
-                { id: "mention", label: "宛先（撮影担当）", placeholder: "@川崎", defaultValue: "@川崎" },
-                { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "mtgDate", label: "初回打ち合わせ日", placeholder: "○月○日（○）" },
-                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
-                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
-              ],
-              template: `{{mention}}
-{{company}}様の撮影について相談です。
-
-初回打ち合わせ：{{mtgDate}}予定
-打ち合わせで先方に撮影候補日を提示したいので、
-打ち合わせ日以降で撮影可能な日程を5候補ほど教えてください。
-
-よろしくお願いします。
-
-━━━━━━━━━━━━━━━━━━━━
-📎 関連リンク
-━━━━━━━━━━━━━━━━━━━━
-📋 ヒアリングシート: {{hearingSheetUrl}}
-📁 撮影素材フォルダ: {{folderUrl}}`
-            }
+            createShootingRequestTemplate()
           ]
         },
         {
@@ -547,64 +469,21 @@ https://forms.gle/gXE12JNfsN9JGiPJA
 2. 企業名・日時・Meet URLを入力
 3. ワークスに貼り付けて送信`,
           links: [
-            {
-              label: "連絡フォーマット",
-              type: "popup",
-              hasInputField: true,
-              inputSectionTitle: "リマインドフォーマット",
-              inputNote: "各項目を入力してください",
-              inputFields: [
-                { id: "mention", label: "宛先", placeholder: "@渡邉 cc:@青柳", defaultValue: "@渡邉 cc:@青柳" },
-                { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "datetime", label: "日時", placeholder: "○月○日（○）○○:○○〜" },
-                { id: "meetUrl", label: "Meet URL", placeholder: "https://meet.google.com/xxx-xxxx-xxx" },
-                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
-                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
-              ],
-              template: `{{mention}}
-{{company}}様の初回打ち合わせリマインドです。
-
-【日時】{{datetime}}
-【Meet URL】{{meetUrl}}
-
-よろしくお願いします。
-
-━━━━━━━━━━━━━━━━━━━━
-📎 関連リンク
-━━━━━━━━━━━━━━━━━━━━
-📋 ヒアリングシート: {{hearingSheetUrl}}
-📁 撮影素材フォルダ: {{folderUrl}}`
-            }
+            createReminderTemplate()
           ]
         },
         {
           label: "リアクション確認",
-          description: `撮影担当者・参加者からリアクション（スタンプや返信）があることを確認します。
+          description: `${WORKS_REACTION_MANUAL}
 
-撮影可能日5候補が確定したら、次のステップへ進みます。`
+撮影可能日5候補が確定したら、次のステップへ進みます。`,
         },
         {
           label: "NOTTA録画要領の確認",
           description: `初回打ち合わせ前に、NOTTAの録画要領を確認しておきます。
 
-━━━━━━━━━━━━━━━━━━━━
-■ 確認すること
-━━━━━━━━━━━━━━━━━━━━
-
-・NOTTAにログインできるか
-・「Web会議の文字起こし」の操作方法
-・録音開始・停止の方法
-
-━━━━━━━━━━━━━━━━━━━━
-■ リハーサル（任意）
-━━━━━━━━━━━━━━━━━━━━
-
-初めての方は、テスト用のMeetを立ち上げて
-NOTTAの録音開始〜停止を試しておくと安心です。`,
-          images: [
-            { url: "/images/notta-home.png", caption: "NOTTA ホーム画面" },
-            { url: "/images/notta-webmeeting.png", caption: "Web会議の文字起こし設定" }
-          ],
+${NOTTA_PREP_CHECK}`,
+          images: NOTTA_PREP_IMAGES,
           links: [
             { label: "NOTTA", type: "link", url: "https://app.notta.ai/" }
           ]
@@ -687,62 +566,10 @@ NOTTAの録音開始〜停止を試しておくと安心です。`,
           label: "Meetに入ってNOTTAを起動",
           description: `【NOTTAの起動マニュアル】
 
-━━━━━━━━━━━━━━━━━━━━
-■ Step 1：NOTTAにログイン
-━━━━━━━━━━━━━━━━━━━━
+${NOTTA_START_MANUAL}
 
-1. NOTTAのWebサイト（https://app.notta.ai/）にアクセス
-2. ログイン
-3. ホーム画面で「Web会議の文字起こし」をクリック
-
-━━━━━━━━━━━━━━━━━━━━
-■ Step 2：Web会議URLを取得
-━━━━━━━━━━━━━━━━━━━━
-
-1. Googleカレンダーを開く
-2. 該当の予定をクリック
-3. 「Google Meetに参加する」の横にあるコピーアイコンをクリック
-   → URLがクリップボードにコピーされる
-
-━━━━━━━━━━━━━━━━━━━━
-■ Step 3：NOTTAにURL入力
-━━━━━━━━━━━━━━━━━━━━
-
-1. NOTTAの「Web会議を自動文字起こしする」ダイアログが開く
-2. 言語設定を確認（1カ国語 / 日本語）
-3. 「Web会議の招待URL」欄にURLを貼り付け
-   → 「ビデオ通話のリンク: https://meet.google.com/...」と表示されればOK
-4. 「文字起こしする」ボタンをクリック
-
-━━━━━━━━━━━━━━━━━━━━
-■ Step 4：Google Meetで承認
-━━━━━━━━━━━━━━━━━━━━
-
-1. Google Meetに入室
-2. 画面右上に「1人のゲストの参加を許可」が表示される
-3. クリックすると「参加承認の待機中」が表示
-4. 「Notta Bot」の「承認」をクリック
-   → Notta Botが会議に参加
-
-━━━━━━━━━━━━━━━━━━━━
-■ 画面レイアウト（推奨）
-━━━━━━━━━━━━━━━━━━━━
-
-画面は狭くなりますが3分割しておくと見やすいです（推奨・任意）
-ヒアリングシート・Google Meet・NOTTAを並べて配置
-
-※デュアルディスプレイの場合：
-  カメラのある場所の下にMeet画面を配置し、
-  なるべくカメラ目線になるようにしてください。`,
-          images: [
-            { url: "/images/notta-step1-home.png", caption: "STEP 1: NOTTAホームで「Web会議」をクリック" },
-            { url: "/images/notta-step2-dialog.png", caption: "STEP 2: 「今すぐ文字起こし」を選択" },
-            { url: "/images/notta-step3-calendar-copy.png", caption: "STEP 3: カレンダーからMeet URLをコピー" },
-            { url: "/images/notta-step4-url-paste.png", caption: "STEP 4: NOTTAにURLを貼り付け" },
-            { url: "/images/notta-step8-approve.png", caption: "STEP 5: MeetでNotta Botの参加を承認" },
-            { url: "/images/notta-step5-bot-joined.png", caption: "STEP 6: Notta Bot参加後のMeet画面" },
-            { url: "/images/notta-step10-3split.jpg", caption: "【参考】3分割レイアウト例" }
-          ],
+${NOTTA_LAYOUT_TIP}`,
+          images: [...NOTTA_START_IMAGES, NOTTA_LAYOUT_IMAGE],
           links: [
             { label: "NOTTA", type: "link", url: "https://app.notta.ai/" }
           ]
@@ -844,44 +671,8 @@ NOTTAの録音開始〜停止を試しておくと安心です。`,
           label: "NOTTAの録音を確認",
           description: `【NOTTAの停止・録音確認マニュアル】
 
-━━━━━━━━━━━━━━━━━━━━
-■ 終了手順
-━━━━━━━━━━━━━━━━━━━━
-
-終了時はMeetを終了すれば自動的にNOTTAも停止します。
-
-1. Google Meetの赤いボタンをクリック
-2. 「通話を終了して全員を退出させる」を選択
-3. NOTTAは自動的に録音停止
-
-━━━━━━━━━━━━━━━━━━━━
-■ AI文字起こし改善を待つ
-━━━━━━━━━━━━━━━━━━━━
-
-1. 録音終了後「AIが文字起こしを改善しています...（約1分）」と表示
-2. 完了を待つ
-
-━━━━━━━━━━━━━━━━━━━━
-■ データのダウンロード
-━━━━━━━━━━━━━━━━━━━━
-
-mp3とテキスト両方ダウンロードしておくと安心です。
-
-1. NOTTAの録音詳細ページを開く
-2. 画面上部のダウンロードアイコンをクリック
-3. 「MP3」と「テキスト」を選択してダウンロード
-
-━━━━━━━━━━━━━━━━━━━━
-■ トラブル対応
-━━━━━━━━━━━━━━━━━━━━
-
-・録音が途中で止まっていた場合 → ヒアリングシートのメモで補完
-・文字起こしが不正確な部分 → 手動で修正`,
-          images: [
-            { url: "/images/notta-step11-end-meeting.png", caption: "STEP 1: ミーティング終了" },
-            { url: "/images/notta-step12-ai-processing.png", caption: "STEP 2: AI文字起こし処理中" },
-            { url: "/images/notta-step13-download.png", caption: "STEP 3: テキストでダウンロード" }
-          ],
+${NOTTA_END_MANUAL}`,
+          images: NOTTA_END_IMAGES,
           links: [
             { label: "NOTTA", type: "link", url: "https://app.notta.ai/" }
           ]
@@ -946,57 +737,12 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
 【ヒアリングシート・フォルダURLの確認方法】
 企業シートのPart③（処理データ）に保存されています。`,
           links: [
-            {
-              label: "連絡フォーマット",
-              type: "popup",
-              hasInputField: true,
-              inputSectionTitle: "撮影指示フォーマット",
-              inputNote: "各項目を入力してください",
-              inputFields: [
-                { id: "mention", label: "宛先（撮影担当）", placeholder: "@川崎", defaultValue: "@川崎" },
-                { id: "cc", label: "CC", placeholder: "@青柳", defaultValue: "@青柳" },
-                { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "shootingDate", label: "撮影日", placeholder: "○月○日（○）○○:○○〜" },
-                { id: "location", label: "場所", placeholder: "○○株式会社 本社" },
-                { id: "address", label: "住所", placeholder: "愛知県名古屋市○○区..." },
-                { id: "interviewTarget", label: "インタビュー対象", placeholder: "代表取締役 ○○様、営業部 ○○様" },
-                { id: "notes", label: "備考", placeholder: "駐車場あり、作業着撮影希望 等" },
-                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
-                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
-              ],
-              template: `{{mention}} cc:{{cc}}
-{{company}}様の撮影日程が確定しましたのでご連絡します。
-
-【撮影日】{{shootingDate}}
-【場所】{{location}}
-【住所】{{address}}
-【インタビュー対象】{{interviewTarget}}
-【備考】{{notes}}
-
-━━━━━━━━━━━━━━━━━━━━
-📁 撮影データの保存先
-━━━━━━━━━━━━━━━━━━━━
-撮影後、以下のフォルダに素材をアップロードしてください。
-{{folderUrl}}
-
-確認したらリアクションお願いします。
-
-━━━━━━━━━━━━━━━━━━━━
-📎 関連リンク
-━━━━━━━━━━━━━━━━━━━━
-📋 ヒアリングシート: {{hearingSheetUrl}}
-📁 撮影素材フォルダ: {{folderUrl}}`
-            }
+            createShootingInstructionTemplate()
           ]
         },
         {
           label: "リアクション確認",
-          description: `撮影担当者からリアクションがあることを確認します。
-
-・スタンプでリアクション（👍 等）
-・または「確認しました」と返信
-
-リアクションがない場合は再度メンションして確認。`,
+          description: WORKS_REACTION_MANUAL,
         },
         {
           label: "議事録を作成",
@@ -1123,32 +869,7 @@ AIが出力した議事録をコピー
             { url: "/images/works-post-send.png", caption: "STEP 3: ワークスに貼り付けて送信" }
           ],
           links: [
-            {
-              label: "ワークス投稿フォーマット",
-              type: "popup",
-              hasInputField: true,
-              inputSectionTitle: "ワークス投稿フォーマット",
-              inputNote: "企業名と議事録を入力してください",
-              inputFields: [
-                { id: "company", label: "企業名", placeholder: "株式会社○○" },
-                { id: "shootingMention", label: "撮影担当メンション", placeholder: "@川崎", defaultValue: "@川崎" },
-                { id: "minutes", label: "議事録", placeholder: "AIが出力した議事録をここに貼り付け...", type: "textarea", rows: 10 },
-                { id: "hearingSheetUrl", label: "ヒアリングシートURL", placeholder: "https://docs.google.com/spreadsheets/d/..." },
-                { id: "folderUrl", label: "撮影素材フォルダURL", placeholder: "https://drive.google.com/..." }
-              ],
-              template: `@ALL {{shootingMention}}
-{{company}}様 初回打ち合わせの議事録を共有します。
-
-{{minutes}}
-
-ご確認お願いします。
-
-━━━━━━━━━━━━━━━━━━━━
-📎 関連リンク
-━━━━━━━━━━━━━━━━━━━━
-📋 ヒアリングシート: {{hearingSheetUrl}}
-📁 撮影素材フォルダ: {{folderUrl}}`
-            }
+            createMinutesShareTemplate()
           ]
         },
       ],

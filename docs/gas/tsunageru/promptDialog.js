@@ -36,7 +36,7 @@
 const PROMPT_MENU_CATEGORY = '議事録';
 
 function createPromptMenu(ui) {
-  const menu = ui.createMenu('４.📝 議事録作成・報告プロンプト');
+  const menu = ui.createMenu('３.📝 議事録作成');
 
   // プロンプトシートからメニュー項目を動的に生成（カテゴリでフィルタリング）
   const prompts = getPromptList();
@@ -519,7 +519,7 @@ function showPromptUsage() {
     <h3>2. カテゴリについて</h3>
     <p>F列「カテゴリ」でどのメニューに表示するか制御できます：</p>
     <ul>
-      <li><code>議事録</code> → 「４.📝 議事録作成・報告プロンプト」メニューに表示</li>
+      <li><code>議事録</code> → 「３.📝 議事録作成」メニューに表示</li>
       <li><code>構成案</code> → 構成案メニューに表示（将来対応）</li>
     </ul>
 

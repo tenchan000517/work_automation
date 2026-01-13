@@ -54,6 +54,16 @@ const TRANSCRIPT_TO_SHEET_MAPPING = {
   'スカウト_エリア': { row: 130, col: 3 },     // 行130
   'スカウト_キーワード': { row: 131, col: 3 }, // 行131
   'スカウト_備考': { row: 132, col: 3 },       // 行132
+
+  // 撮影準備セクション（row 135 header）
+  // ※行番号はテンプレート再作成後に要確認
+  '撮影場所': { row: 136, col: 3 },
+  '駐車場': { row: 137, col: 3 },
+  '当日担当者': { row: 138, col: 3 },
+  '緊急連絡先': { row: 139, col: 3 },
+  '必要備品': { row: 140, col: 3 },
+  '撮影日時': { row: 141, col: 3 },
+  '集合時間': { row: 142, col: 3 },
 };
 
 
@@ -70,7 +80,7 @@ function addTranscriptMenu() {
 
 // 既存のonOpenに統合する場合
 function addTranscriptMenuToExisting(ui) {
-  ui.createMenu('４.📝 議事録作成・報告プロンプト')
+  ui.createMenu('３.📝 議事録作成')
     .addItem('📋 文字起こしを整理（プロンプト生成）', 'showTranscriptPromptDialog')
     .addItem('📥 AI出力を転記', 'showTransferFromAIDialog')
     .addSeparator()
@@ -1073,6 +1083,17 @@ function flattenJsonData(data) {
     if (data.スカウトメール.エリア) result['スカウト_エリア'] = data.スカウトメール.エリア;
     if (data.スカウトメール.検索キーワード) result['スカウト_キーワード'] = data.スカウトメール.検索キーワード;
     if (data.スカウトメール.備考) result['スカウト_備考'] = data.スカウトメール.備考;
+  }
+
+  // 撮影準備
+  if (data.撮影準備) {
+    if (data.撮影準備.撮影場所) result['撮影場所'] = data.撮影準備.撮影場所;
+    if (data.撮影準備.駐車場) result['駐車場'] = data.撮影準備.駐車場;
+    if (data.撮影準備.当日担当者) result['当日担当者'] = data.撮影準備.当日担当者;
+    if (data.撮影準備.緊急連絡先) result['緊急連絡先'] = data.撮影準備.緊急連絡先;
+    if (data.撮影準備.必要備品) result['必要備品'] = data.撮影準備.必要備品;
+    if (data.撮影準備.撮影日時) result['撮影日時'] = data.撮影準備.撮影日時;
+    if (data.撮影準備.集合時間) result['集合時間'] = data.撮影準備.集合時間;
   }
 
   return result;

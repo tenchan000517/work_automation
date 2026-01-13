@@ -106,11 +106,11 @@ function onOpen() {
   // ０. 設定メニュー（settingsSheet.jsから）
   addSettingsMenu(ui);
 
-  // １. キックオフ・企業情報入力メニュー（companyInfoManager.jsから）
+  // １. 企業情報入力メニュー（companyInfoManager.jsから）
   addKickoffMenu(ui);
 
-  // ２. ヒアリングシート・撮影フォルダ（統合メニュー）
-  ui.createMenu('２.📋 ヒアリングシート・撮影フォルダ')
+  // ２. 初回打ち合わせ（統合メニュー）
+  ui.createMenu('２.📋 初回打ち合わせ')
     .addItem('🆕 新規ヒアリングシート作成（フォーム回答から）', 'createFromFormResponse')
     .addItem('🆕 新規ヒアリングシート作成（手動）', 'createNewHearingSheet')
     .addSeparator()
@@ -126,13 +126,13 @@ function onOpen() {
     // .addItem('📄 現在のシートをテンプレート化', 'formatCurrentSheet')
     .addToUi();
 
-  // ４. 議事録作成・報告プロンプトメニュー（promptDialog.js + transcriptToHearingSheet.js統合）
+  // ３. 議事録作成メニュー（promptDialog.js + transcriptToHearingSheet.js統合）
   createPromptMenu(ui);
 
-  // ５. 構成案作成メニュー（compositionDraftGenerator.jsから）
+  // ４. 構成案作成メニュー（compositionDraftGenerator.jsから）
   addCompositionMenu(ui);
 
-  // 連絡用フォーマットメニュー（ナンバリングなし）（contactFormats.jsから）
+  // 連絡フォーマットメニュー（ナンバリングなし）（contactFormats.jsから）
   addContactFormatsMenu(ui);
 
   // メンテナンス用（必要に応じてコメント解除）
@@ -959,6 +959,17 @@ function setupTemplate() {
   row = createInputRow(sheet, row, 'エリア', false);
   row = createInputRow(sheet, row, '検索キーワード', false);
   row = createInputRowLarge(sheet, row, '備考', false, 2);
+  row++;
+
+  // 撮影準備
+  row = createSubHeader(sheet, row, '撮影準備');
+  row = createInputRow(sheet, row, '撮影場所', false, '本社/工場/その他');
+  row = createInputRow(sheet, row, '駐車場', false, '有無・場所');
+  row = createInputRow(sheet, row, '当日担当者', false, '先方の当日対応者');
+  row = createInputRow(sheet, row, '緊急連絡先', false, '電話番号');
+  row = createInputRow(sheet, row, '必要備品', false, '制服・安全靴等');
+  row = createInputRow(sheet, row, '撮影日時', false, '確定後記入');
+  row = createInputRow(sheet, row, '集合時間', false, '撮影開始30分前目安');
   row++;
 
   // Part③ 処理データ（GASが自動保存するデータ）
