@@ -305,7 +305,7 @@ export function TaskCard({ task, productId, nextTaskName, allTasks }: TaskCardPr
                   return (
                     <div key={index} className="flex flex-col sm:flex-row items-center gap-1 w-full sm:w-auto">
                       {/* ステップボックス */}
-                      <div className={`border rounded-lg px-3 py-3 w-full sm:w-36 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
+                      <div className={`border rounded-lg px-2.5 py-2.5 w-full sm:w-36 min-h-[120px] flex flex-col ${getFlowStepClass(step.label)} relative`}>
                         {/* ステップ番号 */}
                         <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-zinc-600 dark:bg-zinc-500 text-white flex items-center justify-center text-xs font-bold shadow-md">
                           {index + 1}
