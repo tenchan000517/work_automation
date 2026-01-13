@@ -283,6 +283,10 @@ docs/manuals/
 - `getManualByTaskNo(productId, taskNo)` → 商材固有マニュアル
 - `getCommonManual(name)` → 共通マニュアル
 
+**URL:**
+- 商材固有: `/products/{productId}/tasks/{taskNo}/manual`
+- 共通: `/manuals/common/{name}`
+
 **使用パッケージ:**（インストール済み）
 ```bash
 npm install react-markdown remark-gfm rehype-raw
