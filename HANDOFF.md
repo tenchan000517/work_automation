@@ -407,7 +407,7 @@ M-N列: 保存キーマッピング ★新規
 
 ## 次回セッションでやること
 
-### 1. 撮影関連情報の入力フロー整備 ★重要
+### 1. 撮影関連情報の入力フロー整備 ★重要 【実装準備完了】
 
 **目的:**
 撮影日程確定報告ダイアログで、撮影関連情報（場所、駐車場、当日担当者等）を自動読み込みできるようにする。
@@ -434,42 +434,206 @@ M-N列: 保存キーマッピング ★新規
    └→ Part②から自動読み込み
 ```
 
-**追加が必要な項目:**
-- 撮影場所（本社/工場/その他）
-- 駐車場の有無・場所
-- 当日担当者（インタビュワーとは別、当日対応してくれる先方の方）
-- 緊急連絡先（当日何かあった時の電話番号）
-- 必要備品（制服等）
-- 撮影日時（日程確定後に入力）
-- 集合時間（日程確定後に入力）
+---
 
-**対応内容:**
+#### 【詳細実装手順】2026-01-13 調査済み
 
-| # | 対象 | 修正内容 |
-|---|------|----------|
-| 1 | ヒアリングシートテンプレート | Part②に「■ 撮影準備」セクション追加 |
-| 2 | 日程調整メール（contactFormats.js） | 撮影関連情報を聞く旨を追加 |
-| 3 | 議事録プロンプト（プロンプトシート） | 撮影関連情報の出力を追加 |
-| 4 | transcriptToHearingSheet.js | PART2_MAPPINGに撮影関連項目を追加 |
-| 5 | 撮影日程確定報告ダイアログ | Part②から読み込むように変更 |
+##### ステップ1: hearingSheetManager.js - Part②に「■ 撮影準備」セクション追加
 
-**Part②に追加するセクション:**
+**ファイル:** `docs/gas/tsunageru/hearingSheetManager.js`
+**関数:** `setupTemplate()` （775行目〜）
+
+**現在のPart②構成:**
 ```
-■ 撮影準備
-- 撮影場所:
-- 駐車場:
-- 当日担当者:
-- 緊急連絡先:
-- 必要備品:
-- 撮影日時:（日程確定後）
-- 集合時間:（日程確定後）
+Part② ヒアリング情報（打ち合わせ時記入）  ← 行909〜
+  ├── 会社紹介
+  ├── 社員の声（最低2名）
+  ├── 求人写真
+  ├── 重要セクション（★★★）
+  ├── 募集情報
+  ├── 管理情報
+  └── スカウトメール設定  ← ここの後に追加
 ```
 
-**関連ファイル:**
-- hearingSheetManager.js（テンプレート初期設定）
-- transcriptToHearingSheet.js（文字起こし転記）
-- contactFormats.js（日程調整メール、撮影日程確定報告）
-- プロンプトシート（議事録プロンプト）
+**追加コード（961行目付近、スカウトメール設定の後に追加）:**
+```javascript
+// 撮影準備
+row = createSubHeader(sheet, row, '撮影準備');
+row = createInputRow(sheet, row, '撮影場所', false, '本社/工場/その他');
+row = createInputRow(sheet, row, '駐車場', false, '有無・場所');
+row = createInputRow(sheet, row, '当日担当者', false, '先方の当日対応者');
+row = createInputRow(sheet, row, '緊急連絡先', false, '電話番号');
+row = createInputRow(sheet, row, '必要備品', false, '制服・安全靴等');
+row = createInputRow(sheet, row, '撮影日時', false, '確定後記入');
+row = createInputRow(sheet, row, '集合時間', false, '撮影開始30分前目安');
+row++;
+```
+
+**注意:**
+- `createInputRow`の第3引数`false`は青色背景（社内記入）
+- 行が増えるため、Part③の開始行が変わる
+- transcriptToHearingSheet.jsのマッピング行番号も調整必要
+
+---
+
+##### ステップ2: transcriptToHearingSheet.js - マッピング追加
+
+**ファイル:** `docs/gas/tsunageru/transcriptToHearingSheet.js`
+**定数:** `TRANSCRIPT_TO_SHEET_MAPPING` （16行目〜）
+
+**現在のマッピング構成:**
+```javascript
+const TRANSCRIPT_TO_SHEET_MAPPING = {
+  // 会社紹介（row 83〜）
+  // 社員の声（row 98〜）
+  // 最も打ち出したいポイント（row 111）
+  // 募集情報（row 117〜）
+  // スカウトメール（row 129〜）
+};
+```
+
+**追加するマッピング:**
+```javascript
+// 撮影準備セクション（スカウトメールの後に追加される）
+// ※行番号は新しいセクション追加後に再計算必要
+'撮影場所': { row: XXX, col: 3 },
+'駐車場': { row: XXX, col: 3 },
+'当日担当者': { row: XXX, col: 3 },
+'緊急連絡先': { row: XXX, col: 3 },
+'必要備品': { row: XXX, col: 3 },
+```
+
+**flattenJsonData()関数（1032行目〜）にも追加:**
+```javascript
+// 撮影準備
+if (data.撮影準備) {
+  if (data.撮影準備.撮影場所) result['撮影場所'] = data.撮影準備.撮影場所;
+  if (data.撮影準備.駐車場) result['駐車場'] = data.撮影準備.駐車場;
+  if (data.撮影準備.当日担当者) result['当日担当者'] = data.撮影準備.当日担当者;
+  if (data.撮影準備.緊急連絡先) result['緊急連絡先'] = data.撮影準備.緊急連絡先;
+  if (data.撮影準備.必要備品) result['必要備品'] = data.撮影準備.必要備品;
+}
+```
+
+---
+
+##### ステップ3: companyInfoManager.js - 日程調整メールに文言追加
+
+**ファイル:** `docs/gas/tsunageru/companyInfoManager.js`
+**関数:** `createScheduleRequestHTML()` （1562行目〜）
+**テンプレート:** 1586行目〜
+
+**現在のテンプレート（抜粋）:**
+```
+【打ち合わせ方法】
+Google Meetにて実施（約60分）
+※URLは日程確定後にお送りいたします
+```
+
+**変更後:**
+```
+【打ち合わせ方法】
+Google Meetにて実施（約60分）
+※URLは日程確定後にお送りいたします
+※撮影日程・場所・駐車場等についてもお打ち合わせ時にお伺いします
+```
+
+---
+
+##### ステップ4: contactFormats.js - 撮影日程確定報告でPart②読み込み
+
+**ファイル:** `docs/gas/tsunageru/contactFormats.js`
+**関数:** `showShootingConfirmDialog()` （1597行目〜）
+
+**現在の読み込み（1612行目〜）:**
+```javascript
+// 現在はPart③からのみ読み込み
+const instructionResult = loadPart3Data(sheetName, '撮影指示書');
+const folderResult = loadPart3Data(sheetName, '撮影素材フォルダURL');
+const mainFolderResult = loadPart3Data(sheetName, 'メインフォルダURL');
+```
+
+**追加する読み込み（Part②から）:**
+```javascript
+// Part②の撮影準備セクションから読み込む
+// settingsSheet.jsにloadPart2Data()関数を追加するか、
+// 直接シートから特定行を読み込む
+
+// 新規関数 getShootingPrepDataFromSheet(sheetName) を作成
+// 戻り値: { shootingLocation, parking, dayOfContact, emergencyContact, requiredEquipment }
+```
+
+**sheetDataListに追加:**
+```javascript
+return {
+  sheetName: sheetName,
+  shootingInstruction: shootingInstruction,
+  folderUrl: folderUrl,
+  mainFolderUrl: mainFolderUrl,
+  hearingSheetUrl: hearingSheetUrl,
+  companyCueUrl: companyCueUrl,
+  hasInstruction: !!shootingInstruction,
+  // ★追加
+  shootingLocation: shootingLocation,
+  parking: parking,
+  dayOfContact: dayOfContact,
+  emergencyContact: emergencyContact,
+  requiredEquipment: requiredEquipment
+};
+```
+
+**HTML側（1706行目〜）:**
+- 撮影場所・住所・駐車場・当日担当者等の入力欄に自動入力
+- selectCompany(data)関数内で各フィールドにdata.xxxを設定
+
+---
+
+##### ステップ5: プロンプトシート - 議事録プロンプトに撮影関連情報追加
+
+**対象:** スプレッドシートの「プロンプト」シート
+**プロンプト名:** 「ヒアリング情報抽出」
+
+**JSON出力形式に追加:**
+```json
+{
+  "企業名": "...",
+  "会社紹介": { ... },
+  "社員の声": [ ... ],
+  "募集情報": { ... },
+  "スカウトメール": { ... },
+  "撮影準備": {
+    "撮影場所": "本社2階会議室",
+    "駐車場": "正面入口横に来客用駐車場あり",
+    "当日担当者": "総務部 山田様",
+    "緊急連絡先": "090-XXXX-XXXX",
+    "必要備品": "特になし"
+  }
+}
+```
+
+**注意:** これはユーザーがスプレッドシートのプロンプトシートを直接編集する必要あり
+
+---
+
+#### 【実装順序】
+
+1. **hearingSheetManager.js** - Part②にセクション追加
+2. **テンプレート再作成** - GASメニューから「テンプレート初期設定」実行
+3. **行番号確認** - 新しい行番号をメモ
+4. **transcriptToHearingSheet.js** - マッピング追加（正しい行番号で）
+5. **companyInfoManager.js** - メールテンプレート文言追加
+6. **contactFormats.js** - Part②読み込み機能追加
+7. **プロンプトシート** - ユーザーに手動編集を依頼
+
+---
+
+#### 【行番号計算のヒント】
+
+現在のスカウトメール設定の最終行は約134行目付近。
+撮影準備セクションを追加すると +9行（ヘッダー1 + 項目7 + 空行1）。
+Part③の開始行がずれるが、Part③はsettingsSheet.jsのgetPart3ConfigFromSettings()で動的に構成されるため影響なし。
+
+TRANSCRIPT_TO_SHEET_MAPPINGの行番号は、テンプレート再作成後に実際のシートを確認して設定すること。
 
 ---
 
