@@ -12,58 +12,57 @@
 
 // ===== Part② マッピング =====
 // 文字起こしから抽出する項目 → ヒアリングシート（行, 列）
-// ※setupTemplate()の行番号を追跡して算出
+// ※2-3行目にステータス欄があるため、既存データは+1行ずれている
 const TRANSCRIPT_TO_SHEET_MAPPING = {
   // 会社紹介セクション（Part② ヒアリング情報）
-  // Part② starts at row 81, 会社紹介 subheader at row 82
-  '私たちについて': { row: 83, col: 3 },   // 行83
-  '社長挨拶': { row: 86, col: 3 },         // 行86
-  '会社の魅力': { row: 89, col: 3 },       // 行89
-  '雰囲気': { row: 92, col: 3 },           // 行92
+  // Part② starts at row 82, 会社紹介 subheader at row 83
+  '私たちについて': { row: 84, col: 3 },   // 行84
+  '社長挨拶': { row: 87, col: 3 },         // 行87
+  '会社の魅力': { row: 90, col: 3 },       // 行90
+  '雰囲気': { row: 93, col: 3 },           // 行93
 
-  // 社員の声セクション（row 96 header, row 97 column header）
-  '社員1_氏名': { row: 98, col: 3 },
-  '社員1_部署': { row: 98, col: 4 },
-  '社員1_年数': { row: 98, col: 5 },
-  '社員1_インタビュー': { row: 98, col: 6 },
-  '社員2_氏名': { row: 99, col: 3 },
-  '社員2_部署': { row: 99, col: 4 },
-  '社員2_年数': { row: 99, col: 5 },
-  '社員2_インタビュー': { row: 99, col: 6 },
-  '社員3_氏名': { row: 100, col: 3 },
-  '社員3_部署': { row: 100, col: 4 },
-  '社員3_年数': { row: 100, col: 5 },
-  '社員3_インタビュー': { row: 100, col: 6 },
-  '社員4_氏名': { row: 101, col: 3 },
-  '社員4_部署': { row: 101, col: 4 },
-  '社員4_年数': { row: 101, col: 5 },
-  '社員4_インタビュー': { row: 101, col: 6 },
+  // 社員の声セクション（row 97 header, row 98 column header）
+  '社員1_氏名': { row: 99, col: 3 },
+  '社員1_部署': { row: 99, col: 4 },
+  '社員1_年数': { row: 99, col: 5 },
+  '社員1_インタビュー': { row: 99, col: 6 },
+  '社員2_氏名': { row: 100, col: 3 },
+  '社員2_部署': { row: 100, col: 4 },
+  '社員2_年数': { row: 100, col: 5 },
+  '社員2_インタビュー': { row: 100, col: 6 },
+  '社員3_氏名': { row: 101, col: 3 },
+  '社員3_部署': { row: 101, col: 4 },
+  '社員3_年数': { row: 101, col: 5 },
+  '社員3_インタビュー': { row: 101, col: 6 },
+  '社員4_氏名': { row: 102, col: 3 },
+  '社員4_部署': { row: 102, col: 4 },
+  '社員4_年数': { row: 102, col: 5 },
+  '社員4_インタビュー': { row: 102, col: 6 },
 
-  // 最も打ち出したいポイント（row 110 header, row 111 data）
-  '最も打ち出したいポイント': { row: 111, col: 1 },
+  // 最も打ち出したいポイント（row 111 header, row 112 data）
+  '最も打ち出したいポイント': { row: 112, col: 1 },
 
-  // 募集情報セクション（row 116 header）
-  '募集背景': { row: 117, col: 3 },        // 行117
-  'ペルソナ_性別': { row: 119, col: 3 },   // 行119, C列（男/女/どちらでも）
-  'ペルソナ_年齢': { row: 119, col: 5 },   // 行119, E列（D列は項目名）
-  'ペルソナ_外国人': { row: 119, col: 7 }, // 行119, G列（F列は項目名）
-  '求める人材像': { row: 120, col: 3 },    // 行120
+  // 募集情報セクション（row 117 header）
+  '募集背景': { row: 118, col: 3 },        // 行118
+  'ペルソナ_性別': { row: 120, col: 3 },   // 行120, C列（男/女/どちらでも）
+  'ペルソナ_年齢': { row: 120, col: 5 },   // 行120, E列（D列は項目名）
+  'ペルソナ_外国人': { row: 120, col: 7 }, // 行120, G列（F列は項目名）
+  '求める人材像': { row: 121, col: 3 },    // 行121
 
-  // スカウトメール設定（row 128 header）
-  'スカウト_年齢': { row: 129, col: 3 },       // 行129
-  'スカウト_エリア': { row: 130, col: 3 },     // 行130
-  'スカウト_キーワード': { row: 131, col: 3 }, // 行131
-  'スカウト_備考': { row: 132, col: 3 },       // 行132
+  // スカウトメール設定（row 129 header）
+  'スカウト_年齢': { row: 130, col: 3 },       // 行130
+  'スカウト_エリア': { row: 131, col: 3 },     // 行131
+  'スカウト_キーワード': { row: 132, col: 3 }, // 行132
+  'スカウト_備考': { row: 133, col: 3 },       // 行133
 
-  // 撮影準備セクション（row 135 header）
-  // ※行番号はテンプレート再作成後に要確認
-  '撮影場所': { row: 136, col: 3 },
-  '駐車場': { row: 137, col: 3 },
-  '当日担当者': { row: 138, col: 3 },
-  '緊急連絡先': { row: 139, col: 3 },
-  '必要備品': { row: 140, col: 3 },
-  '撮影日時': { row: 141, col: 3 },
-  '集合時間': { row: 142, col: 3 },
+  // 撮影準備セクション（row 136 header）
+  '撮影場所': { row: 137, col: 3 },
+  '駐車場': { row: 138, col: 3 },
+  '当日担当者': { row: 139, col: 3 },
+  '緊急連絡先': { row: 140, col: 3 },
+  '必要備品': { row: 141, col: 3 },
+  '撮影日時': { row: 142, col: 3 },
+  '集合時間': { row: 143, col: 3 },
 };
 
 
@@ -75,6 +74,8 @@ function addTranscriptMenu() {
     .addItem('📥 AI出力を転記', 'showTransferFromAIDialog')
     .addSeparator()
     .addItem('🔧 マッピング確認', 'showMappingDebug')
+    .addSeparator()
+    .addItem('✏️ ステータス更新', 'showStatusUpdateDialog')
     .addToUi();
 }
 
@@ -85,6 +86,8 @@ function addTranscriptMenuToExisting(ui) {
     .addItem('📥 AI出力を転記', 'showTransferFromAIDialog')
     .addSeparator()
     .addItem('🔧 マッピング確認', 'showMappingDebug')
+    .addSeparator()
+    .addItem('✏️ ステータス更新', 'showStatusUpdateDialog')
     .addToUi();
 }
 
@@ -169,7 +172,7 @@ function getCompanySheetListWithNamesAndData() {
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
     if (!isExcludedSheet(sheetName)) {
-      const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+      const companyName = String(sheet.getRange(6, 3).getValue() || '').trim();
 
       // Part③から保存済みデータを取得
       let savedTranscript = '';
@@ -216,7 +219,7 @@ function getCompanySheetListWithNames() {
     const sheetName = sheet.getName();
     if (!isExcludedSheet(sheetName)) {
       // 企業名を取得（行5, C列）
-      const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+      const companyName = String(sheet.getRange(6, 3).getValue() || '').trim();
       companySheets.push({
         sheetName: sheetName,
         companyName: companyName || sheetName  // 企業名がなければシート名を使用
@@ -517,7 +520,7 @@ function getCompanySheetListWithSavedJson() {
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
     if (!isExcludedSheet(sheetName)) {
-      const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+      const companyName = String(sheet.getRange(6, 3).getValue() || '').trim();
 
       // Part③から保存済みJSONを取得
       let savedJson = '';
@@ -974,7 +977,7 @@ function compareWithSelectedSheet(jsonData, targetSheetName) {
   }
 
   // シートの企業名を取得（行5, C列）
-  const sheetCompanyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+  const sheetCompanyName = String(sheet.getRange(6, 3).getValue() || '').trim();
   const jsonCompanyName = String(jsonData.企業名 || '').trim();
 
   // シートの企業名が空の場合は警告

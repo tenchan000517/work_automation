@@ -25,78 +25,79 @@ const FORM_RESPONSE_SHEET_NAME = 'フォームの回答 1';
 
 // ===== フォーム回答 → ヒアリングシート マッピング =====
 // フォーム列番号 → ヒアリングシート（行, 列）
+// ※2-3行目にステータス欄があるため、既存データは+1行ずれている
 const FORM_TO_SHEET_MAPPING = {
   // セクション1: 企業概要
-  1:  { row: 5, col: 3 },   // 企業名 → 行5, C列
-  2:  { row: 6, col: 3 },   // 代表者名 → 行6, C列
-  3:  { row: 7, col: 3 },   // HP URL → 行7, C列
-  4:  { row: 8, col: 3 },   // 住所 → 行8, C列
-  5:  { row: 9, col: 3 },   // 電話番号 → 行9, C列
-  6:  { row: 10, col: 3 },  // メールアドレス → 行10, C列
-  7:  { row: 11, col: 3 },  // 許可番号 → 行11, C列
-  8:  { row: 12, col: 3 },  // 設立日 → 行12, C列
-  9:  { row: 13, col: 3 },  // 担当者名・役職 → 行13, C列
-  10: { row: 14, col: 3 },  // 事業内容 → 行14, C列
-  11: { row: 15, col: 3 },  // 転勤の有無 → 行15, C列
-  12: { row: 15, col: 5 },  // 転勤先 → 行15, E列
+  1:  { row: 6, col: 3 },   // 企業名 → 行6, C列
+  2:  { row: 7, col: 3 },   // 代表者名 → 行7, C列
+  3:  { row: 8, col: 3 },   // HP URL → 行8, C列
+  4:  { row: 9, col: 3 },   // 住所 → 行9, C列
+  5:  { row: 10, col: 3 },  // 電話番号 → 行10, C列
+  6:  { row: 11, col: 3 },  // メールアドレス → 行11, C列
+  7:  { row: 12, col: 3 },  // 許可番号 → 行12, C列
+  8:  { row: 13, col: 3 },  // 設立日 → 行13, C列
+  9:  { row: 14, col: 3 },  // 担当者名・役職 → 行14, C列
+  10: { row: 15, col: 3 },  // 事業内容 → 行15, C列
+  11: { row: 16, col: 3 },  // 転勤の有無 → 行16, C列
+  12: { row: 16, col: 5 },  // 転勤先 → 行16, E列
 
   // セクション2: 雇用形態・職種
-  13: { row: 18, col: 3 },  // 雇用形態 → 行18, C列
-  14: { row: 21, col: 3 },  // 職種 → 行21, C列
-  15: { row: 19, col: 3 },  // 試用期間の有無 → 行19, C列
-  16: { row: 19, col: 5 },  // 試用期間 → 行19, E列
-  17: { row: 20, col: 3 },  // 試用期間中の条件変更 → 行20, C列
+  13: { row: 19, col: 3 },  // 雇用形態 → 行19, C列
+  14: { row: 22, col: 3 },  // 職種 → 行22, C列
+  15: { row: 20, col: 3 },  // 試用期間の有無 → 行20, C列
+  16: { row: 20, col: 5 },  // 試用期間 → 行20, E列
+  17: { row: 21, col: 3 },  // 試用期間中の条件変更 → 行21, C列
 
   // セクション3: 勤務条件
-  18: { row: 24, col: 3 },  // 勤務時間① → 行24, C列（開始～終了を1セルに）
-  19: { row: 25, col: 3 },  // 勤務時間② → 行25, C列
-  20: { row: 26, col: 3 },  // 勤務時間③ → 行26, C列
-  21: { row: 24, col: 7 },  // 実働時間 → 行24, G列
-  22: { row: 30, col: 3 },  // 休憩時間 → 行30, C列
-  23: { row: 27, col: 3 },  // 勤務時間の備考 → 行27, C列
+  18: { row: 25, col: 3 },  // 勤務時間① → 行25, C列（開始～終了を1セルに）
+  19: { row: 26, col: 3 },  // 勤務時間② → 行26, C列
+  20: { row: 27, col: 3 },  // 勤務時間③ → 行27, C列
+  21: { row: 25, col: 7 },  // 実働時間 → 行25, G列
+  22: { row: 31, col: 3 },  // 休憩時間 → 行31, C列
+  23: { row: 28, col: 3 },  // 勤務時間の備考 → 行28, C列
 
   // セクション4: 残業
-  24: { row: 36, col: 3 },  // 残業の有無 → 行36, C列
-  25: { row: 37, col: 6 },  // 月の平均残業時間 → 行37, F列
-  26: { row: 38, col: 3 },  // 残業の備考 → 行38, C列
+  24: { row: 37, col: 3 },  // 残業の有無 → 行37, C列
+  25: { row: 38, col: 6 },  // 月の平均残業時間 → 行38, F列
+  26: { row: 39, col: 3 },  // 残業の備考 → 行39, C列
 
   // セクション5: 休日
-  27: { row: 41, col: 3 },  // 休日区分 → 行41, C列
-  28: { row: 42, col: 6 },  // 年間休日数 → 行42, F列
-  29: { row: 44, col: 3 },  // 長期休暇の有無 → 行44, C列
-  30: { row: 44, col: 5 },  // 長期休暇の詳細 → 行44, E列
+  27: { row: 42, col: 3 },  // 休日区分 → 行42, C列
+  28: { row: 43, col: 6 },  // 年間休日数 → 行43, F列
+  29: { row: 45, col: 3 },  // 長期休暇の有無 → 行45, C列
+  30: { row: 45, col: 5 },  // 長期休暇の詳細 → 行45, E列
 
   // セクション6: 給与
-  31: { row: 48, col: 3 },  // 給与形態 → 行48, C列
-  32: { row: 49, col: 3 },  // 給与額 → 行49, C列
-  33: { row: 50, col: 3 },  // 想定年収 → 行50, C列
-  34: { row: 51, col: 3 },  // 賞与の有無 → 行51, C列
-  35: { row: 51, col: 5 },  // 賞与詳細 → 行51, E列
-  36: { row: 52, col: 3 },  // みなし残業代の有無 → 行52, C列（時間欄）
-  37: { row: 52, col: 5 },  // みなし残業代詳細 → 行52, E列（金額欄）
-  38: { row: 53, col: 3 },  // 試用期間中給与 → 行53, C列
+  31: { row: 49, col: 3 },  // 給与形態 → 行49, C列
+  32: { row: 50, col: 3 },  // 給与額 → 行50, C列
+  33: { row: 51, col: 3 },  // 想定年収 → 行51, C列
+  34: { row: 52, col: 3 },  // 賞与の有無 → 行52, C列
+  35: { row: 52, col: 5 },  // 賞与詳細 → 行52, E列
+  36: { row: 53, col: 3 },  // みなし残業代の有無 → 行53, C列（時間欄）
+  37: { row: 53, col: 5 },  // みなし残業代詳細 → 行53, E列（金額欄）
+  38: { row: 54, col: 3 },  // 試用期間中給与 → 行54, C列
 
   // セクション7: 待遇・福利厚生
-  39: { row: 56, col: 4 },  // 雇用保険 → 行56, D列
-  40: { row: 56, col: 6 },  // 労災保険 → 行56, F列
-  41: { row: 57, col: 4 },  // 厚生年金 → 行57, D列
-  42: { row: 57, col: 6 },  // 健康保険 → 行57, F列
-  43: { row: 58, col: 3 },  // その他待遇 → 行58, C列
+  39: { row: 57, col: 4 },  // 雇用保険 → 行57, D列
+  40: { row: 57, col: 6 },  // 労災保険 → 行57, F列
+  41: { row: 58, col: 4 },  // 厚生年金 → 行58, D列
+  42: { row: 58, col: 6 },  // 健康保険 → 行58, F列
+  43: { row: 59, col: 3 },  // その他待遇 → 行59, C列
 
   // セクション8: 作業内容
-  44: { row: 63, col: 3 },  // 作業内容詳細 → 行63, C列
+  44: { row: 64, col: 3 },  // 作業内容詳細 → 行64, C列
 
   // セクション9: サービス・製品
-  45: { row: 70, col: 3 },  // サービス・製品① → 行70, C列
-  46: { row: 71, col: 3 },  // サービス・製品② → 行71, C列
-  47: { row: 72, col: 3 },  // サービス・製品③ → 行72, C列
-  48: { row: 73, col: 3 },  // 作業上の注意点 → 行73, C列
+  45: { row: 71, col: 3 },  // サービス・製品① → 行71, C列
+  46: { row: 72, col: 3 },  // サービス・製品② → 行72, C列
+  47: { row: 73, col: 3 },  // サービス・製品③ → 行73, C列
+  48: { row: 74, col: 3 },  // 作業上の注意点 → 行74, C列
 
   // セクション10: その他
-  49: { row: 77, col: 4 },  // 従業員の平均年齢 → 行77, D列
-  50: { row: 77, col: 6 },  // 男女比 → 行77, F列
-  51: { row: 78, col: 3 },  // 必須資格 → 行78, C列
-  52: { row: 79, col: 3 },  // 選考フロー → 行79, C列
+  49: { row: 78, col: 4 },  // 従業員の平均年齢 → 行78, D列
+  50: { row: 78, col: 6 },  // 男女比 → 行78, F列
+  51: { row: 79, col: 3 },  // 必須資格 → 行79, C列
+  52: { row: 80, col: 3 },  // 選考フロー → 行80, C列
 };
 
 // ===== メニュー設定 =====
@@ -124,6 +125,8 @@ function onOpen() {
     .addItem('🎨 テンプレート初期設定', 'setupTemplate')
     .addItem('⚙️ 親フォルダを設定', 'setParentFolder')
     // .addItem('📄 現在のシートをテンプレート化', 'formatCurrentSheet')
+    .addSeparator()
+    .addItem('✏️ ステータス更新', 'showStatusUpdateDialog')
     .addToUi();
 
   // ３. 議事録作成メニュー（promptDialog.js + transcriptToHearingSheet.js統合）
@@ -134,6 +137,9 @@ function onOpen() {
 
   // 連絡フォーマットメニュー（ナンバリングなし）（contactFormats.jsから）
   addContactFormatsMenu(ui);
+
+  // 📊 進捗管理メニュー（progressManager.jsから）
+  addProgressMenu(ui);
 
   // メンテナンス用（必要に応じてコメント解除）
   // addStructureCheckMenuToExisting(ui);
@@ -165,7 +171,7 @@ function createFromFormResponse() {
   let activeCompanyName = null;
   if (!isExcludedSheet(activeSheetName)) {
     try {
-      activeCompanyName = activeSheet.getRange(5, 3).getValue() || activeSheetName;
+      activeCompanyName = activeSheet.getRange(6, 3).getValue() || activeSheetName;
     } catch (e) {
       activeCompanyName = activeSheetName;
     }
@@ -297,7 +303,7 @@ function createNewHearingSheet() {
     newSheet.setName(companyName);
 
     // 企業名をセルに自動入力
-    newSheet.getRange(5, 3).setValue(companyName);
+    newSheet.getRange(6, 3).setValue(companyName);
 
     // 新しいシートをアクティブにする
     ss.setActiveSheet(newSheet);
@@ -335,7 +341,7 @@ function transferToExistingSheet() {
   let activeCompanyName = null;
   if (!isExcludedSheet(activeSheetName)) {
     try {
-      activeCompanyName = activeSheet.getRange(5, 3).getValue() || activeSheetName;
+      activeCompanyName = activeSheet.getRange(6, 3).getValue() || activeSheetName;
     } catch (e) {
       activeCompanyName = activeSheetName;
     }
@@ -400,7 +406,7 @@ function executeTransferToExistingSheet(rowIndex) {
   }
 
   // シートの企業名を取得（行5, C列）
-  const sheetCompanyName = String(targetSheet.getRange(5, 3).getValue() || '').trim();
+  const sheetCompanyName = String(targetSheet.getRange(6, 3).getValue() || '').trim();
 
   // 企業名の一致確認
   if (sheetCompanyName && formCompanyName) {
@@ -780,6 +786,8 @@ function setupTemplate() {
     sheet = ss.insertSheet(SHEET_NAME);
   } else {
     sheet.clear();
+    // sheet.clear()はデータ検証をクリアしない場合があるため、明示的にクリア
+    sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).clearDataValidations();
   }
 
   sheet.setColumnWidth(1, 30);
@@ -804,15 +812,11 @@ function setupTemplate() {
   sheet.setRowHeight(row, 40);
   row++;
 
-  // 凡例
-  sheet.getRange(row, 1, 1, 3).merge()
-    .setValue('🟨 黄色セル：企業様ご記入　🟦 青色セル：打ち合わせ時記入')
-    .setFontSize(10)
-    .setFontColor('#666666');
-  row++;
+  // ステータス欄（2-3行目）
+  row = createStatusSection(sheet, row);
 
   // Part① 基本情報
-  row = createSectionHeader(sheet, row, 'Part① 基本情報（企業様ご記入）');
+  row = createSectionHeader(sheet, row, 'Part① 基本情報（企業様ご記入orフォーム）');
 
   // 企業概要
   row = createSubHeader(sheet, row, '企業概要');
@@ -997,10 +1001,98 @@ function setupTemplate() {
     COLORS.BORDER, SpreadsheetApp.BorderStyle.SOLID
   );
 
+  // ログヘッダーを作成（I列〜N列）
+  createLogHeader(sheet);
+
   SpreadsheetApp.getUi().alert('✅ テンプレートの初期設定が完了しました');
 }
 
+// ログヘッダーを作成（I列〜N列）
+function createLogHeader(sheet) {
+  // タイトル行
+  sheet.getRange(1, 9, 1, 6)
+    .setValues([['更新ログ', '', '', '', '', '']])
+    .setBackground('#4A90D9')
+    .setFontColor('#FFFFFF')
+    .setFontWeight('bold');
+  sheet.getRange(1, 9, 1, 6).merge();
+
+  // ヘッダー行
+  const headers = ['日時', 'タスク変更', '保持者変更', '状態', 'メモ', '工数'];
+  sheet.getRange(2, 9, 1, 6)
+    .setValues([headers])
+    .setBackground('#E3F2FD')
+    .setFontWeight('bold');
+
+  // 列幅調整
+  sheet.setColumnWidth(9, 120);   // I列: 日時
+  sheet.setColumnWidth(10, 80);   // J列: タスク変更
+  sheet.setColumnWidth(11, 100);  // K列: 保持者変更
+  sheet.setColumnWidth(12, 80);   // L列: 状態
+  sheet.setColumnWidth(13, 200);  // M列: メモ
+  sheet.setColumnWidth(14, 80);   // N列: 工数
+}
+
 // ===== ヘルパー関数（既存コードを維持） =====
+
+// ステータス欄作成（2-3行目）
+// 2行目: ヘッダー（B〜G列）
+// 3行目: 入力欄（B〜G列）
+function createStatusSection(sheet, startRow) {
+  const STATUS_TASKS = [
+    '0.受注・立ち上げ', '1.日程調整', '2.打ち合わせ前準備', '3.初回打ち合わせ',
+    '4.打ち合わせ後対応', '5.ヒアリング整理', '6.企画・質問設計', '7.撮影',
+    '8.編集', '9.原稿執筆', '10.確認依頼', '11.キックオフMTG',
+    '12.応募対応', '13.週間データ集計', '14.月次FB'
+  ];
+  const STATUS_HOLDERS = ['渡邉', '河合', '川崎', '中尾文香', '紺谷', '下脇田', '先方'];
+  const STATUS_STATES = ['対応中', '先方確認', '次の担当へ'];
+  const STATUS_OVERALL = ['制作中', '運用中', '完了'];
+
+  const headerRow = startRow;
+  const valueRow = startRow + 1;
+
+  // === 2行目: ヘッダー（B〜G列） ===
+  const headers = ['現在タスク', 'タスク保持者', '状態', '期限', '最終更新日', '全体ステータス'];
+  headers.forEach((header, i) => {
+    sheet.getRange(headerRow, 2 + i)
+      .setValue(header)
+      .setBackground('#E3F2FD')
+      .setFontWeight('bold')
+      .setFontColor('#000000');
+  });
+
+  // === 3行目: 入力欄（B〜G列） ===
+  const inputBg = '#FFFDE7';
+
+  // B列: 現在タスク
+  sheet.getRange(valueRow, 2).setValue(STATUS_TASKS[0]).setBackground(inputBg).setFontColor('#000000');
+  const taskRule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS_TASKS, true).build();
+  sheet.getRange(valueRow, 2).setDataValidation(taskRule);
+
+  // C列: タスク保持者
+  sheet.getRange(valueRow, 3).setValue(STATUS_HOLDERS[0]).setBackground(inputBg).setFontColor('#000000');
+  const holderRule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS_HOLDERS, true).build();
+  sheet.getRange(valueRow, 3).setDataValidation(holderRule);
+
+  // D列: 状態
+  sheet.getRange(valueRow, 4).setValue(STATUS_STATES[0]).setBackground(inputBg).setFontColor('#000000');
+  const stateRule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS_STATES, true).build();
+  sheet.getRange(valueRow, 4).setDataValidation(stateRule);
+
+  // E列: 期限
+  sheet.getRange(valueRow, 5).setBackground(inputBg).setFontColor('#000000').setNumberFormat('M/d');
+
+  // F列: 最終更新日（自動）
+  sheet.getRange(valueRow, 6).setBackground('#E0E0E0').setFontColor('#666666').setNumberFormat('M/d');
+
+  // G列: 全体ステータス
+  sheet.getRange(valueRow, 7).setValue(STATUS_OVERALL[0]).setBackground(inputBg).setFontColor('#000000');
+  const overallRule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS_OVERALL, true).build();
+  sheet.getRange(valueRow, 7).setDataValidation(overallRule);
+
+  return startRow + 2; // 次の行番号を返す
+}
 
 function createSectionHeader(sheet, row, title) {
   sheet.getRange(row, 1, 1, 7).merge()

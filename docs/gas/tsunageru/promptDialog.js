@@ -59,6 +59,8 @@ function createPromptMenu(ui) {
   menu.addItem('📄 プロンプトシートを作成', 'createPromptSheet');
   menu.addItem('🔄 サンプルプロンプトを追加', 'addSamplePrompts');
   menu.addItem('❓ 使い方', 'showPromptUsage');
+  menu.addSeparator();
+  menu.addItem('✏️ ステータス更新', 'showStatusUpdateDialog');
 
   menu.addToUi();
 }
@@ -577,7 +579,7 @@ function getCompanySheetListForPrompt(saveKey, inputKey) {
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
     if (!isExcludedSheet(sheetName)) {
-      const companyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+      const companyName = String(sheet.getRange(6, 3).getValue() || '').trim();
 
       // Part③から保存済みデータを取得（saveKey）
       let savedData = '';

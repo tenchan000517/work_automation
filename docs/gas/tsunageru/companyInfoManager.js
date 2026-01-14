@@ -30,6 +30,8 @@ function addKickoffMenu(ui) {
     .addItem('🏢 企業情報編集', 'showCompanyInfoEditDialog')
     .addSeparator()
     .addItem('📊 企業情報一覧反映', 'syncCompanyListSheet')
+    .addSeparator()
+    .addItem('✏️ ステータス更新', 'showStatusUpdateDialog')
     .addToUi();
 }
 
@@ -155,7 +157,7 @@ function getCompanyInfoFromSheet(sheetName) {
     // 行5,C列から企業名を取得（あれば上書き）
     let cellCompanyName = '';
     try {
-      cellCompanyName = String(sheet.getRange(5, 3).getValue() || '').trim();
+      cellCompanyName = String(sheet.getRange(6, 3).getValue() || '').trim();
     } catch (e) {
       // セル取得失敗時はシート名を使用
     }

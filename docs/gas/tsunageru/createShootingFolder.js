@@ -1011,7 +1011,7 @@ function getCompanySheetListForFolder() {
     if (!isExcludedSheet(name)) {
       let companyName = '';
       try {
-        companyName = sheet.getRange(5, 3).getValue() || '';
+        companyName = sheet.getRange(6, 3).getValue() || '';
       } catch (e) {
         companyName = '';
       }

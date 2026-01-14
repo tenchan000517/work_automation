@@ -31,6 +31,8 @@ function addContactFormatsMenu(ui) {
     .addSeparator()
     .addItem('📸 撮影日程確定報告', 'showShootingConfirmDialog')  // ★新規：撮影指示書+企業カンペ
     .addItem('📝 議事録共有', 'showMinutesShareDialog')
+    .addSeparator()
+    .addItem('✏️ ステータス更新', 'showStatusUpdateDialog')
     .addToUi();
 }
 
