@@ -38,23 +38,22 @@ const DEFAULT_MEMBERS = [
   { name: '青柳', note: 'CC' },
 ];
 
-// デフォルト業務一覧（ツナゲル）
+// デフォルト業務一覧（ツナゲル）No.0〜13
 const DEFAULT_TASKS = [
-  { no: 0, name: '受注・ワークス立ち上げ', assignee: '渡邉' },
-  { no: 1, name: '初回打ち合わせ日程調整', assignee: '渡邉' },
-  { no: 2, name: '打ち合わせ前準備', assignee: '河合' },
-  { no: 3, name: 'オンライン初回打ち合わせ', assignee: '渡邉, 河合' },
-  { no: 4, name: '打ち合わせ後対応', assignee: '河合' },
-  { no: 5, name: 'ヒアリング内容整理', assignee: '河合' },
-  { no: 6, name: '企画・質問設計', assignee: '川崎' },
-  { no: 7, name: '撮影', assignee: '川崎' },
-  { no: 8, name: '編集', assignee: '河合' },
-  { no: 9, name: '原稿執筆', assignee: '河合, 中尾文香' },
-  { no: 10, name: '企業担当へ確認依頼', assignee: '河合' },
-  { no: 11, name: '今後の担当者共有・スケジュール共有', assignee: '河合' },
-  { no: 12, name: '企業・応募者へ連絡', assignee: '紺谷' },
-  { no: 13, name: '週間データ集計・資料作成', assignee: '河合' },
-  { no: 14, name: '月次FB打合せ', assignee: '川崎, 下脇田' },
+  { no: 0, name: '受注・立ち上げ', assignee: '渡邉' },
+  { no: 1, name: '打ち合わせ前準備', assignee: '河合' },
+  { no: 2, name: 'オンライン初回打ち合わせ', assignee: '渡邉, 河合' },
+  { no: 3, name: '打ち合わせ後対応', assignee: '河合' },
+  { no: 4, name: 'ヒアリング内容整理', assignee: '河合' },
+  { no: 5, name: '企画・質問設計', assignee: '川崎' },
+  { no: 6, name: '撮影', assignee: '川崎' },
+  { no: 7, name: '編集', assignee: '河合' },
+  { no: 8, name: '原稿執筆', assignee: '河合, 中尾文香' },
+  { no: 9, name: '企業担当へ確認依頼', assignee: '河合' },
+  { no: 10, name: '今後の担当者共有・スケジュール共有', assignee: '河合' },
+  { no: 11, name: '企業・応募者へ連絡', assignee: '紺谷' },
+  { no: 12, name: '週間データ集計・資料作成', assignee: '河合' },
+  { no: 13, name: '月次FB打合せ', assignee: '川崎, 下脇田' },
 ];
 
 // デフォルトフォルダ設定

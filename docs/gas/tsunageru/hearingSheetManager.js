@@ -1039,15 +1039,9 @@ function createLogHeader(sheet) {
 // 2行目: ヘッダー（B〜G列）
 // 3行目: 入力欄（B〜G列）
 function createStatusSection(sheet, startRow) {
-  const STATUS_TASKS = [
-    '0.受注・立ち上げ', '1.日程調整', '2.打ち合わせ前準備', '3.初回打ち合わせ',
-    '4.打ち合わせ後対応', '5.ヒアリング整理', '6.企画・質問設計', '7.撮影',
-    '8.編集', '9.原稿執筆', '10.確認依頼', '11.キックオフMTG',
-    '12.応募対応', '13.週間データ集計', '14.月次FB'
-  ];
-  const STATUS_HOLDERS = ['渡邉', '河合', '川崎', '中尾文香', '紺谷', '下脇田', '先方'];
-  const STATUS_STATES = ['対応中', '先方確認', '次の担当へ'];
-  const STATUS_OVERALL = ['制作中', '運用中', '完了'];
+  // progressManager.jsのgetTasks()を使用（設定シートから取得）
+  const tasks = getTasks();
+  const taskList = tasks.map(t => t.no + '.' + t.name);
 
   const headerRow = startRow;
   const valueRow = startRow + 1;
@@ -1066,13 +1060,13 @@ function createStatusSection(sheet, startRow) {
   const inputBg = '#FFFDE7';
 
   // B列: 現在タスク
-  sheet.getRange(valueRow, 2).setValue(STATUS_TASKS[0]).setBackground(inputBg).setFontColor('#000000');
-  const taskRule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS_TASKS, true).build();
+  sheet.getRange(valueRow, 2).setValue(taskList[0]).setBackground(inputBg).setFontColor('#000000');
+  const taskRule = SpreadsheetApp.newDataValidation().requireValueInList(taskList, true).build();
   sheet.getRange(valueRow, 2).setDataValidation(taskRule);
 
   // C列: タスク保持者
-  sheet.getRange(valueRow, 3).setValue(STATUS_HOLDERS[0]).setBackground(inputBg).setFontColor('#000000');
-  const holderRule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS_HOLDERS, true).build();
+  sheet.getRange(valueRow, 3).setValue(TASK_HOLDERS[0]).setBackground(inputBg).setFontColor('#000000');
+  const holderRule = SpreadsheetApp.newDataValidation().requireValueInList(TASK_HOLDERS, true).build();
   sheet.getRange(valueRow, 3).setDataValidation(holderRule);
 
   // D列: 状態

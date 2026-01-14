@@ -14,26 +14,61 @@
 // ===== 定数 =====
 const PROGRESS_SHEET_NAME = '進捗管理';
 
-// タスク定義（No.0〜14）
-const TASKS = [
-  { no: 0, name: '受注・立ち上げ', phase: '受注・立ち上げ' },
-  { no: 1, name: '日程調整', phase: '受注・立ち上げ' },
-  { no: 2, name: '打ち合わせ前準備', phase: '受注・立ち上げ' },
-  { no: 3, name: '初回打ち合わせ', phase: '受注・立ち上げ' },
-  { no: 4, name: '打ち合わせ後対応', phase: '受注・立ち上げ' },
-  { no: 5, name: 'ヒアリング整理', phase: '原稿作成' },
-  { no: 6, name: '企画・質問設計', phase: '動画制作' },
-  { no: 7, name: '撮影', phase: '動画制作' },
-  { no: 8, name: '編集', phase: '動画制作' },
-  { no: 9, name: '原稿執筆', phase: '原稿作成' },
-  { no: 10, name: '確認依頼', phase: '確認・共有' },
-  { no: 11, name: 'キックオフMTG', phase: '確認・共有' },
-  { no: 12, name: '応募対応', phase: '運用中' },
-  { no: 13, name: '週間データ集計', phase: '運用中' },
-  { no: 14, name: '月次FB', phase: '運用中' }
-];
+// phaseマッピング（タスク番号 → フェーズ）
+const PHASE_MAPPING = {
+  0: '受注・立ち上げ',
+  1: '受注・立ち上げ',
+  2: '受注・立ち上げ',
+  3: '受注・立ち上げ',
+  4: '原稿作成',
+  5: '動画制作',
+  6: '動画制作',
+  7: '動画制作',
+  8: '原稿作成',
+  9: '確認・共有',
+  10: '確認・共有',
+  11: '運用中',
+  12: '運用中',
+  13: '運用中'
+};
 
-// タスク保持者の選択肢
+/**
+ * タスク定義を取得（設定シートから、なければデフォルト）
+ * @returns {Object[]} { no, name, phase } の配列
+ */
+function getTasks() {
+  // settingsSheet.jsのgetAllTaskAssignees()を使用
+  const tasksFromSheet = getAllTaskAssignees();
+
+  // phaseを付与して返す
+  return tasksFromSheet.map(t => ({
+    no: t.no,
+    name: t.name,
+    phase: PHASE_MAPPING[t.no] || '運用中'
+  }));
+}
+
+// 後方互換用: TASKSを参照している箇所のためのgetter
+// ※新しいコードはgetTasks()を使用すること
+const TASKS = {
+  get length() { return getTasks().length; },
+  map: function(fn) { return getTasks().map(fn); },
+  find: function(fn) { return getTasks().find(fn); },
+  forEach: function(fn) { return getTasks().forEach(fn); }
+};
+
+// タスク保持者の選択肢（設定シートのメンバー一覧から取得）
+function getTaskHolders() {
+  const members = getAllMembers();
+  const holders = members.map(m => m.name);
+  // 「先方」を追加
+  if (!holders.includes('先方')) {
+    holders.push('先方');
+  }
+  return holders;
+}
+
+// 後方互換用
 const TASK_HOLDERS = ['渡邉', '河合', '川崎', '中尾文香', '紺谷', '下脇田', '先方'];
 
 // 状態の選択肢

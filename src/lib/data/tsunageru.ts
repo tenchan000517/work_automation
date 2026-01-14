@@ -28,7 +28,7 @@ import {
 export const tsunageru: Product = {
   id: "tsunageru",
   name: "ツナゲル",
-  taskCount: 14,
+  taskCount: 13,
   description: "採用求人原稿作成、インタビュー動画、応募対応、FB",
   hasOverallFlow: true, // 商材レベルの全体フロー（docs/flows/tsunageru/overall-flow.md）
   tasks: [
@@ -36,21 +36,28 @@ export const tsunageru: Product = {
     {
       no: "0",
       category: "受注・立ち上げ",
-      name: "受注・ワークス立ち上げ",
+      name: "受注・立ち上げ",
       assignee: "渡邉",
-      nextAssignee: "渡邉",  // 次: 1 初回打ち合わせ日程調整
-      tools: "ワークス",
-      deliverable: "企業グループ作成完了",
-      checkpoint: "必要情報の入力漏れ",
+      nextAssignee: "河合",  // 次: 1 打ち合わせ前準備
+      tools: "ワークス・メール・カレンダー",
+      deliverable: "グループ作成・日程確定",
+      checkpoint: "グループ作成・日程調整・フォーム依頼が完了しているか",
       hasManual: true,
-      issues: "企業基本情報の共有フォーマット整備",
-      simulation: `【業務内容】
-1. 受注確定
-2. ワークスで企業グループを作成
-3. 企業基本情報の共有フォーマットに記入
+      issues: "",
+      simulation: `【営業側の作業】
+1. ワークスで企業グループを作成
+2. 企業基本情報の共有フォーマットを送信
+3. 先方へ日程調整・Googleフォーム入力依頼
+4. 日程確定・カレンダー登録・ワークス共有
+
+【製作陣の役割】
+グループ立ち上げを確認したら以下をウォッチ：
+・日程調整が進んでいるか
+・フォーム回答が届いているか
+・必要に応じて自ら対応（リマインド等）
 
 【トリガー（次工程へ）】
-→ ワークスで担当者メンション + 必要情報フォーマット送信`,
+→ 日程確定＋カレンダー登録＋ワークス報告`,
       format: `企業基本情報の共有フォーマット
 
 ================================================================================
@@ -96,25 +103,6 @@ export const tsunageru: Product = {
         {
           label: "情報共有",
           summary: "企業情報をフォーマットでグループに共有",
-          description: `【企業基本情報フォーマットの記入ポイント】
-
-必須項目：
-・企業名（正式名称で記載）
-・担当者名
-・役職・部署
-・連絡先（電話・メール両方）
-・契約内容（期間・金額を明記）
-
-注意点：
-・略称は使わず正式名称で記載
-・担当者が複数いる場合は全員記載
-・契約金額は税別/税込を明記
-
-【送信手順】
-1. 下の「フォーマット」ボタンから企業基本情報フォーマットをコピー
-2. フォーマットに必要情報を記入
-3. 下の「投稿フォーマット」ボタンから投稿文をコピー
-4. ワークスに貼り付けて送信`,
           images: [{ url: "/images/lineworks-sample.png", caption: "ワークス投稿の例（メンション＋フォーマット送信）" }],
           links: [
             { label: "フォーマット", type: "popup", content: `============================
@@ -143,86 +131,9 @@ export const tsunageru: Product = {
             createOrderNotificationTemplate("ツナゲル", "12ヶ月")
           ]
         },
-      ],
-    },
-    {
-      no: "1",
-      category: "受注・立ち上げ",
-      name: "初回打ち合わせ日程調整",
-      assignee: "渡邉",
-      nextAssignee: "河合",  // 次: 2 打ち合わせ前準備
-      tools: "メール・カレンダー",
-      deliverable: "日程確定",
-      checkpoint: "参加者全員の日程確認",
-      hasManual: true,
-      issues: "先方用初回打ち合わせシート作成が必要",
-      simulation: `【業務内容】
-1. 先方と初回打ち合わせの候補日程を調整
-2. 参加者（企業担当・渡邉・河合）の日程を確認
-3. 日程確定後、カレンダー登録
-
-【事前アクション】
-→ 先方へヒアリングシート（黄色部分）の事前記入を依頼
-※先方用初回打ち合わせシートを送付
-
-【トリガー（次工程へ）】
-→ 日程確定報告（カレンダー更新 or スプレッドシート更新）`,
-      flowSteps: [
         {
           label: "日程調整",
           summary: "初回打ち合わせの日程を先方と調整",
-          description: `初回打ち合わせの日程調整を行います。
-あわせて、Googleフォーム（ヒアリングシート）の事前入力をお願いします。
-
-━━━━━━━━━━━━━━━━━━━━
-■ 依頼メール例文
-━━━━━━━━━━━━━━━━━━━━
-
-件名：【日程調整】初回お打ち合わせのご案内
-
-○○株式会社
-○○様
-
-お世話になっております。
-株式会社Singの渡邉です。
-
-この度は採用支援サービス「ツナゲル」をご契約いただき、
-誠にありがとうございます。
-
-早速ですが、初回お打ち合わせの日程調整をさせていただきたく
-ご連絡いたしました。
-
-下記日程にてご都合いかがでしょうか。
-
-━━━━━━━━━━━━━━━━━━━━
-【候補日程】
-・○月○日（○）○○:○○〜
-・○月○日（○）○○:○○〜
-・○月○日（○）○○:○○〜
-━━━━━━━━━━━━━━━━━━━━
-
-【打ち合わせ方法】
-Google Meetにて実施（約60分）
-※URLは日程確定後にお送りいたします
-
-【参加者（弊社）】
-渡邉、河合
-
-━━━━━━━━━━━━━━━━━━━━
-
-また、打ち合わせをより充実したものにするため、
-事前に下記ヒアリングシートへのご回答をお願いいたします。
-
-▼ヒアリングシート（Googleフォーム）
-https://forms.gle/gXE12JNfsN9JGiPJA
-
-【所要時間】約15〜20分程度
-【ご回答期限】初回お打ち合わせ日の前日まで
-
-ご不明な点がございましたら、
-お気軽にお問い合わせください。
-
-何卒よろしくお願いいたします。`,
           links: [
             { label: "Googleフォーム", type: "link", url: "https://forms.gle/gXE12JNfsN9JGiPJA" }
           ]
@@ -231,30 +142,18 @@ https://forms.gle/gXE12JNfsN9JGiPJA
         {
           label: "ワークス共有",
           summary: "日程確定をグループに報告",
-          description: `日程が確定したら、ワークスの企業グループで制作メンバーに共有します。
-
-【送信手順】
-1. 下の「投稿フォーマット」ボタンから投稿文をコピー
-2. 企業名・日時・Meet URLを入力
-3. ワークスに貼り付けて送信`,
-          images: [{ url: "/images/works-schedule-share.png", caption: "ワークスでの日程共有の例" }],
           links: [
             createScheduleConfirmTemplate()
           ]
         },
-        {
-          label: "リアクション確認",
-          summary: "メンバーの確認状況をチェック",
-          description: WORKS_REACTION_MANUAL,
-        },
       ],
     },
     {
-      no: "2",
+      no: "1",
       category: "受注・立ち上げ",
       name: "打ち合わせ前準備",
       assignee: "河合",
-      nextAssignee: "渡邉, 河合",  // 次: 3 オンライン初回打ち合わせ
+      nextAssignee: "渡邉, 河合",  // 次: 2 オンライン初回打ち合わせ
       tools: "スプレッドシート・GAS",
       deliverable: "ヒアリングシート作成完了・撮影日程調整済み",
       checkpoint: "フォーム回答の確認・撮影担当者との日程調整",
@@ -386,7 +285,7 @@ ${GAS_AUTH_MANUAL}`,
         {
           label: "撮影日確認",
           summary: "撮影担当者の空き日程を確認",
-          relatedTaskNo: "7",  // 撮影業務の担当者を動的に表示
+          relatedTaskNo: "6",  // 撮影業務の担当者を動的に表示
           description: `初回打ち合わせで先方に撮影候補日を提示できるよう、撮影担当者に事前確認します。
 
 【確認内容】
@@ -403,7 +302,7 @@ ${GAS_AUTH_MANUAL}`,
         {
           label: "リマインド",
           summary: "打ち合わせ参加者にリマインド送信",
-          relatedTaskNo: "3",  // オンライン初回打ち合わせの参加者を動的に表示
+          relatedTaskNo: "2",  // オンライン初回打ち合わせの参加者を動的に表示
           excludeSelf: true,     // 自分（河合）を除く
           description: `初回打ち合わせの参加者（自分を除く）にリマインドを送ります。
 
@@ -436,11 +335,11 @@ ${NOTTA_PREP_CHECK}`,
       ],
     },
     {
-      no: "3",
+      no: "2",
       category: "受注・立ち上げ",
       name: "オンライン初回打ち合わせ",
       assignee: "渡邉, 河合",
-      nextAssignee: "河合",  // 次: 4 打ち合わせ後対応
+      nextAssignee: "河合",  // 次: 3 打ち合わせ後対応
       tools: "Google Meet・ヒアリングシート・NOTTA",
       deliverable: "ヒアリングシート記入済み・議事録",
       checkpoint: "要件漏れ・撮影日程確定",
@@ -608,11 +507,11 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
       ],
     },
     {
-      no: "4",
+      no: "3",
       category: "受注・立ち上げ",
       name: "打ち合わせ後対応",
       assignee: "河合",
-      nextAssignee: "河合",  // 次: 5 ヒアリング内容整理
+      nextAssignee: "河合",  // 次: 4 ヒアリング内容整理
       tools: "ワークス・Googleドライブ",
       deliverable: "議事録共有・撮影フォルダ作成完了",
       checkpoint: "撮影日程の連絡漏れ・フォルダ作成漏れ",
@@ -628,7 +527,7 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
         {
           label: "撮影連絡",
           summary: "撮影日程確定を撮影担当者に連絡",
-          relatedTaskNo: "7",
+          relatedTaskNo: "6",
           description: `撮影日程確定を撮影担当者に連絡します。
 撮影データの保存先フォルダも明確に指示します。
 
@@ -782,11 +681,11 @@ AIが出力した議事録をコピー
     },
     // ==================== Phase 1: ヒアリング・企画 ====================
     {
-      no: "5",
+      no: "4",
       category: "採用求人原稿作成",
       name: "ヒアリング内容整理",
       assignee: "河合",
-      nextAssignee: "河合, 中尾文香, 川崎",  // 次: 9 原稿執筆 / 6 企画・質問設計（分岐）
+      nextAssignee: "河合, 中尾文香, 川崎",  // 次: 8 原稿執筆 / 5 企画・質問設計（分岐）
       tools: "スプレッドシート",
       deliverable: "構成案",
       checkpoint: "要件漏れ",
@@ -1395,7 +1294,7 @@ Step4.
 ■ トリガー（次工程へ）
 ━━━━━━━━━━━━━━━━━━━━
 
-構成案が承認されたら → 原稿執筆（No.4）へ`,
+構成案が承認されたら → 原稿執筆（No.8）へ`,
           links: [
             {
               label: "共有フォーマット",
@@ -1448,11 +1347,11 @@ Step4.
       ],
     },
     {
-      no: "6",
+      no: "5",
       category: "インタビューショート動画",
       name: "企画・質問設計",
       assignee: "川崎",
-      nextAssignee: "川崎",  // 次: 7 撮影
+      nextAssignee: "川崎",  // 次: 6 撮影
       tools: "企業カンペ",
       deliverable: "質問案",
       checkpoint: "採用訴求一致",
@@ -1479,11 +1378,11 @@ Step4.
       ],
     },
     {
-      no: "7",
+      no: "6",
       category: "インタビューショート動画",
       name: "撮影",
       assignee: "川崎",
-      nextAssignee: "河合",  // 次: 8 編集
+      nextAssignee: "河合",  // 次: 7 編集
       tools: "AIカメラアプリ",
       deliverable: "動画素材",
       checkpoint: "音声",
@@ -1503,11 +1402,11 @@ Step4.
       ],
     },
     {
-      no: "8",
+      no: "7",
       category: "インタビューショート動画",
       name: "編集",
       assignee: "河合",
-      nextAssignee: "河合",  // 次: 10 企業担当へ確認依頼
+      nextAssignee: "河合",  // 次: 9 企業担当へ確認依頼
       tools: "Powerdirector",
       deliverable: "ショート動画",
       checkpoint: "テロップ誤字",
@@ -1531,11 +1430,11 @@ Step4.
       ],
     },
     {
-      no: "9",
+      no: "8",
       category: "採用求人原稿作成",
       name: "原稿執筆",
       assignee: "河合, 中尾文香",
-      nextAssignee: "河合",  // 次: 10 企業担当へ確認依頼
+      nextAssignee: "河合",  // 次: 9 企業担当へ確認依頼
       tools: "エンゲージ・Pairsona",
       deliverable: "原稿",
       checkpoint: "表現NG",
@@ -1592,11 +1491,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       ],
     },
     {
-      no: "10",
+      no: "9",
       category: "作成原稿の確認",
       name: "企業担当へ確認依頼",
       assignee: "河合",
-      nextAssignee: "河合",  // 次: 11 今後の担当者共有
+      nextAssignee: "河合",  // 次: 10 今後の担当者共有
       tools: "メール",
       deliverable: "原稿リンク",
       checkpoint: "原稿内容に相違ないか",
@@ -1614,11 +1513,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       ],
     },
     {
-      no: "11",
+      no: "10",
       category: "キックオフMTG",
       name: "今後の担当者の共有とスケジュール共有",
       assignee: "河合",
-      nextAssignee: "紺谷",  // 次: 12 応募対応
+      nextAssignee: "紺谷",  // 次: 11 応募対応
       tools: "メール",
       deliverable: "原稿リンク",
       checkpoint: "原稿内容に相違ないか",
@@ -1635,11 +1534,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       ],
     },
     {
-      no: "12",
+      no: "11",
       category: "応募対応連絡",
       name: "企業・応募者へ連絡",
       assignee: "紺谷",
-      nextAssignee: "河合",  // 次: 13 週間データ集計
+      nextAssignee: "河合",  // 次: 12 週間データ集計
       tools: "エンゲージ・Pairsona・ワークス",
       deliverable: "通話ログ・メール",
       checkpoint: "フロー遵守",
@@ -1655,11 +1554,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       ],
     },
     {
-      no: "13",
+      no: "12",
       category: "FB資料作成",
       name: "週間データの集計と資料作成",
       assignee: "河合",
-      nextAssignee: "川崎, 下脇田",  // 次: 14 月次FB
+      nextAssignee: "川崎, 下脇田",  // 次: 13 月次FB
       tools: "スプレッドシート・Canva",
       deliverable: "スプレッドシート集計データ",
       checkpoint: "数値推移",
@@ -1684,11 +1583,11 @@ Pairsona:編集データを指定フォルダからダウンロードしYouTube�
       ],
     },
     {
-      no: "14",
+      no: "13",
       category: "月次FB",
       name: "月次FB打合せ",
       assignee: "川崎, 下脇田",
-      nextAssignee: "河合",  // 継続運用: 13 週間データ集計に戻る
+      nextAssignee: "河合",  // 継続運用: 12 週間データ集計に戻る
       tools: "資料テンプレ",
       deliverable: "FB資料",
       checkpoint: "指標理解",
