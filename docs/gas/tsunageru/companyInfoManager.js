@@ -614,8 +614,13 @@ function showOrderReportDialog() {
 }
 
 function createOrderReportHTML(members, companies, activeCompanyName) {
-  const defaultMentions = ['河合', '中尾文香'];
-  const defaultCC = ['青柳'];
+  const settings = getSettingsFromSheet();
+  const defaultMentions = settings['受注連絡メンション']
+    ? settings['受注連絡メンション'].split(',').map(s => s.trim())
+    : ['河合', '中尾文香'];
+  const defaultCC = settings['受注連絡CC']
+    ? settings['受注連絡CC'].split(',').map(s => s.trim())
+    : ['青柳'];
 
   // メンバーリストをJSON形式で渡す
   const membersJson = JSON.stringify(members.map(m => escapeHtmlAttrCI(m)));
@@ -1562,7 +1567,10 @@ function getCompanyAssigneesFromList(companyName) {
 }
 
 function createScheduleRequestHTML(members, companies, activeCompanyName, formUrl) {
-  const defaultParticipants = ['渡邉', '河合'];
+  const settings = getSettingsFromSheet();
+  const defaultParticipants = settings['日程調整参加者']
+    ? settings['日程調整参加者'].split(',').map(s => s.trim())
+    : ['渡邉', '河合'];
 
   // メンバーリストをJSON形式で渡す
   const membersJson = JSON.stringify(members.map(m => escapeHtmlAttrCI(m)));

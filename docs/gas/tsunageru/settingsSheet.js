@@ -669,7 +669,7 @@ function getPart3ConfigFromSettings() {
  */
 function isExcludedSheet(sheetName) {
   // 完全一致で除外
-  const exactMatch = ['プロンプト', '設定', 'フォームの回答 1', 'フォームの回答1', '企業情報一覧'];
+  const exactMatch = ['プロンプト', '設定', 'フォームの回答 1', 'フォームの回答1', '企業情報一覧', '進捗管理'];
   if (exactMatch.includes(sheetName)) {
     return true;
   }
@@ -749,8 +749,8 @@ function showMemberEditDialog() {
   const members = getMemberListWithNotes();
 
   const html = HtmlService.createHtmlOutput(createMemberEditHTML(members))
-    .setWidth(500)
-    .setHeight(500);
+    .setWidth(700)
+    .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, '👥 メンバー編集');
 }
 
@@ -761,37 +761,34 @@ function createMemberEditHTML(members) {
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
-    .member-list { max-height: 300px; overflow-y: auto; }
+    /* メンバー編集ダイアログ固有スタイル */
+    .member-list { max-height: 550px; overflow-y: auto; }
     .member-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
     .member-row input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
     .member-row input.name { width: 120px; }
     .member-row input.note { flex: 1; }
     .member-row button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; background: #ffebee; color: #c62828; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .btn-add { background: #e8f5e9; color: #2e7d32; margin-bottom: 15px; }
-    .status { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
+    .btn-add { margin-bottom: 15px; }
   </style>
 </head>
 <body>
   <p>メンバーを追加・編集できます。変更後は「保存」をクリックしてください。</p>
+  <p class="hint" style="color: #666; font-size: 12px; margin-top: -5px;">※設定シートのA-B列で手動でも変更可能です</p>
 
   <button class="btn btn-add" onclick="addMember()">＋ メンバーを追加</button>
 
   <div class="member-list" id="memberList"></div>
 
   <div style="margin-top: 20px;">
-    <button class="btn btn-primary" onclick="saveMembers()">保存</button>
-    <button class="btn btn-secondary" onclick="google.script.host.close()">キャンセル</button>
+    <button class="btn btn-blue" onclick="saveMembers()">保存</button>
+    <button class="btn btn-gray" onclick="google.script.host.close()">キャンセル</button>
   </div>
 
   <div class="status" id="status"></div>
+
+  ${CI_UI_COMPONENTS}
 
   <script>
     let members = ${membersJson};
@@ -807,10 +804,7 @@ function createMemberEditHTML(members) {
       \`).join('');
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
+    // escapeHtml は CI_UI_COMPONENTS で提供
 
     function addMember() {
       members.push({ name: '', note: '' });
@@ -899,7 +893,7 @@ function showTaskAssigneeEditDialog() {
 
   const html = HtmlService.createHtmlOutput(createTaskAssigneeEditHTML(tasks, members))
     .setWidth(700)
-    .setHeight(600);
+    .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, '📝 業務担当者編集');
 }
 
@@ -911,19 +905,13 @@ function createTaskAssigneeEditHTML(tasks, members) {
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+    /* 業務担当者編集ダイアログ固有スタイル */
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
     th { background: #f5f5f5; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .status { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
-    .task-list { max-height: 400px; overflow-y: auto; }
+    .task-list { max-height: 550px; overflow-y: auto; }
     .note { font-size: 12px; color: #666; margin-bottom: 15px; }
     .assignee-cell { min-width: 200px; position: relative; }
     .assignee-display {
@@ -967,6 +955,7 @@ function createTaskAssigneeEditHTML(tasks, members) {
 </head>
 <body>
   <p class="note">各業務の担当者を選択してください。クリックして複数人を選択できます。</p>
+  <p style="color: #666; font-size: 12px; margin-top: -10px; margin-bottom: 15px;">※設定シートのD-F列で手動でも変更可能です</p>
 
   <div class="task-list">
     <table>
@@ -987,6 +976,8 @@ function createTaskAssigneeEditHTML(tasks, members) {
   </div>
 
   <div class="status" id="status"></div>
+
+  ${CI_UI_COMPONENTS}
 
   <script>
     let tasks = ${tasksJson};
@@ -1035,10 +1026,7 @@ function createTaskAssigneeEditHTML(tasks, members) {
       }).join('');
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
+    // escapeHtml は CI_UI_COMPONENTS で提供
 
     function toggleDropdown(index, event) {
       event.stopPropagation();
@@ -1187,8 +1175,8 @@ function showFolderSettingsEditDialog() {
   }
 
   const html = HtmlService.createHtmlOutput(createFolderSettingsEditHTML(parentFolderId, parentFolderName, subfolders))
-    .setWidth(600)
-    .setHeight(500);
+    .setWidth(700)
+    .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, '📁 フォルダ設定編集');
 }
 
@@ -1209,11 +1197,10 @@ function createFolderSettingsEditHTML(parentFolderId, parentFolderName, subfolde
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+    /* フォルダ設定編集ダイアログ固有スタイル */
     .section { margin-bottom: 25px; }
-    .section-title { font-weight: bold; margin-bottom: 10px; color: #333; font-size: 14px; }
     .setting-row { margin-bottom: 15px; }
     .setting-row label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
     .setting-row .note { font-size: 12px; color: #666; margin-top: 3px; }
@@ -1229,14 +1216,7 @@ function createFolderSettingsEditHTML(parentFolderId, parentFolderName, subfolde
       font-size: 16px;
     }
     .subfolder-row .delete-btn:hover { background: #ffcdd2; }
-    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .btn-add { background: #e8f5e9; color: #2e7d32; margin-top: 10px; }
-    .btn-add:hover { background: #c8e6c9; }
-    .status { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
+    .btn-add { margin-top: 10px; }
     .parent-folder-box {
       background: #f5f5f5;
       border: 1px solid #e0e0e0;
@@ -1244,29 +1224,15 @@ function createFolderSettingsEditHTML(parentFolderId, parentFolderName, subfolde
       padding: 12px;
       margin-bottom: 8px;
     }
-    .parent-folder-name {
-      font-weight: bold;
-      color: #333;
-      font-size: 14px;
-    }
-    .parent-folder-id {
-      font-family: monospace;
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
-    }
-    .parent-folder-hint {
-      font-size: 12px;
-      color: #1976d2;
-      margin-top: 8px;
-    }
-    .not-set {
-      color: #999;
-      font-style: italic;
-    }
+    .parent-folder-name { font-weight: bold; color: #333; font-size: 14px; }
+    .parent-folder-id { font-family: monospace; font-size: 12px; color: #666; margin-top: 4px; }
+    .parent-folder-hint { font-size: 12px; color: #1976d2; margin-top: 8px; }
+    .not-set { color: #999; font-style: italic; }
   </style>
 </head>
 <body>
+  <p style="color: #666; font-size: 12px; margin-bottom: 15px;">※設定シートのH-I列で手動でも変更可能です</p>
+
   <div class="section">
     <div class="section-title">📁 親フォルダ</div>
     <div class="parent-folder-box">
@@ -1295,6 +1261,8 @@ function createFolderSettingsEditHTML(parentFolderId, parentFolderName, subfolde
 
   <div class="status" id="status"></div>
 
+  ${CI_UI_COMPONENTS}
+
   <script>
     let subfolders = ${subfoldersJson};
 
@@ -1308,10 +1276,7 @@ function createFolderSettingsEditHTML(parentFolderId, parentFolderName, subfolde
       \`).join('');
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
+    // escapeHtml は CI_UI_COMPONENTS で提供
 
     function addSubfolder() {
       const num = subfolders.length + 1;
@@ -1431,8 +1396,8 @@ function showPromptEditDialog() {
   }
 
   const html = HtmlService.createHtmlOutput(createPromptEditHTML(prompts))
-    .setWidth(800)
-    .setHeight(600);
+    .setWidth(700)
+    .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, '📄 プロンプト編集');
 }
 
@@ -1443,12 +1408,12 @@ function createPromptEditHTML(prompts) {
 <!DOCTYPE html>
 <html>
 <head>
+  ${CI_DIALOG_STYLES}
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+    /* プロンプト編集ダイアログ固有スタイル */
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .header h3 { margin: 0; color: #333; }
-    .prompt-list { max-height: 350px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; }
+    .prompt-list { max-height: 550px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; }
     .prompt-item {
       padding: 12px 15px;
       border-bottom: 1px solid #f0f0f0;
@@ -1463,16 +1428,8 @@ function createPromptEditHTML(prompts) {
     .prompt-desc { font-size: 12px; color: #666; margin-top: 2px; }
     .prompt-category { font-size: 11px; color: #fff; background: #9c27b0; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
     .prompt-actions { display: flex; gap: 8px; }
-    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
-    .btn-primary { background: #1a73e8; color: white; }
-    .btn-secondary { background: #f1f3f4; color: #333; }
-    .btn-add { background: #e8f5e9; color: #2e7d32; }
     .btn-edit { background: #e3f2fd; color: #1565c0; padding: 6px 12px; }
-    .btn-delete { background: #ffebee; color: #c62828; padding: 6px 12px; }
     .btn-small { padding: 6px 12px; font-size: 12px; }
-    .status { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
-    .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
-    .status.error { display: block; background: #ffebee; color: #c62828; }
     .empty-message { padding: 40px; text-align: center; color: #999; }
 
     /* モーダル */
@@ -1496,17 +1453,6 @@ function createPromptEditHTML(prompts) {
       overflow-y: auto;
     }
     .modal h4 { margin: 0 0 15px 0; color: #333; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 13px; }
-    .form-group input, .form-group textarea, .form-group select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    .form-group textarea { min-height: 100px; resize: vertical; font-family: monospace; }
-    .form-group .hint { font-size: 11px; color: #888; margin-top: 3px; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
   </style>
 </head>
@@ -1575,6 +1521,8 @@ function createPromptEditHTML(prompts) {
     </div>
   </div>
 
+  ${CI_UI_COMPONENTS}
+
   <script>
     let prompts = ${promptsJson};
 
@@ -1603,10 +1551,7 @@ function createPromptEditHTML(prompts) {
       \`).join('');
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
+    // escapeHtml は CI_UI_COMPONENTS で提供
 
     function openAddModal() {
       document.getElementById('modalTitle').textContent = '新規プロンプト追加';

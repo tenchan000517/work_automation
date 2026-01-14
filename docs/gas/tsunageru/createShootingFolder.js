@@ -24,18 +24,6 @@
  * 2. 「Drive API」を選択して「追加」
  */
 
-// ===== 設定 =====
-// 撮影データを格納する親フォルダのID（Google DriveのURLから取得）
-// 例: https://drive.google.com/drive/folders/XXXXXXXXX の XXXXXXXXX 部分
-const PARENT_FOLDER_ID = 'YOUR_PARENT_FOLDER_ID_HERE';
-
-// サブフォルダの構成
-const SUBFOLDERS = [
-  '01_撮影素材',
-  '02_編集データ',
-  '03_完成動画'
-];
-
 // ===== メニュー設定 =====
 /**
  * 既存のonOpenに統合する場合（hearingSheetManager.jsから呼び出し）
@@ -575,9 +563,8 @@ function setParentFolder() {
 
 // ===== 親フォルダID取得 =====
 function getParentFolderId() {
-  // プロパティから取得、なければ定数を使用
-  const savedId = PropertiesService.getScriptProperties().getProperty('PARENT_FOLDER_ID');
-  return savedId || PARENT_FOLDER_ID;
+  // プロパティから取得（設定メニューで保存した値）
+  return PropertiesService.getScriptProperties().getProperty('PARENT_FOLDER_ID') || null;
 }
 
 // ===== 作成履歴機能 =====

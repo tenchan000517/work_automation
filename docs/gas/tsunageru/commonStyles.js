@@ -113,6 +113,10 @@ const CI_DIALOG_STYLES = `
   .btn-copy:hover { background: #2d8e47; }
   .btn-parse { background: #ff9800; color: white; }
   .btn-parse:hover { background: #f57c00; }
+  .btn-add { background: #e8f5e9; color: #2e7d32; }
+  .btn-add:hover { background: #c8e6c9; }
+  .btn-delete { background: #ffebee; color: #c62828; }
+  .btn-delete:hover { background: #ffcdd2; }
 
   .actions { display: flex; gap: 10px; margin-top: 20px; }
 

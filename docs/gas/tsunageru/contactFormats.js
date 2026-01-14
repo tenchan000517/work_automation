@@ -50,26 +50,10 @@ function getCompanySheetListForContacts() {
   const sheets = ss.getSheets();
   const companySheets = [];
 
-  // 除外シート判定（インライン定義で依存関係問題を回避）
-  const excludeExact = ['プロンプト', '設定', 'フォームの回答 1', 'フォームの回答1', '企業情報一覧', 'ヒアリングシート'];
-  const excludePartial = ['ヒアリングシート', '原本'];
-
   for (const sheet of sheets) {
     const name = sheet.getName();
-
-    // 完全一致で除外
-    if (excludeExact.includes(name)) continue;
-
-    // 部分一致で除外
-    let excluded = false;
-    for (const partial of excludePartial) {
-      if (name.includes(partial)) {
-        excluded = true;
-        break;
-      }
-    }
-    if (excluded) continue;
-
+    // settingsSheet.jsの共通関数で除外判定
+    if (isExcludedSheet(name)) continue;
     companySheets.push(name);
   }
 
@@ -221,11 +205,16 @@ function showScheduleConfirmDialog() {
 }
 
 function createScheduleConfirmHTML(companySheets, members) {
+  const settings = getSettingsFromSheet();
   // メンバーリストと企業リストをJSON形式で渡す
   const membersJson = JSON.stringify(members.map(m => escapeHtmlAttr(m)));
   const companiesJson = JSON.stringify(companySheets.map(s => escapeHtmlAttr(s)));
-  const defaultMentions = ['河合'];
-  const defaultCC = ['青柳'];
+  const defaultMentions = settings['日程確定報告メンション']
+    ? settings['日程確定報告メンション'].split(',').map(s => s.trim())
+    : ['河合'];
+  const defaultCC = settings['日程確定報告CC']
+    ? settings['日程確定報告CC'].split(',').map(s => s.trim())
+    : ['青柳'];
 
   return `
 <!DOCTYPE html>
@@ -687,10 +676,15 @@ function showMeetingReminderDialog() {
 }
 
 function createMeetingReminderHTML(companySheets, members) {
+  const settings = getSettingsFromSheet();
   const membersJson = JSON.stringify(members.map(m => escapeHtmlAttr(m)));
   const companiesJson = JSON.stringify(companySheets.map(s => escapeHtmlAttr(s)));
-  const defaultMentions = ['渡邉'];
-  const defaultCC = ['青柳'];
+  const defaultMentions = settings['リマインドメンション']
+    ? settings['リマインドメンション'].split(',').map(s => s.trim())
+    : ['渡邉'];
+  const defaultCC = settings['リマインドCC']
+    ? settings['リマインドCC'].split(',').map(s => s.trim())
+    : ['青柳'];
 
   return `
 <!DOCTYPE html>
