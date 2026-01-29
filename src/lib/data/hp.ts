@@ -4,188 +4,244 @@ import { FB_REPORT_TEMPLATE } from "./common";
 export const hp: Product = {
   id: "hp",
   name: "HP制作",
-  taskCount: 8,
-  description: "構成設計、デザイン、実装、更新",
+  taskCount: 11,
+  description: "ヒアリング、AI原稿生成、Claude Code実装、運用",
+  hasOverallFlow: true,
   tasks: [
+    // ==================== Phase 0: 受注・立ち上げ ====================
     {
       no: "0",
-      category: "構成設計",
-      name: "テンプレート選定",
-      assignee: "河合",
-      nextAssignee: "川崎",  // 次: No.18 素材撮影
-      tools: "SANKOU",
-      deliverable: "構成案",
-      checkpoint: "導線",
+      category: "受注・立ち上げ",
+      name: "受注・立ち上げ",
+      assignee: "渡邉",
+      nextAssignee: "河合",
+      tools: "ワークス・メール・カレンダー",
+      deliverable: "グループ作成・日程確定",
+      checkpoint: "グループ作成・日程調整が完了しているか",
       hasManual: true,
-      issues: "ヒアリングシートの改善・ヒアリング精度向上・ヒアリング時に文章が載ってくる\n初回打ち合わせマニュアル",
-      relatedLinks: [
-        { label: "SANKOU", url: "https://sankoudesign.com/", type: "site" },
-      ],
-      simulation: `大輝ワークス立ち上げ　企業基本情報の共有フォーマット
-受注者が初回打ち合わせ日程共有
-ZOOM初回打ち合わせ企業：担当・渡邉・河合
-HP制作ヒアリング：ヒアリングシートを基にヒアリングの実施
-撮影日程の調整：川崎
-議事録のワークスグループ共有
-河合撮影データの共有フォルダ作成`,
+      issues: "",
       flowSteps: [
-        { label: "ワークス立ち上げ・企業基本情報の共有フォーマット" },
-        { label: "受注者が初回打ち合わせ日程共有" },
-        { label: "ZOOM初回打ち合わせ：ヒアリングシートを基にヒアリングの実施" },
-        { label: "撮影日程の調整" },
-        { label: "議事録のワークスグループ共有" },
-        { label: "撮影データの共有フォルダ作成" },
+        { label: "グループ作成", summary: "LINEWORKSで企業グループを立ち上げる" },
+        { label: "情報共有", summary: "企業情報をフォーマットでグループに共有" },
+        { label: "日程調整", summary: "初回打ち合わせの日程を先方と調整" },
+        { label: "カレンダー登録", summary: "確定した日程をカレンダーに登録" },
+        { label: "ワークス共有", summary: "日程確定をグループに報告" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の担当者へ" },
       ],
     },
+    // ==================== Phase 1: 打ち合わせ前準備 ====================
     {
       no: "1",
+      category: "受注・立ち上げ",
+      name: "打ち合わせ前準備",
+      assignee: "河合",
+      nextAssignee: "渡邉, 河合",
+      tools: "スプレッドシート",
+      deliverable: "ヒアリングシート作成完了",
+      checkpoint: "シート作成・撮影日程調整が完了しているか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "シート作成", summary: "ヒアリングシートを作成" },
+        { label: "フォルダ作成", summary: "素材用フォルダを作成" },
+        { label: "撮影日確認", summary: "撮影担当者の空き日程を確認" },
+        { label: "リマインド", summary: "打ち合わせ参加者にリマインド送信" },
+        { label: "録画準備", summary: "NOTTAの録画設定を確認" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の担当者へ" },
+      ],
+    },
+    // ==================== Phase 2: 初回打ち合わせ ====================
+    {
+      no: "2",
+      category: "受注・立ち上げ",
+      name: "初回打ち合わせ",
+      assignee: "渡邉, 河合",
+      nextAssignee: "河合",
+      tools: "Google Meet・NOTTA",
+      deliverable: "ヒアリング完了・録画データ",
+      checkpoint: "必要な情報がヒアリングできているか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "NOTTA起動", summary: "録画・文字起こしを開始" },
+        { label: "ヒアリング実施", summary: "ヒアリングシートに沿って情報収集" },
+        { label: "撮影日程確定", summary: "撮影日程を先方と調整" },
+        { label: "NOTTA終了", summary: "録画を終了し保存" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の担当者へ" },
+      ],
+    },
+    // ==================== Phase 3: 文字起こし・転記 ====================
+    {
+      no: "3",
+      category: "原稿作成",
+      name: "文字起こし・転記",
+      assignee: "河合",
+      nextAssignee: "河合",
+      tools: "NOTTA・GAS",
+      deliverable: "ヒアリングシート完成",
+      checkpoint: "文字起こしが正確に転記されているか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "文字起こし確認", summary: "NOTTAの文字起こしを確認" },
+        { label: "GAS転記", summary: "GASでヒアリングシートに転記" },
+        { label: "内容確認", summary: "転記内容を確認・修正" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
+      ],
+    },
+    // ==================== Phase 4: JSON出力・原稿生成 ====================
+    {
+      no: "4",
+      category: "原稿作成",
+      name: "JSON出力・原稿生成",
+      assignee: "河合",
+      nextAssignee: "河合",
+      tools: "GAS・AI",
+      deliverable: "HP原稿",
+      checkpoint: "テンプレートに沿った原稿が生成されているか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "JSON出力", summary: "ヒアリングシートの内容をJSONで出力" },
+        { label: "AIプロンプト実行", summary: "JSON＋プロンプトでAIに原稿生成" },
+        { label: "原稿確認", summary: "生成された原稿を確認・修正" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
+      ],
+    },
+    // ==================== Phase 5: HP作成 ====================
+    {
+      no: "5",
+      category: "実装",
+      name: "HP作成",
+      assignee: "河合",
+      nextAssignee: "川崎",
+      tools: "Claude Code・VSCode",
+      deliverable: "HP（MVP）",
+      checkpoint: "テンプレートからHPが正しく生成されているか",
+      hasManual: true,
+      issues: "",
+      relatedLinks: [
+        { label: "HPテンプレート", url: "https://sing-hp-template.vercel.app/", type: "site" },
+        { label: "修正マニュアル", url: "https://sing-hp-template.vercel.app/manual", type: "site" },
+      ],
+      flowSteps: [
+        { label: "テンプレート準備", summary: "HPテンプレートを準備" },
+        { label: "Claude Code実行", summary: "原稿を元にHPを生成" },
+        { label: "動作確認", summary: "表示崩れ・リンク切れをチェック" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
+      ],
+    },
+    // ==================== Phase 6: 素材撮影（オプション） ====================
+    {
+      no: "6",
       category: "素材撮影",
       name: "素材撮影",
       assignee: "川崎",
-      nextAssignee: "河合",  // 次: No.14 デザイン作成
+      nextAssignee: "河合",
       tools: "カメラ",
       deliverable: "写真・動画素材",
-      checkpoint: "画角・音声",
+      checkpoint: "必要な素材が揃っているか",
       hasManual: true,
-      issues: "撮影マニュアル\nデータ共有マニュアル(ドライブの使い方＋テンプレ)",
-      memo: `撮影マニュアル作り込み必要(撮り方・データ確認方法・データチェック)
-データ共有マニュアルの作成(テンプレ)`,
-      simulation: `撮影
-撮影データチェック
-撮影者が撮影データの納品：共有ドライブの指定フォルダ内に指定のファイル名で格納
-河合がローカルフォルダにデータダウンロード`,
+      issues: "",
+      memo: `【オプションタスク】
+プランによっては先方用意もあり。
+
+パターン:
+A. 撮影あり（動画）: HPの中に動画を配置
+B. 撮影あり（写真）: 高解像度素材写真を配置
+C. 先方用意: 先方に素材を用意してもらう`,
       flowSteps: [
-        { label: "撮影" },
-        { label: "撮影データチェック" },
-        { label: "撮影データの納品：共有ドライブの指定フォルダ内に指定のファイル名で格納" },
-        { label: "河合がローカルフォルダにデータダウンロード" },
+        { label: "撮影準備", summary: "撮影日程・場所・必要素材を確認" },
+        { label: "撮影実施", summary: "写真・動画を撮影" },
+        { label: "データチェック", summary: "撮影データの品質確認" },
+        { label: "データ納品", summary: "共有ドライブにアップロード" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
       ],
     },
-    {
-      no: "2",
-      category: "デザイン",
-      name: "デザイン作成",
-      assignee: "河合",
-      nextAssignee: "河合",  // 次: No.15 コーディング
-      tools: "Canva",
-      deliverable: "デザイン",
-      checkpoint: "UI",
-      hasManual: true,
-      issues: "Canvaフォルダ制作マニュアル　HP制作テンプレ・HP制作マニュアル・HP制作チェックリスト・データ格納先ドライブフォルダマニュアル",
-      simulation: `Canvaに企業名フォルダを作成しページごとにファイル作成する
-HP制作テンプレートを基に画像、文章をはめ込む
-作成したHPデザインをチェックリストを用いてチェックする
-各セクションごとにデータをダウンロードし指定したグーグルドライブにセクションごとのファイル名で格納する
-格納が完了したら、企業グループで報告する`,
-      flowSteps: [
-        { label: "Canvaに企業名フォルダを作成しページごとにファイル作成する" },
-        { label: "HP制作テンプレートを基に画像、文章をはめ込む" },
-        { label: "作成したHPデザインをチェックリストを用いてチェックする" },
-        { label: "各セクションごとにデータをダウンロードし指定したグーグルドライブにセクションごとのファイル名で格納する" },
-        { label: "格納が完了したら、企業グループで報告する" },
-      ],
-    },
-    {
-      no: "3",
-      category: "実装",
-      name: "コーディング",
-      assignee: "河合",
-      nextAssignee: "河合",  // 次: No.21 企業担当へ確認依頼
-      tools: "VSコード・Claude",
-      deliverable: "Webサイト",
-      checkpoint: "表示崩れ",
-      hasManual: true,
-      issues: "ノウハウの体系的な共有・ブログ更新の時にどうしたら楽になるか",
-    },
-    {
-      no: "4",
-      category: "作成原稿の確認",
-      name: "企業担当へ確認依頼",
-      assignee: "河合",
-      nextAssignee: "河合",  // 次: No.22 キックオフMTG
-      tools: "メール",
-      deliverable: "HPリンク",
-      checkpoint: "チェックリストと相違ないか",
-      hasManual: true,
-      issues: "メールテンプレ",
-      simulation: `先方へHPデザインの確認
-修正箇所の有無の確認
-修正箇所の修正対応
-キックオフの日程調整`,
-      flowSteps: [
-        { label: "先方へHPデザインの確認" },
-        { label: "修正箇所の有無の確認" },
-        { label: "修正箇所の修正対応" },
-        { label: "キックオフの日程調整" },
-      ],
-    },
-    {
-      no: "5",
-      category: "キックオフMTG",
-      name: "今後の担当者の共有とスケジュール共有",
-      assignee: "河合",
-      nextAssignee: "-",  // 次: No.23 HPの内容更新（担当なし）
-      tools: "メール",
-      deliverable: "打合せ議事録",
-      checkpoint: "ネクスト内容の認識合わせ",
-      hasManual: true,
-      issues: "納品打合せマニュアル",
-      memo: "打合せマニュアル・議事録テンプレ",
-      simulation: "今後の運用担当者と次回FB日程の調整",
-      flowSteps: [
-        { label: "今後の運用担当者と次回FB日程の調整" },
-      ],
-    },
-    {
-      no: "6",
-      category: "HPの内容更新",
-      name: "HPのブログ機能の更新及びSEO最適化",
-      assignee: "-",
-      nextAssignee: "河合",  // 次: No.16 月次FB打合せ
-      tools: "-",
-      deliverable: "-",
-      checkpoint: "-",
-      hasManual: true,
-      issues: "HP運用マニュアル",
-      memo: "HP運用マニュアル",
-      simulation: "HP運用マニュアルを基に運用プラン毎の運用を実施",
-      flowSteps: [
-        { label: "HP運用マニュアルを基に運用プラン毎の運用を実施" },
-      ],
-    },
+    // ==================== Phase 7: 修正・根拠作成 ====================
     {
       no: "7",
-      category: "月次FB",
-      name: "月次FB打合せ",
+      category: "実装",
+      name: "修正・根拠作成",
       assignee: "河合",
-      nextAssignee: "",  // 最終業務
-      tools: "資料テンプレ",
-      deliverable: "FB資料",
-      checkpoint: "指標理解",
+      nextAssignee: "河合",
+      tools: "Claude Code・AI",
+      deliverable: "HP（修正版）・トークスクリプト",
+      checkpoint: "MVPとして先方に見せられる状態か",
       hasManual: true,
-      issues: "FBマニュアル・FB資料テンプレ",
-      memo: "FBマニュアル・FB資料テンプレ・議事録テンプレ",
-      simulation: `FBマニュアルをもとにFBの実施
-次回打合せ日程の決定
-議事録のテンプレートを企業グループに共有`,
+      issues: "",
       flowSteps: [
-        { label: "FBマニュアルをもとにFBの実施" },
-        { label: "次回打合せ日程の決定" },
-        { label: "議事録のテンプレートを企業グループに共有" },
+        { label: "リデザイン", summary: "必要に応じてデザイン調整" },
+        { label: "根拠作成", summary: "AIでデザインの意図を説明するトークスクリプトを作成" },
+        { label: "最終確認", summary: "MVP完成を確認" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
+      ],
+    },
+    // ==================== Phase 8: MVP確認・修正 ====================
+    {
+      no: "8",
+      category: "確認・修正",
+      name: "MVP確認・修正",
+      assignee: "河合",
+      nextAssignee: "河合",
+      tools: "メール・Google Meet",
+      deliverable: "FB反映済みHP",
+      checkpoint: "先方のFBが反映されているか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "MVP送付", summary: "先方にMVPを送付" },
+        { label: "FB収集", summary: "先方からフィードバックをもらう" },
+        { label: "修正対応", summary: "FBを元に修正" },
+        { label: "再確認", summary: "必要に応じて再度確認" },
+        { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
+      ],
+    },
+    // ==================== Phase 9: 納品 ====================
+    {
+      no: "9",
+      category: "納品",
+      name: "納品",
+      assignee: "河合",
+      nextAssignee: "河合",
+      tools: "メール",
+      deliverable: "納品完了",
+      checkpoint: "納品物が揃っているか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "最終確認", summary: "納品物の最終チェック" },
+        { label: "納品", summary: "先方に納品" },
+        { label: "運用説明", summary: "今後の運用について説明" },
+        { label: "ステータス更新", summary: "ステータスを更新して運用フェーズへ" },
+      ],
+    },
+    // ==================== Phase 10: 月次FB ====================
+    {
+      no: "10",
+      category: "運用",
+      name: "月次FB",
+      assignee: "河合",
+      nextAssignee: "",
+      tools: "資料テンプレ・Google Meet",
+      deliverable: "FB資料",
+      checkpoint: "指標を正しく理解し説明できるか",
+      hasManual: true,
+      issues: "",
+      flowSteps: [
+        { label: "資料作成", summary: "FB資料を作成" },
+        { label: "FB実施", summary: "先方とFBミーティング" },
+        { label: "次回日程確定", summary: "次回FB日程を調整" },
+        { label: "議事録共有", summary: "議事録をグループに共有" },
       ],
       format: FB_REPORT_TEMPLATE,
     },
   ],
   issues: [
-    "ヒアリングシートの改善・ヒアリング精度向上・ヒアリング時に文章が載ってくる",
-    "初回打ち合わせマニュアル",
-    "撮影マニュアル",
-    "データ共有マニュアル(ドライブの使い方＋テンプレ)",
-    "Canvaフォルダ制作マニュアル　HP制作テンプレ・HP制作マニュアル・HP制作チェックリスト・データ格納先ドライブフォルダマニュアル",
-    "ノウハウの体系的な共有・ブログ更新の時にどうしたら楽になるか",
-    "メールテンプレ",
-    "納品打合せマニュアル",
-    "HP運用マニュアル",
-    "FBマニュアル・FB資料テンプレ",
+    "ヒアリングシートの改善・ヒアリング精度向上",
+    "GAS連携の整備（文字起こし転記、JSON出力）",
+    "AIプロンプトの整備（原稿生成、トークスクリプト）",
+    "Claude Codeでの実装フローの整備",
+    "撮影マニュアル（オプション対応）",
   ],
 };
