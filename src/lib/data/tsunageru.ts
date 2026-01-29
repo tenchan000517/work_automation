@@ -103,6 +103,25 @@ export const tsunageru: Product = {
         {
           label: "情報共有",
           summary: "企業情報をフォーマットでグループに共有",
+          description: `【企業基本情報フォーマットの記入ポイント】
+
+必須項目：
+・企業名（正式名称で記載）
+・担当者名
+・役職・部署
+・連絡先（電話・メール両方）
+・契約内容（期間・金額を明記）
+
+注意点：
+・略称は使わず正式名称で記載
+・担当者が複数いる場合は全員記載
+・契約金額は税別/税込を明記
+
+【送信手順】
+1. 「フォーマット」ボタンから企業基本情報フォーマットをコピー
+2. フォーマットに必要情報を記入
+3. 「投稿フォーマット」ボタンから投稿文をコピー
+4. ワークスに貼り付けて送信`,
           images: [{ url: "/images/lineworks-sample.png", caption: "ワークス投稿の例（メンション＋フォーマット送信）" }],
           links: [
             { label: "フォーマット", type: "popup", content: `============================
@@ -194,7 +213,7 @@ export const tsunageru: Product = {
 回答があれば次のステップでヒアリングシートを作成します。
 回答がない場合は、先方にリマインドするか「新規作成（手動）」で空のシートを作成します。`,
           links: [
-            { label: "フォーム回答シート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit?gid=273899977#gid=273899977" }
+            { label: "フォーム回答シート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit?gid=851890070#gid=851890070" }
           ]
         },
         {
@@ -260,7 +279,7 @@ ${GAS_AUTH_MANUAL}`,
             ...GAS_AUTH_IMAGES,
           ],
           links: [
-            { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit" }
+            { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit?gid=547745536#gid=547745536" }
           ]
         },
         {
@@ -299,7 +318,7 @@ ${GAS_AUTH_MANUAL}`,
             { url: "/images/gas-folder-complete.png", caption: "STEP 4: フォルダ作成完了" }
           ],
           links: [
-            { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit" }
+            { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1-7HaTUdnFSEUUDPl9Z_b2kUJNaJQ90h4hHmRgfW-6dk/edit?gid=547745536#gid=547745536" }
           ]
         },
         {
@@ -312,7 +331,7 @@ ${GAS_AUTH_MANUAL}`,
 撮影可能な日程を5候補程度聞いておく
 
 【送信手順】
-1. 下の「連絡フォーマット」ボタンから投稿文をコピー
+1. 「連絡フォーマット」ボタンから投稿文をコピー
 2. 企業名・日程を入力
 3. ワークスに貼り付けて送信`,
           links: [
@@ -327,7 +346,7 @@ ${GAS_AUTH_MANUAL}`,
           description: `初回打ち合わせの参加者（自分を除く）にリマインドを送ります。
 
 【送信手順】
-1. 下の「連絡フォーマット」ボタンから投稿文をコピー
+1. 「連絡フォーマット」ボタンから投稿文をコピー
 2. 企業名・日時・Meet URLを入力
 3. ワークスに貼り付けて送信`,
           links: [
@@ -592,7 +611,7 @@ NOTTAの録音が失敗していた場合は、このすり合わせの際に
 撮影データの保存先フォルダも明確に指示します。
 
 【送信手順】
-1. 下の「連絡フォーマット」ボタンから投稿文をコピー
+1. 「連絡フォーマット」ボタンから投稿文をコピー
 2. 各項目を入力
 3. ワークスに貼り付けて送信
 
@@ -1143,7 +1162,7 @@ JSONの企業名とシートの企業名が一致しない場合、警告が表�
 ■ 手順
 ━━━━━━━━━━━━━━━━━━━━
 
-1. 下の「構成案テンプレート」ボタンからテンプレートをコピー
+1. 「構成案テンプレート」ボタンからテンプレートをコピー
 2. ヒアリングシートの情報を元に各項目を埋める
 3. 「原稿の方向性メモ」で訴求ポイントを整理
 
