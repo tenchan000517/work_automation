@@ -10,6 +10,22 @@
  * - 既存フォームへの質問項目セットアップ
  * - フォーム情報のエクスポート（ID、URL、各質問のID等）
  * - 条件分岐の設定（サーバー管理の希望に応じた質問表示）
+ *
+ * 【ページ構成】
+ * ページ1: 担当者情報 + 企業情報
+ * ページ2: HPについてのご要望
+ * ページ3: サーバー・ドメインについて（分岐の起点）
+ * ページ4: サーバー情報（共通）
+ * ページ5a: サーバー情報（詳細）→ A/B/D向け
+ * ページ5b: サーバー情報（自社管理）→ C向け
+ * ページ6: メール関連 → A/D向け
+ * 完了ページ
+ *
+ * 【条件分岐】
+ * A. Singに移管 → 共通 → 詳細 → メール関連 → 完了
+ * B. メール残す → 共通 → 詳細 → 完了
+ * C. 自社管理   → 共通 → C用 → 完了
+ * D. 検討中     → 共通 → 詳細 → メール関連 → 完了
  */
 
 // ===========================================
@@ -71,17 +87,76 @@ function setupFormQuestions() {
     form.setAllowResponseEdits(false);
     form.setLimitOneResponsePerUser(false);
 
-    // セクション1: 基本情報
-    createSection1_BasicInfo(form);
+    // ページ1: 担当者情報 + 企業情報
+    createPage1_BasicInfo(form);
 
-    // セクション2: HP制作の方向性
-    createSection2_Direction(form);
+    // ページ2: HPについてのご要望
+    const page2 = form.addPageBreakItem()
+      .setTitle('HPについてのご要望');
+    createPage2_Requirements(form);
 
-    // セクション3: サーバー情報（条件分岐あり）
-    const sections = createSection3_ServerInfo(form);
+    // ページ3: サーバー・ドメインについて（分岐の起点）
+    const page3 = form.addPageBreakItem()
+      .setTitle('サーバー・ドメインについて');
+    const serverChoiceItem = createPage3_ServerChoice(form);
 
+    // ページ4: サーバー情報（共通）
+    const page4_common = form.addPageBreakItem()
+      .setTitle('サーバー情報の確認');
+    createPage4_ServerCommon(form);
+
+    // ページ5a: サーバー情報（詳細）- A/B/D向け
+    const page5a_detail = form.addPageBreakItem()
+      .setTitle('サーバー情報の確認（詳細）')
+      .setHelpText('サーバー移管に必要な情報の把握状況を確認させてください。');
+    createPage5a_ServerDetail(form);
+
+    // ページ5b: サーバー情報（自社管理）- C向け
+    const page5b_self = form.addPageBreakItem()
+      .setTitle('納品方法の確認')
+      .setHelpText('納品方法の確認のため、いくつかお伺いします。');
+    createPage5b_ServerSelf(form);
+
+    // ページ6: メール関連 - A/D向け
+    const page6_mail = form.addPageBreakItem()
+      .setTitle('メールについて')
+      .setHelpText('メールの移行に関する情報を確認させてください。');
+    createPage6_Mail(form);
+
+    // 完了ページ
+    const pageEnd = form.addPageBreakItem()
+      .setTitle('ご回答ありがとうございました')
+      .setHelpText('以上で質問は終了です。\n\n入力内容を確認のうえ「送信」ボタンを押してください。');
+
+    // ===========================================
     // 条件分岐の設定
-    setupConditionalLogic(form, sections);
+    // ===========================================
+
+    // サーバー管理の希望の選択肢を設定（分岐付き）
+    // A → 共通 → 詳細 → メール → 完了
+    // B → 共通 → 詳細 → 完了（メールスキップ）
+    // C → 共通 → C用 → 完了
+    // D → 共通 → 詳細 → メール → 完了
+    serverChoiceItem.setChoices([
+      serverChoiceItem.createChoice('A. Singに移管する（ドメイン・サーバーをSingで管理）', page4_common),
+      serverChoiceItem.createChoice('B. メール契約だけ現行のまま残す（サーバーは移管、メールは今のまま）', page4_common),
+      serverChoiceItem.createChoice('C. 自社で管理する（納品物をお渡しし、御社でアップロード）', page4_common),
+      serverChoiceItem.createChoice('D. 検討中（打ち合わせで相談したい）', page4_common)
+    ]);
+
+    // 共通ページからの遷移: 詳細ページへ（A/B/D）
+    // ※Googleフォームの制約で、共通ページからの分岐は難しいため、
+    // 全員が詳細ページを通過し、不要な質問は任意とする
+    page4_common.setGoToPage(page5a_detail);
+
+    // 詳細ページからの遷移: メールページへ
+    page5a_detail.setGoToPage(page6_mail);
+
+    // C用ページからの遷移: 完了へ
+    page5b_self.setGoToPage(pageEnd);
+
+    // メールページからの遷移: 完了へ
+    page6_mail.setGoToPage(pageEnd);
 
     // 結果表示
     const formUrl = form.getPublishedUrl();
@@ -92,7 +167,9 @@ function setupFormQuestions() {
       `質問項目を追加しました。\n\n` +
       `【回答用URL】\n${formUrl}\n\n` +
       `【編集用URL】\n${editUrl}\n\n` +
-      `フォームID: ${form.getId()}`,
+      `フォームID: ${form.getId()}\n\n` +
+      `※条件分岐はGoogleフォームの制約により完全には実装できません。\n` +
+      `全質問を表示し、不要な質問は任意としています。`,
       ui.ButtonSet.OK
     );
 
@@ -137,52 +214,108 @@ function clearAllQuestions() {
 }
 
 // ===========================================
-// セクション1: 基本情報
+// ページ1: 担当者情報 + 企業情報
 // ===========================================
 
-function createSection1_BasicInfo(form) {
-  // セクションヘッダー
+function createPage1_BasicInfo(form) {
+  // ----------------------------------------
+  // 担当者情報
+  // ----------------------------------------
   form.addSectionHeaderItem()
-    .setTitle('セクション1: 基本情報')
-    .setHelpText('ご担当者様の情報をご入力ください。');
+    .setTitle('ご担当者様について')
+    .setHelpText('ご連絡先をご入力ください。');
 
-  // 1-1. 企業名
   form.addTextItem()
     .setTitle('企業名')
     .setRequired(true);
 
-  // 1-2. 担当者名
   form.addTextItem()
     .setTitle('担当者名')
     .setRequired(true);
 
-  // 1-3. 役職
   form.addTextItem()
     .setTitle('役職')
     .setRequired(false);
 
-  // 1-4. 電話番号
   form.addTextItem()
-    .setTitle('電話番号')
+    .setTitle('電話番号（担当者様）')
+    .setHelpText('ご連絡可能な電話番号をご入力ください。')
     .setRequired(true);
 
-  // 1-5. メールアドレス
   form.addTextItem()
-    .setTitle('メールアドレス')
+    .setTitle('メールアドレス（担当者様）')
+    .setHelpText('ご連絡可能なメールアドレスをご入力ください。')
     .setRequired(true);
+
+  // ----------------------------------------
+  // 企業情報（HP掲載用）
+  // ----------------------------------------
+  form.addSectionHeaderItem()
+    .setTitle('会社情報（HPに掲載します）')
+    .setHelpText('HPに掲載する企業情報をご入力ください。\n任意項目は打ち合わせ時に確認することも可能です。');
+
+  form.addTextItem()
+    .setTitle('会社正式名称')
+    .setHelpText('HPに掲載する正式な会社名をご入力ください。\n例: 株式会社〇〇、〇〇株式会社')
+    .setRequired(true);
+
+  form.addTextItem()
+    .setTitle('郵便番号')
+    .setHelpText('例: 123-4567')
+    .setRequired(true);
+
+  form.addTextItem()
+    .setTitle('住所')
+    .setHelpText('HPに掲載する住所をご入力ください。')
+    .setRequired(true);
+
+  form.addTextItem()
+    .setTitle('代表電話番号')
+    .setHelpText('HPに掲載する電話番号をご入力ください。')
+    .setRequired(true);
+
+  form.addTextItem()
+    .setTitle('お問い合わせメールアドレス')
+    .setHelpText('HPのお問い合わせフォームからの送信先となるメールアドレスをご入力ください。\n例: info@example.co.jp')
+    .setRequired(true);
+
+  form.addTextItem()
+    .setTitle('代表者名')
+    .setHelpText('会社概要に掲載する代表者名（任意）')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('設立年')
+    .setHelpText('例: 1990年、平成2年')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('資本金')
+    .setHelpText('例: 1,000万円')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('従業員数')
+    .setHelpText('例: 50名、約100名')
+    .setRequired(false);
+
+  form.addParagraphTextItem()
+    .setTitle('事業内容')
+    .setHelpText('会社概要に掲載する事業内容を簡潔にご入力ください（任意）')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('営業時間・定休日')
+    .setHelpText('例: 9:00〜18:00 / 土日祝休み')
+    .setRequired(false);
 }
 
 // ===========================================
-// セクション2: HP制作の方向性
+// ページ2: HPについてのご要望
 // ===========================================
 
-function createSection2_Direction(form) {
-  // セクションヘッダー
-  form.addSectionHeaderItem()
-    .setTitle('セクション2: HP制作の方向性')
-    .setHelpText('HP制作にあたっての方向性をお聞かせください。');
-
-  // 2-1. HPの主な目的
+function createPage2_Requirements(form) {
+  // HPの主な目的
   form.addCheckboxItem()
     .setTitle('HPの主な目的')
     .setHelpText('該当するものをすべてお選びください。')
@@ -196,13 +329,12 @@ function createSection2_Direction(form) {
     ])
     .setRequired(true);
 
-  // 2-1-other. その他（自由記述）
   form.addTextItem()
     .setTitle('HPの目的「その他」の詳細')
     .setHelpText('上記で「その他」を選択された場合はご記入ください。')
     .setRequired(false);
 
-  // 2-2. メインターゲット
+  // メインターゲット
   form.addCheckboxItem()
     .setTitle('メインターゲット')
     .setHelpText('HPを見てほしい主な対象者をお選びください（複数選択可）。')
@@ -217,19 +349,18 @@ function createSection2_Direction(form) {
     ])
     .setRequired(true);
 
-  // 2-2-other. その他（自由記述）
   form.addTextItem()
     .setTitle('メインターゲット「その他」の詳細')
     .setHelpText('上記で「その他」を選択された場合はご記入ください。')
     .setRequired(false);
 
-  // 2-3. 競合・意識している会社
+  // 競合・意識している会社
   form.addParagraphTextItem()
     .setTitle('競合・意識している会社')
     .setHelpText('同業他社や「このHPのようにしたい」と思う会社があれば教えてください。')
     .setRequired(false);
 
-  // 2-4. 自社の強み（選択）
+  // 自社の強み
   form.addCheckboxItem()
     .setTitle('自社の強み・アピールポイント')
     .setHelpText('お客様や取引先から評価されている点、他社と比べて自信のある点をお選びください。\nHPでアピールするコンテンツの参考にさせていただきます。')
@@ -244,25 +375,23 @@ function createSection2_Direction(form) {
     ])
     .setRequired(false);
 
-  // 2-4-detail. 強みの詳細
   form.addParagraphTextItem()
     .setTitle('自社の強み・アピールポイントの詳細')
     .setHelpText('具体的な強みやエピソードがあれば教えてください。')
     .setRequired(false);
 
-  // 2-5. 参考にしたいHP
+  // 参考にしたいHP
   form.addParagraphTextItem()
     .setTitle('参考にしたいHP')
     .setHelpText('「このサイトの雰囲気が好き」「このレイアウトが見やすい」など、\n参考にしたいサイトがあればURLを教えてください。\n\n同業他社でなくても構いません。\n良いと思うポイントも添えていただけると、より的確なご提案ができます。')
     .setRequired(false);
 
-  // 2-6. 現在のHP URL
+  // 現在のHP
   form.addTextItem()
     .setTitle('現在のHP URL')
     .setHelpText('リニューアルの場合は現在のHPのURLを入力してください。')
     .setRequired(false);
 
-  // 2-7. 現在のHPで気になっている点
   form.addCheckboxItem()
     .setTitle('現在のHPで気になっている点')
     .setHelpText('該当するものをお選びください（複数選択可）。')
@@ -276,19 +405,18 @@ function createSection2_Direction(form) {
     ])
     .setRequired(false);
 
-  // 2-7-other. その他（自由記述）
   form.addTextItem()
     .setTitle('現在のHPで気になっている点「その他」の詳細')
     .setHelpText('上記で「その他」を選択された場合はご記入ください。')
     .setRequired(false);
 
-  // 2-8. 期待すること
+  // 期待すること
   form.addParagraphTextItem()
     .setTitle('HP新規作成・リニューアルに期待すること')
     .setHelpText('HPに期待することや実現したいことを自由にお書きください。')
     .setRequired(false);
 
-  // 2-9. 必要なページ
+  // 必要なページ
   form.addCheckboxItem()
     .setTitle('必要なページ')
     .setHelpText('HPに掲載したいページをお選びください（複数選択可）。')
@@ -307,13 +435,12 @@ function createSection2_Direction(form) {
     ])
     .setRequired(false);
 
-  // 2-9-other. その他（自由記述）
   form.addTextItem()
     .setTitle('必要なページ「その他」の詳細')
     .setHelpText('上記で「その他」を選択された場合はご記入ください。')
     .setRequired(false);
 
-  // 2-10. 既存素材の有無
+  // 既存素材
   form.addCheckboxItem()
     .setTitle('既存素材の有無')
     .setHelpText('HPに使用できる素材をお持ちかどうかをお選びください。\n素材がない場合は撮影のご提案も可能です。')
@@ -326,13 +453,13 @@ function createSection2_Direction(form) {
     ])
     .setRequired(false);
 
-  // 2-11. SNSアカウント
+  // SNS
   form.addParagraphTextItem()
     .setTitle('SNSアカウント')
     .setHelpText('連携・掲載したいSNSがあればURLを教えてください（Instagram、Facebook、X等）。')
     .setRequired(false);
 
-  // 2-12. 希望公開時期
+  // 希望公開時期
   form.addMultipleChoiceItem()
     .setTitle('希望公開時期')
     .setChoiceValues([
@@ -345,15 +472,12 @@ function createSection2_Direction(form) {
 }
 
 // ===========================================
-// セクション3: サーバー情報（条件分岐）
+// ページ3: サーバー・ドメインについて（分岐の起点）
 // ===========================================
 
-function createSection3_ServerInfo(form) {
-  const sections = {};
-
-  // サーバーセクションの冒頭説明
+function createPage3_ServerChoice(form) {
   form.addSectionHeaderItem()
-    .setTitle('セクション3: サーバー情報')
+    .setTitle('サーバー・ドメインについて')
     .setHelpText(
       '【重要】このセクションは「把握状況の確認」です\n\n' +
       'ログイン情報やパスワードなどの入力は不要です。\n' +
@@ -362,7 +486,7 @@ function createSection3_ServerInfo(form) {
       '打ち合わせ時に一緒に確認・整理していきます。'
     );
 
-  // 3-1. サーバー管理の希望（分岐の起点）
+  // サーバー管理の希望（分岐の起点）
   const serverChoiceItem = form.addMultipleChoiceItem()
     .setTitle('サーバー管理の希望')
     .setHelpText(
@@ -372,60 +496,15 @@ function createSection3_ServerInfo(form) {
     )
     .setRequired(true);
 
-  // ページブレーク（共通質問）
-  sections.commonPage = form.addPageBreakItem()
-    .setTitle('サーバー情報（共通）');
-
-  // 共通質問を追加
-  createServerCommonQuestions(form);
-
-  // ページブレーク（A/B/D向け追加質問）
-  sections.abdPage = form.addPageBreakItem()
-    .setTitle('サーバー情報（詳細）')
-    .setHelpText('サーバー移管に必要な情報の把握状況を確認させてください。');
-
-  // A/B/D向け質問を追加
-  createServerABDQuestions(form);
-
-  // ページブレーク（メール関連 - A/D向け）
-  sections.mailPage = form.addPageBreakItem()
-    .setTitle('メール関連情報')
-    .setHelpText('メールの移行に関する情報を確認させてください。');
-
-  // メール関連質問を追加
-  createServerMailQuestions(form);
-
-  // ページブレーク（C向け質問）
-  sections.cPage = form.addPageBreakItem()
-    .setTitle('サーバー情報（自社管理）')
-    .setHelpText('納品方法の確認のため、いくつかお伺いします。');
-
-  // C向け質問を追加
-  createServerCQuestions(form);
-
-  // 完了ページ
-  sections.endPage = form.addPageBreakItem()
-    .setTitle('ご回答ありがとうございました')
-    .setHelpText('以上で質問は終了です。\n\n入力内容を確認のうえ「送信」ボタンを押してください。');
-
-  // サーバー管理の希望の選択肢を設定（分岐付き）
-  serverChoiceItem.setChoices([
-    serverChoiceItem.createChoice('A. Singに移管する（ドメイン・サーバーをSingで管理）', sections.commonPage),
-    serverChoiceItem.createChoice('B. メール契約だけ現行のまま残す（サーバーは移管、メールは今のまま）', sections.commonPage),
-    serverChoiceItem.createChoice('C. 自社で管理する（納品物をお渡しし、御社でアップロード）', sections.commonPage),
-    serverChoiceItem.createChoice('D. 検討中（打ち合わせで相談したい）', sections.commonPage)
-  ]);
-
-  sections.serverChoiceItem = serverChoiceItem;
-
-  return sections;
+  // 選択肢はメイン関数で設定（ページ参照が必要なため）
+  return serverChoiceItem;
 }
 
-/**
- * 共通質問（全パターン）
- */
-function createServerCommonQuestions(form) {
-  // 3-2. 現在のドメイン
+// ===========================================
+// ページ4: サーバー情報（共通）
+// ===========================================
+
+function createPage4_ServerCommon(form) {
   form.addTextItem()
     .setTitle('現在のドメイン')
     .setHelpText(
@@ -435,7 +514,6 @@ function createServerCommonQuestions(form) {
     )
     .setRequired(false);
 
-  // 3-3. プロバイダ
   form.addMultipleChoiceItem()
     .setTitle('プロバイダ（サーバー会社）')
     .setHelpText(
@@ -453,7 +531,6 @@ function createServerCommonQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-4. メール使用状況
   form.addMultipleChoiceItem()
     .setTitle('同じドメインでメールを使用していますか？')
     .setHelpText(
@@ -469,11 +546,11 @@ function createServerCommonQuestions(form) {
     .setRequired(false);
 }
 
-/**
- * A/B/D向け追加質問
- */
-function createServerABDQuestions(form) {
-  // 3-5. プロバイダ管理画面のログイン情報
+// ===========================================
+// ページ5a: サーバー情報（詳細）- A/B/D向け
+// ===========================================
+
+function createPage5a_ServerDetail(form) {
   form.addMultipleChoiceItem()
     .setTitle('プロバイダ管理画面のログイン情報')
     .setHelpText(
@@ -487,7 +564,6 @@ function createServerABDQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-6. ドメイン管理画面のログイン情報
   form.addMultipleChoiceItem()
     .setTitle('ドメイン管理画面のログイン情報')
     .setHelpText(
@@ -502,7 +578,6 @@ function createServerABDQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-7. AuthCode
   form.addMultipleChoiceItem()
     .setTitle('AuthCode（認証コード）の取得方法')
     .setHelpText(
@@ -517,7 +592,6 @@ function createServerABDQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-8. DNS設定
   form.addMultipleChoiceItem()
     .setTitle('DNS設定の確認方法')
     .setHelpText(
@@ -532,7 +606,6 @@ function createServerABDQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-9. サーバー管理者
   form.addMultipleChoiceItem()
     .setTitle('現在のサーバー管理者')
     .setHelpText('現在、サーバーやドメインの管理を誰が行っているかをお答えください。')
@@ -543,7 +616,6 @@ function createServerABDQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-10. 外部委託先への連絡
   form.addMultipleChoiceItem()
     .setTitle('外部委託先への連絡')
     .setHelpText('外部に委託している場合、その委託先に連絡が取れる状態かどうかをお答えください。')
@@ -554,7 +626,6 @@ function createServerABDQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-11. サブドメイン
   form.addMultipleChoiceItem()
     .setTitle('サブドメインの使用')
     .setHelpText(
@@ -570,60 +641,15 @@ function createServerABDQuestions(form) {
     .setRequired(false);
 }
 
-/**
- * メール関連質問（A/D向け）
- */
-function createServerMailQuestions(form) {
-  // 3-12. メールアカウント数
-  form.addMultipleChoiceItem()
-    .setTitle('メールアカウント数')
-    .setHelpText(
-      '同じドメインで使用しているメールアドレスの数をお答えください。\n' +
-      '例: info@、sales@、tanaka@ で3アカウント'
-    )
-    .setChoiceValues([
-      '1〜5アカウント',
-      '6〜10アカウント',
-      '11アカウント以上',
-      '不明・わからない'
-    ])
-    .setRequired(false);
+// ===========================================
+// ページ5b: サーバー情報（自社管理）- C向け
+// ===========================================
 
-  // 3-13. 過去メールの保持希望
-  form.addMultipleChoiceItem()
-    .setTitle('過去メールの保持希望')
-    .setHelpText(
-      'サーバー移管時に、過去の送受信メールを新しい環境に移行するかどうかをお答えください。\n\n' +
-      '※移行には追加作業が必要になる場合があります'
-    )
-    .setChoiceValues([
-      '保持したい（過去メールも移行希望）',
-      '不要（新しいメールだけでOK）',
-      '不明・わからない（相談したい）'
-    ])
-    .setRequired(false);
+function createPage5b_ServerSelf(form) {
+  form.addSectionHeaderItem()
+    .setTitle('納品についての確認')
+    .setHelpText('自社でサーバー管理される場合の納品方法を確認させてください。');
 
-  // 3-14. メールサーバーのログイン情報
-  form.addMultipleChoiceItem()
-    .setTitle('メールサーバーのログイン情報')
-    .setHelpText(
-      'メールソフト（Outlook等）の設定に使用するサーバー情報を把握しているかどうかをお答えください。\n' +
-      '（受信サーバー、送信サーバー、ポート番号など）\n\n' +
-      '※ここでIDやパスワードを入力する必要はありません'
-    )
-    .setChoiceValues([
-      '把握している',
-      '把握していない',
-      '不明・わからない'
-    ])
-    .setRequired(false);
-}
-
-/**
- * C向け質問（自社管理）
- */
-function createServerCQuestions(form) {
-  // 3-15. FTPサーバー情報
   form.addMultipleChoiceItem()
     .setTitle('FTPサーバー情報')
     .setHelpText(
@@ -638,7 +664,6 @@ function createServerCQuestions(form) {
     ])
     .setRequired(false);
 
-  // 3-16. 現在のアップロード方法
   form.addMultipleChoiceItem()
     .setTitle('現在のHPアップロード方法')
     .setHelpText('現在のHPをどのような方法で更新・アップロードしているかをお答えください。')
@@ -651,29 +676,55 @@ function createServerCQuestions(form) {
     .setRequired(false);
 }
 
-/**
- * 条件分岐のセットアップ
- * 注: Googleフォームの制約により、完全な条件分岐は難しいため、
- * 基本的なページ遷移のみ設定
- */
-function setupConditionalLogic(form, sections) {
-  // 共通ページからの遷移設定
-  // A/D → ABDページ → メールページ → 完了
-  // B → ABDページ → 完了
-  // C → Cページ → 完了
+// ===========================================
+// ページ6: メール関連 - A/D向け
+// ===========================================
 
-  // 注意: Googleフォームの制約により、回答内容に基づく
-  // 完全な動的分岐は実現できません。
-  // 全質問を表示し、不要な質問は任意とする形で対応しています。
+function createPage6_Mail(form) {
+  form.addSectionHeaderItem()
+    .setTitle('メール移行について')
+    .setHelpText('メールの移行に関する情報を確認させてください。\n\n※「メールを使用していない」「B. メール契約だけ残す」を選択された方は回答不要です。');
 
-  // ABDページの次 → メールページ
-  sections.abdPage.setGoToPage(sections.mailPage);
+  form.addMultipleChoiceItem()
+    .setTitle('メールアカウント数')
+    .setHelpText(
+      '同じドメインで使用しているメールアドレスの数をお答えください。\n' +
+      '例: info@、sales@、tanaka@ で3アカウント'
+    )
+    .setChoiceValues([
+      '1〜5アカウント',
+      '6〜10アカウント',
+      '11アカウント以上',
+      '不明・わからない'
+    ])
+    .setRequired(false);
 
-  // メールページの次 → 完了
-  sections.mailPage.setGoToPage(sections.endPage);
+  form.addMultipleChoiceItem()
+    .setTitle('過去メールの保持希望')
+    .setHelpText(
+      'サーバー移管時に、過去の送受信メールを新しい環境に移行するかどうかをお答えください。\n\n' +
+      '※移行には追加作業が必要になる場合があります'
+    )
+    .setChoiceValues([
+      '保持したい（過去メールも移行希望）',
+      '不要（新しいメールだけでOK）',
+      '不明・わからない（相談したい）'
+    ])
+    .setRequired(false);
 
-  // Cページの次 → 完了
-  sections.cPage.setGoToPage(sections.endPage);
+  form.addMultipleChoiceItem()
+    .setTitle('メールサーバーのログイン情報')
+    .setHelpText(
+      'メールソフト（Outlook等）の設定に使用するサーバー情報を把握しているかどうかをお答えください。\n' +
+      '（受信サーバー、送信サーバー、ポート番号など）\n\n' +
+      '※ここでIDやパスワードを入力する必要はありません'
+    )
+    .setChoiceValues([
+      '把握している',
+      '把握していない',
+      '不明・わからない'
+    ])
+    .setRequired(false);
 }
 
 // ===========================================

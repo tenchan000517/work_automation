@@ -17,21 +17,52 @@ HP制作のフローをツナゲルと同じ設計思想で整備する。
 5. **リソース・フォルダ設計確定** - ヒアリングシートURL、フォルダ構造、テンプレート選択タイミング
 6. **Googleフォーム設計完了** - サーバー情報の条件分岐質問項目を整理
 7. **サーバー移管手順の整理** - お名前.com基準、メール維持パターン含む
-8. **Googleフォーム作成完了** - GASでセットアップ、全質問項目を実装
+8. **Googleフォーム GAS作成完了** - formCreator.js全面修正済み
 
 ---
 
 #### 📋 次世代セッションでの作業（優先順）
 
-##### ~~STEP 1: Googleフォームの作成~~ ✅完了
+##### STEP 1: Googleフォームの適用（★次にやること）
 
-GASでセットアップ完了。質問項目一覧は `docs/forms/hp-hearing-form.md` を参照。
+GASは修正済み。Googleフォームで以下を実行する必要あり：
+
+1. **「🗑️ 全質問をクリア」を実行**
+2. **「📝 質問項目をセットアップ」を実行**
+3. **フォームの動作確認**（ページ遷移、選択肢など）
+4. **docs/forms/hp-hearing-form.mdを最新に更新**
+
+**GAS修正内容（2026-01-30）:**
+- ページ構成を明確化（7ページ構成）
+- 見出しを改善（「セクション」という内部用語を排除）
+- 企業情報（HP掲載用）を追加（住所、代表電話、お問い合わせメール等）
+- 条件分岐を整理
+
+**ページ構成:**
+```
+【ページ1】担当者情報 + 企業情報（HP掲載用）
+【ページ2】HPについてのご要望
+【ページ3】サーバー・ドメインについて（分岐の起点）
+【ページ4】サーバー情報の確認（共通）
+【ページ5a】サーバー情報の確認（詳細）← A/B/D向け
+【ページ5b】納品方法の確認 ← C向け
+【ページ6】メールについて ← A/D向け
+【完了ページ】
+```
+
+**見出し改善:**
+| 変更前 | 変更後 |
+|--------|--------|
+| セクション1-1: 担当者情報 | ご担当者様について |
+| セクション1-2: 企業情報 | 会社情報（HPに掲載します） |
+| セクション2: HP制作の方向性 | HPについてのご要望 |
+| セクション3: サーバー情報 | サーバー・ドメインについて |
 
 **関連ファイル:**
 - GAS: `docs/gas/hp/formCreator.js`
-- 質問項目一覧: `docs/forms/hp-hearing-form.md`
+- 質問項目一覧: `docs/forms/hp-hearing-form.md`（要更新）
 
-##### STEP 2: ヒアリングシートのテンプレート設計（★次にやること）
+##### STEP 2: ヒアリングシートのテンプレート設計
 
 **構成:**
 - Part① 基本情報（フォームから自動転記）
@@ -203,56 +234,73 @@ docs/manuals/hp/
 
 ---
 
-#### 🔧 GAS調整作業（2026-01-30 開始）
+#### 🔧 GAS作成計画（2026-01-30 確定）
 
-HP制作用のGASを、ツナゲルのGASをベースに調整する。
+HP制作用のGASを、ツナゲルのGASをベースに作成する。
 
-**ツナゲルGASファイル構成:**
+##### HP制作用GAS 必要機能一覧（順番確定）
+
+| # | ファイル名 | 機能 | ベース |
+|---|-----------|------|--------|
+| 1 | `hearingSheetManager.js` | onOpen、新規ヒアリングシート作成、親フォルダ作成 | ツナゲル流用+調整 |
+| 2 | `commonStyles.js` | 共通スタイル定義 | ツナゲル共通（そのまま流用） |
+| 3 | `formTransfer.js` | 企業情報入力（フォーム内容転記） | ツナゲル流用+調整 |
+| 4 | `createFolder.js` | 素材フォルダ作成（テンプレート連動） | ツナゲル流用+調整 |
+| 5 | `progressManager.js` | 進捗管理 | ツナゲルほぼ一緒 |
+| 6 | `promptDialog.js` | 議事録作成 | ツナゲル一緒 |
+| 7 | `transcriptToHearingSheet.js` | 文字起こし転記 | ツナゲル一緒 |
+| 8 | `jsonOutputDialog.js` | JSON出力（サーバー情報以外） | **新規** |
+| 9 | `compositionPrompt.js` | 構成案プロンプト（Claude Code用） | **新規** |
+| 10 | `initialSetupPrompt.js` | 初期設定プロンプト（Next.js/Tailwind等） | **新規**（静的） |
+
+##### 新規作成が必要なもの
+
+**8. JSON出力（jsonOutputDialog.js）**
+- ヒアリングシートからHP制作用の情報を抽出
+- サーバー情報以外（基本情報、クリエイティブ情報）
+- JSON形式で出力
+
+**9. 構成案プロンプト（compositionPrompt.js）**
+- 出力されたJSONを元にAIに投げるプロンプト生成
+- この出力をClaude Codeに渡してHP実装
+
+**10. 初期設定プロンプト（initialSetupPrompt.js）**
+- Next.js、Tailwind、SEO、LLMO、必要ライブラリ
+- global.css、レイアウト等のセットアップ指示
+- ほぼ固定の静的テンプレートをダイアログ表示
+
+##### ツナゲルGASファイル（参照元）
+
 ```
 docs/gas/tsunageru/
-├── commonStyles.js           # 共通スタイル定義（そのまま流用可能）
-├── settingsSheet.js          # 設定シート管理
-├── hearingSheetManager.js    # メイン（onOpen含む）シート作成
-├── companyInfoManager.js     # 企業情報入力
-├── promptDialog.js           # プロンプト生成
-├── compositionDraftGenerator.js # 構成案作成
-├── contactFormats.js         # 連絡フォーマット
-├── progressManager.js        # 進捗管理
-├── transcriptToHearingSheet.js  # 文字起こし転記
-├── createShootingFolder.js   # フォルダ作成
-├── companyCueGenerator.js    # 企業カンペ作成
-└── sheetStructureChecker.js  # メンテナンス用
+├── commonStyles.js           # → そのまま流用
+├── hearingSheetManager.js    # → #1のベース
+├── companyInfoManager.js     # → #3のベース
+├── createShootingFolder.js   # → #4のベース
+├── progressManager.js        # → #5のベース
+├── promptDialog.js           # → #6のベース
+├── transcriptToHearingSheet.js # → #7のベース
+├── settingsSheet.js          # 必要に応じて参照
+├── compositionDraftGenerator.js # 参考
+├── contactFormats.js         # HP制作では不要？
+└── companyCueGenerator.js    # HP制作では不要
 ```
 
-**HP制作で必要なGAS（優先順）:**
-1. `hearingSheetManager.js` → シート作成・テンプレート
-2. `createShootingFolder.js` → 企業フォルダ作成（素材フォルダはNo.6で別途）
-3. `progressManager.js` → ステータス管理
-4. `settingsSheet.js` → 設定シート
-5. `contactFormats.js` → 連絡フォーマット
-6. `transcriptToHearingSheet.js` → 文字起こし転記
-7. `promptDialog.js` → JSON出力用プロンプト（HP制作固有）
+##### HP制作用GAS配置先
 
-**HP制作固有の機能:**
-- テンプレート選択ダイアログ（No.4で使用）
-- テンプレートに応じた素材フォルダ作成（No.6で使用）
-
-**作業ステップ:**
-1. ツナゲルGASの構造を理解
-2. HP制作用にコピー・調整
-3. HP固有機能を追加
-
-**HP制作用GAS配置先:**
 ```
 docs/gas/hp/
-├── commonStyles.js           # ツナゲルと共通
-├── settingsSheet.js
-├── hearingSheetManager.js
-├── createFolder.js           # フォルダ作成（親フォルダ＋素材フォルダ）
-├── progressManager.js
-├── contactFormats.js
-├── transcriptToHearingSheet.js
-└── jsonOutputDialog.js       # HP制作固有（テンプレート選択）
+├── formCreator.js            # ✅完了（Googleフォームセットアップ）
+├── hearingSheetManager.js    # #1
+├── commonStyles.js           # #2（ツナゲルからコピー）
+├── formTransfer.js           # #3
+├── createFolder.js           # #4
+├── progressManager.js        # #5
+├── promptDialog.js           # #6
+├── transcriptToHearingSheet.js # #7
+├── jsonOutputDialog.js       # #8 ★新規
+├── compositionPrompt.js      # #9 ★新規
+└── initialSetupPrompt.js     # #10 ★新規
 ```
 
 ---
@@ -1713,6 +1761,7 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-30 | HP制作: formCreator.js全面修正（ページ構成明確化、見出し改善、企業情報追加、条件分岐整理）※フォームへの適用待ち |
 | 2026-01-30 | HP制作: Googleフォーム作成完了（GASでセットアップ、質問項目一覧をdocs/forms/に保存） |
 | 2026-01-30 | HP制作: Googleフォーム設計完了（サーバー情報の条件分岐質問、4パターン対応） |
 | 2026-01-30 | HP制作: サーバー移管手順を整理（お名前.com基準、メール維持パターン含む） |
