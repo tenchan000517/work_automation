@@ -12,12 +12,13 @@
  * D列: フォルダ設定キー
  * E列: フォルダ設定値
  *
- * 【プロンプトシート構造】
+ * 【プロンプトシート構造】（promptDialog.jsと統一）
  * A列: プロンプト名
- * B列: カテゴリ
- * C列: プロンプト本文
- * D列: 保存キー（Part④のどのラベルに保存するか）
- * E列: 入力キー（Part④のどのラベルから入力を取得するか）
+ * B列: 説明
+ * C列: 入力欄ラベル
+ * D列: 入力欄プレースホルダー
+ * E列: テンプレート（{{input}}が入力値に置換される）
+ * F列: カテゴリ
  */
 
 // ================================================================================
@@ -42,38 +43,62 @@ const HP_DEFAULT_FOLDER_SETTINGS = [
   { key: 'ヒアリングシートフォルダ', value: '1ug4NtkTNB1Lvnw1GN9wtd07u8nXeBYTk' },
 ];
 
-// デフォルトプロンプト（HP制作用）
+// デフォルトプロンプト（HP制作用）- promptDialog.jsと同じ構造
+// [プロンプト名, 説明, 入力欄ラベル, プレースホルダー, テンプレート, カテゴリ]
 const HP_DEFAULT_PROMPTS = [
   {
     name: '議事録作成',
-    category: '文字起こし',
-    prompt: `以下の文字起こしを整理して、議事録形式にまとめてください。
+    description: 'NOTTAの文字起こしからHP制作の議事録を作成',
+    inputLabel: 'ここに文字起こしテキストを貼り付け',
+    placeholder: 'NOTTAでダウンロードした文字起こしテキストをここに貼り付け...',
+    template: `以下の打ち合わせ文字起こしから議事録を作成してください。
 
-【整理のポイント】
-- 話者を明確に
-- 決定事項を明確に
-- TODO項目を抽出
-- 次回までの宿題を整理
+【出力フォーマット】
+■ 打ち合わせ概要
+日時：
+参加者：
+企業名：
 
+■ HPの目的・ゴール
+・メインのコンバージョン：
+・ターゲット層：
+・HPで達成したいこと：
+
+■ ヒアリング内容の要点
+【企業情報・強み】
+・
+
+【デザインの方向性】
+・参考サイト：
+・NGイメージ：
+・表現したいキーワード：
+
+【コンテンツ】
+・必要なページ：
+・既存素材の有無：
+
+【サーバー・ドメイン】
+・現在の状況：
+・デプロイパターン：
+
+■ 決定事項
+・撮影の有無：
+・希望公開時期：
+・その他：
+
+■ 次のアクション
+・
+
+【注意事項】
+・要点を箇条書きで簡潔にまとめる
+・企業の発言はそのままのニュアンスを残す
+・不明点は「要確認」と記載
+
+━━━━━━━━━━━━━━━━━━━━
 【文字起こし】
-{input}`,
-    saveKey: '文字起こし原文',
-    inputKey: ''
-  },
-  {
-    name: '構成案作成',
-    category: '構成',
-    prompt: `以下のヒアリング情報を元に、HPの構成案を作成してください。
-
-【ヒアリング情報】
-{input}
-
-【出力形式】
-- トップページ構成
-- 各ページの構成
-- コンテンツ案`,
-    saveKey: '構成案',
-    inputKey: '文字起こし原文'
+━━━━━━━━━━━━━━━━━━━━
+{{input}}`,
+    category: '議事録'
   },
 ];
 
@@ -156,7 +181,7 @@ function hp_initializeSettingsSheet() {
 // ================================================================================
 
 /**
- * プロンプトシートを作成・初期化
+ * プロンプトシートを作成・初期化（promptDialog.jsと同じ構造）
  */
 function hp_initializePromptSheet() {
   const ui = SpreadsheetApp.getUi();
@@ -178,35 +203,87 @@ function hp_initializePromptSheet() {
     sheet = ss.insertSheet(HP_PROMPT_SHEET_NAME);
   }
 
-  // ヘッダー行
-  const headers = ['プロンプト名', 'カテゴリ', 'プロンプト本文', '保存キー', '入力キー'];
+  // ヘッダー行（promptDialog.jsと同じ構造）
+  const headers = ['プロンプト名', '説明', '入力欄ラベル', '入力欄プレースホルダー', 'テンプレート', 'カテゴリ'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers])
     .setFontWeight('bold')
-    .setBackground('#4285f4')
+    .setBackground('#1565C0')
     .setFontColor('#fff');
 
   // デフォルトプロンプトを追加
-  const promptData = HP_DEFAULT_PROMPTS.map(p => [p.name, p.category, p.prompt, p.saveKey, p.inputKey]);
+  const promptData = HP_DEFAULT_PROMPTS.map(p => [
+    p.name,
+    p.description,
+    p.inputLabel,
+    p.placeholder,
+    p.template,
+    p.category
+  ]);
+
+  // compositionPrompt.jsのテンプレートも追加
+  // ※ HP_COMPOSITION_PROMPT_TEMPLATE, HP_CLAUDE_CODE_PROMPT_TEMPLATE はcompositionPrompt.jsで定義
+  try {
+    if (typeof HP_COMPOSITION_PROMPT_TEMPLATE !== 'undefined') {
+      promptData.push([
+        '構成案プロンプト',
+        '3人の専門家による完全な構成案を生成',
+        'ヒアリング情報（自動挿入）',
+        '※このプロンプトは構成案作成メニューから自動で使用されます',
+        HP_COMPOSITION_PROMPT_TEMPLATE,
+        '構成案'
+      ]);
+    }
+    if (typeof HP_CLAUDE_CODE_PROMPT_TEMPLATE !== 'undefined') {
+      promptData.push([
+        'Claude Code指示文',
+        '構成案からClaude Code用のHP作成指示文を生成',
+        '構成案（自動挿入）',
+        '※このプロンプトは構成案作成メニューから自動で使用されます',
+        HP_CLAUDE_CODE_PROMPT_TEMPLATE,
+        '構成案'
+      ]);
+    }
+  } catch (e) {
+    // compositionPrompt.jsが読み込まれていない場合はスキップ
+  }
+
   if (promptData.length > 0) {
     sheet.getRange(2, 1, promptData.length, headers.length).setValues(promptData);
   }
 
   // 列幅調整
-  sheet.setColumnWidth(1, 150);  // A: プロンプト名
-  sheet.setColumnWidth(2, 100);  // B: カテゴリ
-  sheet.setColumnWidth(3, 500);  // C: プロンプト本文
-  sheet.setColumnWidth(4, 150);  // D: 保存キー
-  sheet.setColumnWidth(5, 150);  // E: 入力キー
+  sheet.setColumnWidth(1, 120);  // A: プロンプト名
+  sheet.setColumnWidth(2, 200);  // B: 説明
+  sheet.setColumnWidth(3, 180);  // C: 入力欄ラベル
+  sheet.setColumnWidth(4, 250);  // D: プレースホルダー
+  sheet.setColumnWidth(5, 500);  // E: テンプレート
+  sheet.setColumnWidth(6, 100);  // F: カテゴリ
 
-  // 行の高さを調整（プロンプト本文が見やすいように）
+  // 行の高さを調整（テンプレートが見やすいように）
   for (let i = 2; i <= promptData.length + 1; i++) {
-    sheet.setRowHeight(i, 100);
+    const promptName = sheet.getRange(i, 1).getValue();
+    // 構成案プロンプトは長いので高さを大きく
+    if (promptName === '構成案プロンプト' || promptName === 'Claude Code指示文') {
+      sheet.setRowHeight(i, 300);
+    } else {
+      sheet.setRowHeight(i, 150);
+    }
   }
 
-  // テキストの折り返し
-  sheet.getRange(2, 3, promptData.length, 1).setWrap(true);
+  // テキストの折り返し（テンプレート列）
+  sheet.getRange(2, 5, promptData.length, 1).setWrap(true);
 
-  ui.alert('✅ プロンプトシートを作成しました');
+  const compositionCount = (typeof HP_COMPOSITION_PROMPT_TEMPLATE !== 'undefined' ? 1 : 0) +
+                          (typeof HP_CLAUDE_CODE_PROMPT_TEMPLATE !== 'undefined' ? 1 : 0);
+  const message = compositionCount > 0
+    ? '✅ プロンプトシートを作成しました\n\n' +
+      '登録されたプロンプト:\n' +
+      '・議事録作成\n' +
+      (compositionCount > 0 ? '・構成案プロンプト（3人の専門家版）\n・Claude Code指示文\n' : '') +
+      '\n※メニューを更新するには、シートを再読み込みしてください。'
+    : '✅ プロンプトシートを作成しました\n\n※メニューを更新するには、シートを再読み込みしてください。';
+
+  ui.alert(message);
 }
 
 // ================================================================================
@@ -290,8 +367,8 @@ function hp_getHearingSheetFolderId() {
 // ================================================================================
 
 /**
- * 全プロンプトを取得
- * @returns {Object[]} プロンプト配列 [{name, category, prompt, saveKey, inputKey}, ...]
+ * 全プロンプトを取得（6列構造）
+ * @returns {Object[]} プロンプト配列 [{name, description, inputLabel, placeholder, template, category}, ...]
  */
 function hp_getAllPrompts() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -306,15 +383,16 @@ function hp_getAllPrompts() {
     return HP_DEFAULT_PROMPTS;
   }
 
-  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
   const prompts = data
-    .filter(row => row[0]) // プロンプト名がある行のみ
+    .filter(row => row[0] && row[4]) // プロンプト名とテンプレートがある行のみ
     .map(row => ({
       name: row[0],
-      category: row[1] || '',
-      prompt: row[2] || '',
-      saveKey: row[3] || '',
-      inputKey: row[4] || ''
+      description: row[1] || '',
+      inputLabel: row[2] || 'ここに入力',
+      placeholder: row[3] || '',
+      template: row[4] || '',
+      category: row[5] || ''
     }));
 
   return prompts.length > 0 ? prompts : HP_DEFAULT_PROMPTS;

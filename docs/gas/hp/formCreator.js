@@ -14,11 +14,14 @@
  * 【ページ構成】
  * ページ1: 担当者情報 + 企業情報
  * ページ2: HPについてのご要望
- * ページ3: サーバー・ドメインについて（分岐の起点）
- * ページ4: サーバー情報（共通）
- * ページ5a: サーバー情報（詳細）→ A/B/D向け
- * ページ5b: サーバー情報（自社管理）→ C向け
- * ページ6: メール関連 → A/D向け
+ * ページ3: 会社の詳細情報（ビジョン、代表メッセージ等）
+ * ページ4: サービス・商品について
+ * ページ5: 採用関連情報（採用目的の場合）
+ * ページ6: サーバー・ドメインについて（分岐の起点）
+ * ページ7: サーバー情報（共通）
+ * ページ8a: サーバー情報（詳細）→ A/B/D向け
+ * ページ8b: サーバー情報（自社管理）→ C向け
+ * ページ9: メール関連 → A/D向け
  * 完了ページ
  *
  * 【条件分岐】
@@ -52,7 +55,7 @@ const HP_FORM_CONFIG = {
   description: `HP制作にあたり、事前にいくつかの項目をお伺いします。
 ご記入いただいた内容をもとに、打ち合わせを進めさせていただきます。
 
-所要時間: 約10〜15分`,
+所要時間: 約15〜20分`,
 };
 
 // ===========================================
@@ -95,33 +98,51 @@ function setupFormQuestions() {
       .setTitle('HPについてのご要望');
     createPage2_Requirements(form);
 
-    // ページ3: サーバー・ドメインについて（分岐の起点）
+    // ページ3: 会社の詳細情報（新規追加）
     const page3 = form.addPageBreakItem()
+      .setTitle('会社の詳細情報')
+      .setHelpText('HPに掲載する会社の詳細情報をご入力ください。\n任意項目は、お持ちでない場合や公開を希望されない場合は空欄で構いません。');
+    createPage3_CompanyDetail(form);
+
+    // ページ4: サービス・商品について（新規追加）
+    const page4 = form.addPageBreakItem()
+      .setTitle('サービス・商品について')
+      .setHelpText('御社のサービスや商品についてお聞かせください。\n打ち合わせで深掘りさせていただく際の参考にさせていただきます。');
+    createPage4_ServiceProduct(form);
+
+    // ページ5: 採用関連情報（新規追加）
+    const page5 = form.addPageBreakItem()
+      .setTitle('採用関連情報')
+      .setHelpText('【採用目的でない場合はスキップしてください】\n\n「HPの主な目的」で「採用強化」を選択された方はご入力ください。');
+    createPage5_Recruitment(form);
+
+    // ページ6: サーバー・ドメインについて（分岐の起点）
+    const page6 = form.addPageBreakItem()
       .setTitle('サーバー・ドメインについて');
-    const serverChoiceItem = createPage3_ServerChoice(form);
+    const serverChoiceItem = createPage6_ServerChoice(form);
 
-    // ページ4: サーバー情報（共通）
-    const page4_common = form.addPageBreakItem()
+    // ページ7: サーバー情報（共通）
+    const page7_common = form.addPageBreakItem()
       .setTitle('サーバー情報の確認');
-    createPage4_ServerCommon(form);
+    createPage7_ServerCommon(form);
 
-    // ページ5a: サーバー情報（詳細）- A/B/D向け
-    const page5a_detail = form.addPageBreakItem()
+    // ページ8a: サーバー情報（詳細）- A/B/D向け
+    const page8a_detail = form.addPageBreakItem()
       .setTitle('サーバー情報の確認（詳細）')
       .setHelpText('サーバー移管に必要な情報の把握状況を確認させてください。');
-    createPage5a_ServerDetail(form);
+    createPage8a_ServerDetail(form);
 
-    // ページ5b: サーバー情報（自社管理）- C向け
-    const page5b_self = form.addPageBreakItem()
+    // ページ8b: サーバー情報（自社管理）- C向け
+    const page8b_self = form.addPageBreakItem()
       .setTitle('納品方法の確認')
       .setHelpText('納品方法の確認のため、いくつかお伺いします。');
-    createPage5b_ServerSelf(form);
+    createPage8b_ServerSelf(form);
 
-    // ページ6: メール関連 - A/D向け
-    const page6_mail = form.addPageBreakItem()
+    // ページ9: メール関連 - A/D向け
+    const page9_mail = form.addPageBreakItem()
       .setTitle('メールについて')
       .setHelpText('メールの移行に関する情報を確認させてください。');
-    createPage6_Mail(form);
+    createPage9_Mail(form);
 
     // 完了ページ
     const pageEnd = form.addPageBreakItem()
@@ -133,30 +154,26 @@ function setupFormQuestions() {
     // ===========================================
 
     // サーバー管理の希望の選択肢を設定（分岐付き）
-    // A → 共通 → 詳細 → メール → 完了
-    // B → 共通 → 詳細 → 完了（メールスキップ）
-    // C → 共通 → C用 → 完了
-    // D → 共通 → 詳細 → メール → 完了
     serverChoiceItem.setChoices([
-      serverChoiceItem.createChoice('A. Singに移管する（ドメイン・サーバーをSingで管理）', page4_common),
-      serverChoiceItem.createChoice('B. メール契約だけ現行のまま残す（サーバーは移管、メールは今のまま）', page4_common),
-      serverChoiceItem.createChoice('C. 自社で管理する（納品物をお渡しし、御社でアップロード）', page4_common),
-      serverChoiceItem.createChoice('D. 検討中（打ち合わせで相談したい）', page4_common)
+      serverChoiceItem.createChoice('A. Singに移管する（ドメイン・サーバーをSingで管理）', page7_common),
+      serverChoiceItem.createChoice('B. メール契約だけ現行のまま残す（サーバーは移管、メールは今のまま）', page7_common),
+      serverChoiceItem.createChoice('C. 自社で管理する（納品物をお渡しし、御社でアップロード）', page7_common),
+      serverChoiceItem.createChoice('D. 検討中（打ち合わせで相談したい）', page7_common)
     ]);
 
     // 共通ページからの遷移: 詳細ページへ（A/B/D）
     // ※Googleフォームの制約で、共通ページからの分岐は難しいため、
     // 全員が詳細ページを通過し、不要な質問は任意とする
-    page4_common.setGoToPage(page5a_detail);
+    page7_common.setGoToPage(page8a_detail);
 
     // 詳細ページからの遷移: メールページへ
-    page5a_detail.setGoToPage(page6_mail);
+    page8a_detail.setGoToPage(page9_mail);
 
     // C用ページからの遷移: 完了へ
-    page5b_self.setGoToPage(pageEnd);
+    page8b_self.setGoToPage(pageEnd);
 
     // メールページからの遷移: 完了へ
-    page6_mail.setGoToPage(pageEnd);
+    page9_mail.setGoToPage(pageEnd);
 
     // 結果表示
     const formUrl = form.getPublishedUrl();
@@ -472,10 +489,210 @@ function createPage2_Requirements(form) {
 }
 
 // ===========================================
-// ページ3: サーバー・ドメインについて（分岐の起点）
+// ページ3: 会社の詳細情報（新規追加）
 // ===========================================
 
-function createPage3_ServerChoice(form) {
+function createPage3_CompanyDetail(form) {
+  // ビジョン・ミッション
+  form.addParagraphTextItem()
+    .setTitle('会社のビジョン・ミッション')
+    .setHelpText('会社のビジョンやミッション、経営理念があればご入力ください。\n既に文章がある場合はそのままコピー＆ペーストしてください。')
+    .setRequired(false);
+
+  // 代表メッセージ
+  form.addParagraphTextItem()
+    .setTitle('代表メッセージ')
+    .setHelpText('代表者様からのメッセージがあればご入力ください。\n会社案内等に既存の文章がある場合はそのままコピー＆ペーストしてください。\n\n※打ち合わせ時にインタビュー形式で作成することも可能です。')
+    .setRequired(false);
+
+  // 売上高
+  form.addTextItem()
+    .setTitle('売上高')
+    .setHelpText('【任意・公開非公開はお選びいただけます】\n会社概要に掲載する場合のみご入力ください。\n例: 10億円、非公開')
+    .setRequired(false);
+
+  // 会社の雰囲気・文化
+  form.addParagraphTextItem()
+    .setTitle('会社の雰囲気・文化')
+    .setHelpText('社内の雰囲気や大切にしている文化があれば教えてください。\n例: アットホームな雰囲気、チャレンジを応援する文化、風通しの良い職場 など')
+    .setRequired(false);
+
+  // オフィス情報
+  form.addParagraphTextItem()
+    .setTitle('オフィス・店舗情報')
+    .setHelpText('本社以外に支店・営業所・店舗などがあれば、名称と住所をご入力ください。')
+    .setRequired(false);
+
+  // 設備
+  form.addParagraphTextItem()
+    .setTitle('設備・施設')
+    .setHelpText('アピールしたい設備や施設があれば教えてください。\n例: 最新の加工機械、広い駐車場、休憩室完備 など')
+    .setRequired(false);
+}
+
+// ===========================================
+// ページ4: サービス・商品について（新規追加）
+// ===========================================
+
+function createPage4_ServiceProduct(form) {
+  // サービス・商品の概要
+  form.addParagraphTextItem()
+    .setTitle('主なサービス・商品')
+    .setHelpText('御社の主なサービスや商品を教えてください。\n複数ある場合は箇条書きでも構いません。')
+    .setRequired(false);
+
+  // 強み・特徴
+  form.addParagraphTextItem()
+    .setTitle('サービス・商品の強み・特徴')
+    .setHelpText('御社のサービス・商品の強みや、他社との違いを教えてください。')
+    .setRequired(false);
+
+  // 実績・導入事例
+  form.addParagraphTextItem()
+    .setTitle('実績・導入事例')
+    .setHelpText('HPに掲載したい実績や導入事例があれば教えてください。\n例: 導入企業数、取引先、受賞歴、メディア掲載 など')
+    .setRequired(false);
+
+  // 参考資料の有無
+  form.addCheckboxItem()
+    .setTitle('参考資料の有無')
+    .setHelpText('HP制作の参考になる資料をお持ちでしたらお知らせください。\n打ち合わせ時にご提出いただけると、より良いHPを作成できます。')
+    .setChoiceValues([
+      '会社案内・パンフレット',
+      'サービス資料・カタログ',
+      '提案資料・営業資料',
+      '採用資料',
+      '特にない'
+    ])
+    .setRequired(false);
+}
+
+// ===========================================
+// ページ5: 採用関連情報（新規追加）
+// ===========================================
+
+function createPage5_Recruitment(form) {
+  form.addSectionHeaderItem()
+    .setTitle('募集職種について')
+    .setHelpText('採用ページに掲載する募集職種の情報をご入力ください。\n複数職種ある場合は、主要なものを1〜2職種ご入力ください。');
+
+  // 募集職種1
+  form.addTextItem()
+    .setTitle('募集職種①：職種名')
+    .setHelpText('例: 営業職、製造スタッフ、Webデザイナー')
+    .setRequired(false);
+
+  form.addParagraphTextItem()
+    .setTitle('募集職種①：仕事内容')
+    .setHelpText('具体的な仕事内容を教えてください。')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種①：給与')
+    .setHelpText('例: 月給25万円〜35万円、年収400万円〜600万円')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種①：初任給（新卒の場合）')
+    .setHelpText('例: 大卒22万円、高卒18万円')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種①：勤務地')
+    .setHelpText('例: 本社（名古屋市）、転勤なし')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種①：勤務時間')
+    .setHelpText('例: 8:30〜17:30（休憩60分）')
+    .setRequired(false);
+
+  // 募集職種2
+  form.addSectionHeaderItem()
+    .setTitle('募集職種②（2つ目がある場合）');
+
+  form.addTextItem()
+    .setTitle('募集職種②：職種名')
+    .setRequired(false);
+
+  form.addParagraphTextItem()
+    .setTitle('募集職種②：仕事内容')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種②：給与')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種②：初任給（新卒の場合）')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種②：勤務地')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('募集職種②：勤務時間')
+    .setRequired(false);
+
+  // 応募資格・歓迎スキル
+  form.addSectionHeaderItem()
+    .setTitle('応募条件・待遇');
+
+  form.addParagraphTextItem()
+    .setTitle('応募資格・歓迎スキル')
+    .setHelpText('必須条件や歓迎するスキル・経験を教えてください。\n例: 要普通免許、未経験歓迎、〇〇経験者優遇')
+    .setRequired(false);
+
+  // 数値データ
+  form.addSectionHeaderItem()
+    .setTitle('会社データ（採用ページ用）')
+    .setHelpText('採用ページでアピールできる数値データがあればご入力ください。');
+
+  form.addTextItem()
+    .setTitle('定着率')
+    .setHelpText('例: 95%、直近3年で離職者1名')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('年間休日')
+    .setHelpText('例: 120日、完全週休2日制')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('平均残業時間')
+    .setHelpText('例: 月10時間程度、繁忙期のみ20時間程度')
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle('有給取得率')
+    .setHelpText('例: 80%、平均取得日数12日')
+    .setRequired(false);
+
+  // 福利厚生
+  form.addParagraphTextItem()
+    .setTitle('福利厚生')
+    .setHelpText('福利厚生を箇条書きでご入力ください。\n例: 社会保険完備、退職金制度、社員寮、資格取得支援 など')
+    .setRequired(false);
+
+  // 研修制度
+  form.addParagraphTextItem()
+    .setTitle('研修制度')
+    .setHelpText('研修制度や教育体制について教えてください。\n例: 入社時研修3ヶ月、OJT制度、外部研修費用補助 など')
+    .setRequired(false);
+
+  // その他掲載したい情報
+  form.addParagraphTextItem()
+    .setTitle('その他掲載したい情報')
+    .setHelpText('採用ページに掲載したいその他の情報があれば自由にご記入ください。')
+    .setRequired(false);
+}
+
+// ===========================================
+// ページ6: サーバー・ドメインについて（分岐の起点）
+// ===========================================
+
+function createPage6_ServerChoice(form) {
   form.addSectionHeaderItem()
     .setTitle('サーバー・ドメインについて')
     .setHelpText(
@@ -501,10 +718,10 @@ function createPage3_ServerChoice(form) {
 }
 
 // ===========================================
-// ページ4: サーバー情報（共通）
+// ページ7: サーバー情報（共通）
 // ===========================================
 
-function createPage4_ServerCommon(form) {
+function createPage7_ServerCommon(form) {
   form.addTextItem()
     .setTitle('現在のドメイン')
     .setHelpText(
@@ -547,10 +764,10 @@ function createPage4_ServerCommon(form) {
 }
 
 // ===========================================
-// ページ5a: サーバー情報（詳細）- A/B/D向け
+// ページ8a: サーバー情報（詳細）- A/B/D向け
 // ===========================================
 
-function createPage5a_ServerDetail(form) {
+function createPage8a_ServerDetail(form) {
   form.addMultipleChoiceItem()
     .setTitle('プロバイダ管理画面のログイン情報')
     .setHelpText(
@@ -642,10 +859,10 @@ function createPage5a_ServerDetail(form) {
 }
 
 // ===========================================
-// ページ5b: サーバー情報（自社管理）- C向け
+// ページ8b: サーバー情報（自社管理）- C向け
 // ===========================================
 
-function createPage5b_ServerSelf(form) {
+function createPage8b_ServerSelf(form) {
   form.addSectionHeaderItem()
     .setTitle('納品についての確認')
     .setHelpText('自社でサーバー管理される場合の納品方法を確認させてください。');
@@ -677,10 +894,10 @@ function createPage5b_ServerSelf(form) {
 }
 
 // ===========================================
-// ページ6: メール関連 - A/D向け
+// ページ9: メール関連 - A/D向け
 // ===========================================
 
-function createPage6_Mail(form) {
+function createPage9_Mail(form) {
   form.addSectionHeaderItem()
     .setTitle('メール移行について')
     .setHelpText('メールの移行に関する情報を確認させてください。\n\n※「メールを使用していない」「B. メール契約だけ残す」を選択された方は回答不要です。');
