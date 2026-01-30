@@ -1,0 +1,1155 @@
+/**
+ * HP制作 ヒアリングシート管理 メインGAS
+ *
+ * 【機能】
+ * 1. ヒアリングシート作成（フォーム回答から/手動）
+ * 2. 企業フォルダ作成
+ * 3. フォーム転記（既存シートへ）
+ *
+ * 【設計思想】
+ * - ツナゲルほど複雑にしない（不変・シンプル）
+ * - commonStyles.jsを使用してUI統一
+ *
+ * 【ヒアリングシート構造】
+ * 1行目: 企業名（タイトル）
+ * 2行目: ステータスヘッダー（B〜G列）
+ * 3行目: ステータス入力欄
+ * H列: 公開URL
+ * I〜N列: 更新ログ
+ * 4行目〜: Part①〜④
+ */
+
+// ===== 定数 =====
+const HP_COLORS = {
+  HEADER: '#1565C0',        // 青
+  HEADER_TEXT: '#FFFFFF',
+  PART_HEADER: '#4A90D9',   // 薄青
+  SUB_HEADER: '#E8EAF6',    // 薄紫
+  LABEL: '#F5F5F5',         // グレー
+  FORM_INPUT: '#FFFDE7',    // 黄色（フォーム転記セル）
+  HEARING_INPUT: '#E3F2FD', // 水色（ヒアリング記入セル）
+  DATA_LABEL: '#9e9e9e',    // グレー（Part④）
+  DATA_VALUE: '#e0e0e0',    // ライトグレー（Part④）
+  BORDER: '#BDBDBD'
+};
+
+const HP_SHEET_NAME = 'ヒアリングシート';
+const HP_FORM_RESPONSE_SHEET_NAME = 'フォームの回答 1';
+
+// ステータス関連定数
+const HP_STATUS_STATES = ['対応中', '先方確認', '次の担当へ'];
+const HP_STATUS_OVERALL = ['制作中', '運用中', '完了'];
+const HP_TASK_HOLDERS = ['渡邉', '河合', '川崎', '青柳', '先方'];
+
+// タスク一覧（HP制作用11タスク）
+const HP_TASKS = [
+  { no: 0, name: '受注・立ち上げ' },
+  { no: 1, name: '打ち合わせ前準備' },
+  { no: 2, name: '初回打ち合わせ' },
+  { no: 3, name: '文字起こし・転記' },
+  { no: 4, name: 'JSON出力・原稿生成' },
+  { no: 5, name: 'HP作成' },
+  { no: 6, name: '素材撮影' },
+  { no: 7, name: '修正・根拠作成' },
+  { no: 8, name: 'MVP確認・修正' },
+  { no: 9, name: '納品' },
+  { no: 10, name: '月次FB' }
+];
+
+// 除外シート名（システムシート）
+const HP_EXCLUDED_SHEETS = [
+  'ヒアリングシート',
+  'フォームの回答 1',
+  'フォームの回答1',
+  '設定',
+  'プロンプト',
+  '進捗一覧',
+  '企業情報一覧'
+];
+
+// ===== フォーム回答 → ヒアリングシート マッピング =====
+// フォーム列番号（0始まり、タイムスタンプ=0） → ヒアリングシート（行, 列）
+// ※ページ構成に基づいて設計（formCreator.js参照）
+const HP_FORM_TO_SHEET_MAPPING = {
+  // ページ1: 担当者情報 + 企業情報
+  1:  { row: 6, col: 2 },   // 企業名 → Part① 基本情報
+  2:  { row: 7, col: 2 },   // 担当者名
+  3:  { row: 8, col: 2 },   // 役職
+  4:  { row: 9, col: 2 },   // 電話番号（担当者様）
+  5:  { row: 10, col: 2 },  // メールアドレス（担当者様）
+  6:  { row: 11, col: 2 },  // 会社正式名称
+  7:  { row: 12, col: 2 },  // 郵便番号
+  8:  { row: 13, col: 2 },  // 住所
+  9:  { row: 14, col: 2 },  // 代表電話番号
+  10: { row: 15, col: 2 },  // お問い合わせメールアドレス
+  11: { row: 16, col: 2 },  // 代表者名
+  12: { row: 17, col: 2 },  // 設立年
+  13: { row: 18, col: 2 },  // 資本金
+  14: { row: 19, col: 2 },  // 従業員数
+  15: { row: 20, col: 2 },  // 事業内容
+  16: { row: 21, col: 2 },  // 営業時間・定休日
+
+  // ページ2: HPについてのご要望 → Part② or 別セクション
+  // （マッピングは後で詳細化）
+};
+
+// ===== メニュー設定 =====
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+
+  // 設定メニュー（settingsSheet.jsから）
+  hp_addSettingsMenu(ui);
+
+  // メインメニュー
+  ui.createMenu('📋 HP制作')
+    .addItem('🆕 新規ヒアリングシート作成（フォーム回答から）', 'hp_createFromFormResponse')
+    .addItem('🆕 新規ヒアリングシート作成（手動）', 'hp_createNewHearingSheet')
+    .addSeparator()
+    .addItem('📂 企業フォルダ作成', 'hp_createCompanyFolder')
+    .addSeparator()
+    .addItem('📥 フォーム回答を既存シートに転記', 'hp_transferToExistingSheet')
+    .addSeparator()
+    .addItem('🎨 テンプレート初期設定', 'hp_setupTemplate')
+    .addToUi();
+}
+
+// ===== ヘルパー関数 =====
+
+/**
+ * 除外シートかどうかを判定
+ */
+function hp_isExcludedSheet(sheetName) {
+  return HP_EXCLUDED_SHEETS.includes(sheetName);
+}
+
+/**
+ * 企業名の一致確認（部分一致・表記揺れ対応）
+ */
+function hp_checkCompanyNameMatch(name1, name2) {
+  const normalize = (str) => {
+    return str
+      .replace(/株式会社/g, '')
+      .replace(/（株）/g, '')
+      .replace(/\(株\)/g, '')
+      .replace(/㈱/g, '')
+      .replace(/有限会社/g, '')
+      .replace(/合同会社/g, '')
+      .replace(/\s+/g, '')
+      .trim();
+  };
+
+  const n1 = normalize(name1);
+  const n2 = normalize(name2);
+
+  if (n1 === n2) return true;
+  if (n1.includes(n2) || n2.includes(n1)) return true;
+
+  return false;
+}
+
+// ===== 1. 新規作成（フォーム回答から） =====
+function hp_createFromFormResponse() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // フォーム回答シートを取得
+  const formSheet = ss.getSheetByName(HP_FORM_RESPONSE_SHEET_NAME) ||
+                    ss.getSheetByName('フォームの回答1');
+
+  if (!formSheet) {
+    ui.alert('エラー', 'フォーム回答シートが見つかりません。', ui.ButtonSet.OK);
+    return;
+  }
+
+  const lastRow = formSheet.getLastRow();
+  if (lastRow <= 1) {
+    ui.alert('エラー', 'フォーム回答がありません。', ui.ButtonSet.OK);
+    return;
+  }
+
+  // アクティブシートの企業名を取得
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+  let activeCompanyName = null;
+  if (!hp_isExcludedSheet(activeSheetName)) {
+    try {
+      activeCompanyName = activeSheet.getRange(6, 2).getValue() || activeSheetName;
+    } catch (e) {
+      activeCompanyName = activeSheetName;
+    }
+  }
+
+  // 回答一覧を取得
+  const responses = formSheet.getRange(2, 1, lastRow - 1, formSheet.getLastColumn()).getValues();
+
+  // 企業名リストを作成
+  const companyList = responses.map((row, index) => {
+    const timestamp = row[0] ? new Date(row[0]).toLocaleString('ja-JP') : '';
+    const companyName = row[1] || '(企業名なし)';
+    const isActive = activeCompanyName && companyName === activeCompanyName;
+    return {
+      index: index + 2,
+      display: `${companyName} (${timestamp})`,
+      companyName: companyName,
+      timestamp: timestamp,
+      isActive: isActive,
+      data: row
+    };
+  });
+
+  // ソート: アクティブ最上段、残りは新しい順
+  companyList.sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return b.index - a.index;
+  });
+
+  // 選択ダイアログを表示
+  const htmlContent = hp_createSelectionDialog(companyList, 'createFromFormResponse');
+  const htmlOutput = HtmlService.createHtmlOutput(htmlContent)
+    .setWidth(700)
+    .setHeight(550);
+  ui.showModalDialog(htmlOutput, 'フォーム回答から新規作成');
+}
+
+// フォーム回答から新規作成を実行
+function hp_executeCreateFromFormResponse(rowIndex) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const formSheet = ss.getSheetByName(HP_FORM_RESPONSE_SHEET_NAME) ||
+                    ss.getSheetByName('フォームの回答1');
+  const formData = formSheet.getRange(rowIndex, 1, 1, formSheet.getLastColumn()).getValues()[0];
+
+  const companyName = formData[1] || '未設定企業';
+
+  // 同名のシートが既に存在するかチェック
+  if (ss.getSheetByName(companyName)) {
+    return {
+      success: false,
+      error: '「' + companyName + '」という名前のシートは既に存在します。'
+    };
+  }
+
+  try {
+    // テンプレートシートを取得
+    const templateSheet = ss.getSheetByName(HP_SHEET_NAME);
+    if (!templateSheet) {
+      return {
+        success: false,
+        error: 'テンプレート（ヒアリングシート）が見つかりません。先に「テンプレート初期設定」を実行してください。'
+      };
+    }
+
+    // シートをコピー
+    const newSheet = templateSheet.copyTo(ss);
+    newSheet.setName(companyName);
+
+    // データを転記
+    hp_transferFormDataToSheet(newSheet, formData);
+
+    // タイトル行に企業名を設定
+    newSheet.getRange(1, 1).setValue(companyName + ' ヒアリングシート');
+
+    // 新しいシートをアクティブに
+    ss.setActiveSheet(newSheet);
+
+    return {
+      success: true,
+      sheetName: companyName,
+      companyName: companyName
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// ===== 2. 新規作成（手動） =====
+function hp_createNewHearingSheet() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const response = ui.prompt(
+    '新規ヒアリングシート作成',
+    '企業名を入力してください（例：株式会社○○）：',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return;
+  }
+
+  const companyName = response.getResponseText().trim();
+  if (!companyName) {
+    ui.alert('エラー', '企業名を入力してください。', ui.ButtonSet.OK);
+    return;
+  }
+
+  // 同名のシートが既に存在するかチェック
+  if (ss.getSheetByName(companyName)) {
+    ui.alert('エラー', '「' + companyName + '」という名前のシートは既に存在します。', ui.ButtonSet.OK);
+    return;
+  }
+
+  try {
+    const templateSheet = ss.getSheetByName(HP_SHEET_NAME);
+    if (!templateSheet) {
+      ui.alert('エラー', 'テンプレート（ヒアリングシート）が見つかりません。先に「テンプレート初期設定」を実行してください。', ui.ButtonSet.OK);
+      return;
+    }
+
+    const newSheet = templateSheet.copyTo(ss);
+    newSheet.setName(companyName);
+
+    // タイトル行とPart①に企業名を設定
+    newSheet.getRange(1, 1).setValue(companyName + ' ヒアリングシート');
+    newSheet.getRange(6, 2).setValue(companyName);
+
+    ss.setActiveSheet(newSheet);
+
+    ui.alert('作成完了', '✅ 「' + companyName + '」シートを作成しました。', ui.ButtonSet.OK);
+
+  } catch (error) {
+    ui.alert('エラー', 'シート作成に失敗しました：' + error.message, ui.ButtonSet.OK);
+  }
+}
+
+// ===== 3. フォーム回答を既存シートに転記 =====
+function hp_transferToExistingSheet() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const formSheet = ss.getSheetByName(HP_FORM_RESPONSE_SHEET_NAME) ||
+                    ss.getSheetByName('フォームの回答1');
+
+  if (!formSheet) {
+    ui.alert('エラー', 'フォーム回答シートが見つかりません。', ui.ButtonSet.OK);
+    return;
+  }
+
+  const lastRow = formSheet.getLastRow();
+  if (lastRow <= 1) {
+    ui.alert('エラー', 'フォーム回答がありません。', ui.ButtonSet.OK);
+    return;
+  }
+
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+  let activeCompanyName = null;
+  if (!hp_isExcludedSheet(activeSheetName)) {
+    try {
+      activeCompanyName = activeSheet.getRange(6, 2).getValue() || activeSheetName;
+    } catch (e) {
+      activeCompanyName = activeSheetName;
+    }
+  }
+
+  const responses = formSheet.getRange(2, 1, lastRow - 1, formSheet.getLastColumn()).getValues();
+
+  const companyList = responses.map((row, index) => {
+    const timestamp = row[0] ? new Date(row[0]).toLocaleString('ja-JP') : '';
+    const companyName = row[1] || '(企業名なし)';
+    const isActive = activeCompanyName && companyName === activeCompanyName;
+    return {
+      index: index + 2,
+      display: `${companyName} (${timestamp})`,
+      companyName: companyName,
+      timestamp: timestamp,
+      isActive: isActive,
+      data: row
+    };
+  });
+
+  companyList.sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return b.index - a.index;
+  });
+
+  const htmlContent = hp_createSelectionDialog(companyList, 'transferToExistingSheet');
+  const htmlOutput = HtmlService.createHtmlOutput(htmlContent)
+    .setWidth(700)
+    .setHeight(550);
+  ui.showModalDialog(htmlOutput, 'フォーム回答を既存シートに転記');
+}
+
+// 既存シートに転記を実行
+function hp_executeTransferToExistingSheet(rowIndex) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const formSheet = ss.getSheetByName(HP_FORM_RESPONSE_SHEET_NAME) ||
+                    ss.getSheetByName('フォームの回答1');
+  const formData = formSheet.getRange(rowIndex, 1, 1, formSheet.getLastColumn()).getValues()[0];
+
+  const formCompanyName = String(formData[1] || '').trim();
+
+  let targetSheet = ss.getActiveSheet();
+  if (hp_isExcludedSheet(targetSheet.getName())) {
+    targetSheet = ss.getSheetByName(HP_SHEET_NAME);
+  }
+
+  if (!targetSheet) {
+    return {
+      success: false,
+      error: 'ヒアリングシートが見つかりません。先にヒアリングシートを選択してください。'
+    };
+  }
+
+  // シートの企業名を取得
+  const sheetCompanyName = String(targetSheet.getRange(6, 2).getValue() || '').trim();
+
+  // 企業名の一致確認
+  if (sheetCompanyName && formCompanyName) {
+    const isMatch = hp_checkCompanyNameMatch(formCompanyName, sheetCompanyName);
+    if (!isMatch) {
+      return {
+        success: false,
+        needConfirm: true,
+        formCompanyName: formCompanyName,
+        sheetCompanyName: sheetCompanyName,
+        sheetName: targetSheet.getName()
+      };
+    }
+  }
+
+  try {
+    hp_transferFormDataToSheet(targetSheet, formData);
+    return {
+      success: true,
+      sheetName: targetSheet.getName()
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// 強制的に転記を実行（確認後）
+function hp_executeTransferForce(rowIndex) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const formSheet = ss.getSheetByName(HP_FORM_RESPONSE_SHEET_NAME) ||
+                    ss.getSheetByName('フォームの回答1');
+  const formData = formSheet.getRange(rowIndex, 1, 1, formSheet.getLastColumn()).getValues()[0];
+
+  let targetSheet = ss.getActiveSheet();
+  if (hp_isExcludedSheet(targetSheet.getName())) {
+    targetSheet = ss.getSheetByName(HP_SHEET_NAME);
+  }
+
+  try {
+    hp_transferFormDataToSheet(targetSheet, formData);
+    return {
+      success: true,
+      sheetName: targetSheet.getName()
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// ===== データ転記関数 =====
+function hp_transferFormDataToSheet(sheet, formData) {
+  // マッピングに従ってデータを転記
+  for (const formCol in HP_FORM_TO_SHEET_MAPPING) {
+    const mapping = HP_FORM_TO_SHEET_MAPPING[formCol];
+    const value = formData[parseInt(formCol)];
+
+    if (value !== undefined && value !== null && value !== '') {
+      sheet.getRange(mapping.row, mapping.col).setValue(value);
+    }
+  }
+}
+
+// ===== 4. 企業フォルダ作成 =====
+function hp_createCompanyFolder() {
+  const ui = SpreadsheetApp.getUi();
+
+  // アクティブシートから企業名を取得
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const activeSheet = ss.getActiveSheet();
+  const activeSheetName = activeSheet.getName();
+
+  if (hp_isExcludedSheet(activeSheetName)) {
+    ui.alert('エラー', '企業のシートを選択してください。', ui.ButtonSet.OK);
+    return;
+  }
+
+  const companyName = activeSheet.getRange(6, 2).getValue() || activeSheetName;
+
+  // 親フォルダIDを取得（設定シートから、またはデフォルト）
+  const parentFolderId = hp_getParentFolderId();
+  if (!parentFolderId) {
+    ui.alert('エラー', '親フォルダが設定されていません。\n設定シートで「HP・LP」フォルダを設定してください。', ui.ButtonSet.OK);
+    return;
+  }
+
+  try {
+    const parentFolder = DriveApp.getFolderById(parentFolderId);
+
+    // 既存フォルダをチェック
+    const existingFolders = parentFolder.getFoldersByName(companyName);
+    if (existingFolders.hasNext()) {
+      const existingFolder = existingFolders.next();
+      const result = ui.alert(
+        '確認',
+        '「' + companyName + '」フォルダは既に存在します。\n\n既存フォルダを開きますか？',
+        ui.ButtonSet.YES_NO
+      );
+      if (result === ui.Button.YES) {
+        const folderUrl = existingFolder.getUrl();
+        // Part④にURLを保存
+        hp_saveFolderUrlToSheet(activeSheet, folderUrl);
+        ui.alert('完了', '既存フォルダのURLをシートに保存しました。\n\n' + folderUrl, ui.ButtonSet.OK);
+      }
+      return;
+    }
+
+    // 新規フォルダ作成
+    const newFolder = parentFolder.createFolder(companyName);
+    const folderUrl = newFolder.getUrl();
+
+    // Part④にURLを保存
+    hp_saveFolderUrlToSheet(activeSheet, folderUrl);
+
+    ui.alert('完了', '✅ 企業フォルダを作成しました。\n\n' + folderUrl, ui.ButtonSet.OK);
+
+  } catch (error) {
+    ui.alert('エラー', 'フォルダ作成に失敗しました：' + error.message, ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * 親フォルダIDを取得（設定シートから）
+ */
+function hp_getParentFolderId() {
+  // settingsSheet.jsのhp_getParentFolderIdFromSettings()を使用
+  return hp_getParentFolderIdFromSettings();
+}
+
+/**
+ * フォルダURLをシートのPart④に保存
+ */
+function hp_saveFolderUrlToSheet(sheet, folderUrl) {
+  // Part④の「企業フォルダURL」行を探して保存
+  // 仮実装: 固定行に保存
+  // TODO: Part④の構成に合わせて調整
+  const lastRow = sheet.getLastRow();
+  for (let row = 1; row <= lastRow; row++) {
+    const label = sheet.getRange(row, 1).getValue();
+    if (label === '企業フォルダURL') {
+      sheet.getRange(row, 2).setValue(folderUrl);
+      return;
+    }
+  }
+}
+
+// ===== テンプレート初期設定 =====
+function hp_setupTemplate() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(HP_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(HP_SHEET_NAME);
+  } else {
+    sheet.clear();
+    sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).clearDataValidations();
+  }
+
+  // 列幅設定
+  sheet.setColumnWidth(1, 200);  // A列: ラベル
+  sheet.setColumnWidth(2, 400);  // B列: 値
+  sheet.setColumnWidth(3, 100);  // C列: タスク保持者等
+  sheet.setColumnWidth(4, 80);   // D列: 状態
+  sheet.setColumnWidth(5, 80);   // E列: 期限
+  sheet.setColumnWidth(6, 80);   // F列: 最終更新日
+  sheet.setColumnWidth(7, 80);   // G列: 全体ステータス
+
+  let row = 1;
+
+  // 1行目: タイトル
+  sheet.getRange(row, 1, 1, 7).merge()
+    .setValue('HP制作ヒアリングシート')
+    .setBackground(HP_COLORS.HEADER)
+    .setFontColor(HP_COLORS.HEADER_TEXT)
+    .setFontSize(16)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
+  sheet.setRowHeight(row, 40);
+  row++;
+
+  // 2-3行目: ステータス欄
+  row = hp_createStatusSection(sheet, row);
+
+  // Part① 基本情報
+  row = hp_createPartHeader(sheet, row, 'Part① 基本情報（フォームから自動転記）');
+  row = hp_createFormInputRow(sheet, row, '企業名');
+  row = hp_createFormInputRow(sheet, row, '担当者名');
+  row = hp_createFormInputRow(sheet, row, '役職');
+  row = hp_createFormInputRow(sheet, row, '電話番号（担当者様）');
+  row = hp_createFormInputRow(sheet, row, 'メールアドレス（担当者様）');
+  row = hp_createFormInputRow(sheet, row, '会社正式名称');
+  row = hp_createFormInputRow(sheet, row, '郵便番号');
+  row = hp_createFormInputRow(sheet, row, '住所');
+  row = hp_createFormInputRow(sheet, row, '代表電話番号');
+  row = hp_createFormInputRow(sheet, row, 'お問い合わせメールアドレス');
+  row = hp_createFormInputRow(sheet, row, '代表者名');
+  row = hp_createFormInputRow(sheet, row, '設立年');
+  row = hp_createFormInputRow(sheet, row, '資本金');
+  row = hp_createFormInputRow(sheet, row, '従業員数');
+  row = hp_createFormInputRow(sheet, row, '事業内容');
+  row = hp_createFormInputRow(sheet, row, '営業時間・定休日');
+  row++;
+
+  // HPについてのご要望
+  row = hp_createSubHeader(sheet, row, 'HPについてのご要望');
+  row = hp_createFormInputRow(sheet, row, 'HPの主な目的');
+  row = hp_createFormInputRow(sheet, row, 'メインターゲット');
+  row = hp_createFormInputRow(sheet, row, '競合・意識している会社');
+  row = hp_createFormInputRow(sheet, row, '自社の強み');
+  row = hp_createFormInputRow(sheet, row, '参考にしたいHP');
+  row = hp_createFormInputRow(sheet, row, '現在のHP URL');
+  row = hp_createFormInputRow(sheet, row, '現在のHPで気になっている点');
+  row = hp_createFormInputRow(sheet, row, '期待すること');
+  row = hp_createFormInputRow(sheet, row, '必要なページ');
+  row = hp_createFormInputRow(sheet, row, '既存素材の有無');
+  row = hp_createFormInputRow(sheet, row, 'SNSアカウント');
+  row = hp_createFormInputRow(sheet, row, '希望公開時期');
+  row++;
+
+  // 会社の詳細情報
+  row = hp_createSubHeader(sheet, row, '会社の詳細情報');
+  row = hp_createFormInputRow(sheet, row, 'ビジョン・ミッション');
+  row = hp_createFormInputRow(sheet, row, '代表メッセージ');
+  row = hp_createFormInputRow(sheet, row, '売上高');
+  row = hp_createFormInputRow(sheet, row, '会社の雰囲気・文化');
+  row = hp_createFormInputRow(sheet, row, 'オフィス・店舗情報');
+  row = hp_createFormInputRow(sheet, row, '設備・施設');
+  row++;
+
+  // サービス・商品について
+  row = hp_createSubHeader(sheet, row, 'サービス・商品について');
+  row = hp_createFormInputRow(sheet, row, '主なサービス・商品');
+  row = hp_createFormInputRow(sheet, row, 'サービス・商品の強み・特徴');
+  row = hp_createFormInputRow(sheet, row, '実績・導入事例');
+  row = hp_createFormInputRow(sheet, row, '参考資料の有無');
+  row++;
+
+  // Part② ヒアリング情報
+  row = hp_createPartHeader(sheet, row, 'Part② ヒアリング情報（打ち合わせで記入）★1行1情報');
+
+  // 1. ゴール・コンバージョン
+  row = hp_createSubHeader(sheet, row, '1. ゴール・コンバージョン');
+  row = hp_createHearingInputRow(sheet, row, 'メインのコンバージョン');
+  row = hp_createHearingInputRow(sheet, row, 'ハードル設定');
+  row++;
+
+  // 2. ターゲットの深掘り
+  row = hp_createSubHeader(sheet, row, '2. ターゲットの深掘り（ペルソナ設計）');
+  row = hp_createHearingInputRow(sheet, row, '年齢層・性別');
+  row = hp_createHearingInputRow(sheet, row, '職業・役職・年収帯');
+  row = hp_createHearingInputRow(sheet, row, '居住地・勤務地');
+  row = hp_createHearingInputRow(sheet, row, '抱えている課題・悩み');
+  row = hp_createHearingInputRow(sheet, row, 'どんな状況で検索するか');
+  row = hp_createHearingInputRow(sheet, row, '検索しそうなキーワード');
+  row = hp_createHearingInputRow(sheet, row, '比較検討時に重視するポイント');
+  row = hp_createHearingInputRow(sheet, row, '問い合わせ・応募前の不安・障壁');
+  row++;
+
+  // 3. 強みの深掘り
+  row = hp_createSubHeader(sheet, row, '3. 強みの深掘り');
+  row = hp_createHearingInputRow(sheet, row, '選ばれる理由の具体例');
+  row = hp_createHearingInputRow(sheet, row, 'お客様・社員からよく言われる褒め言葉');
+  row = hp_createHearingInputRow(sheet, row, 'こだわり・譲れないポイント');
+  row = hp_createHearingInputRow(sheet, row, '資格・認定・特許など');
+  row = hp_createHearingInputRow(sheet, row, '独自の技術・ノウハウ');
+  row = hp_createHearingInputRow(sheet, row, '提出資料で特に使いたい部分');
+  row = hp_createHearingInputRow(sheet, row, '募集要項の推しポイント');
+  row = hp_createHearingInputRow(sheet, row, '働き方の強み');
+  row++;
+
+  // 4. 表現の方向性
+  row = hp_createSubHeader(sheet, row, '4. 表現の方向性');
+  row = hp_createHearingInputRow(sheet, row, 'キャッチコピー既存案');
+  row = hp_createHearingInputRow(sheet, row, 'キャッチコピーイメージ');
+  row = hp_createHearingInputRow(sheet, row, '参考キャッチコピー');
+  row = hp_createHearingInputRow(sheet, row, 'デザインの深掘り');
+  row = hp_createHearingInputRow(sheet, row, 'NGイメージ');
+  row = hp_createHearingInputRow(sheet, row, '撮影の雰囲気');
+  row = hp_createHearingInputRow(sheet, row, '映したいもの');
+  row = hp_createHearingInputRow(sheet, row, '社風の具体例');
+  row = hp_createHearingInputRow(sheet, row, '表現したいキーワード');
+  row++;
+
+  // 5. SEO・キーワード設計
+  row = hp_createSubHeader(sheet, row, '5. SEO・キーワード設計');
+  row = hp_createHearingInputRow(sheet, row, '最重要キーワード（3つ）');
+  row = hp_createHearingInputRow(sheet, row, 'サブキーワード（5つ程度）');
+  row = hp_createHearingInputRow(sheet, row, 'ローカルSEO対象地域');
+  row = hp_createHearingInputRow(sheet, row, '現在の検索順位');
+  row = hp_createHearingInputRow(sheet, row, '競合キーワード');
+  row++;
+
+  // 6. 新規作成の確認
+  row = hp_createSubHeader(sheet, row, '6. 新規作成の確認');
+  row = hp_createHearingInputRow(sheet, row, '代表メッセージ作成方法');
+  row = hp_createHearingInputRow(sheet, row, '代表の強調点');
+  row = hp_createHearingInputRow(sheet, row, 'インタビュー対象者');
+  row = hp_createHearingInputRow(sheet, row, 'インタビュー人数');
+  row = hp_createHearingInputRow(sheet, row, 'インタビュー切り口');
+  row = hp_createHearingInputRow(sheet, row, 'よくある質問');
+  row = hp_createHearingInputRow(sheet, row, '誤解されたくないこと');
+  row++;
+
+  // Part③ サーバー情報
+  row = hp_createPartHeader(sheet, row, 'Part③ サーバー情報（フォームから転記 + 補足）');
+  row = hp_createFormInputRow(sheet, row, 'サーバー管理の希望');
+  row = hp_createFormInputRow(sheet, row, '現在のドメイン');
+  row = hp_createFormInputRow(sheet, row, 'プロバイダ');
+  row = hp_createFormInputRow(sheet, row, '同じドメインでメール使用');
+  row = hp_createFormInputRow(sheet, row, 'プロバイダ管理画面のログイン情報');
+  row = hp_createFormInputRow(sheet, row, 'ドメイン管理画面のログイン情報');
+  row = hp_createFormInputRow(sheet, row, 'AuthCode取得方法');
+  row = hp_createFormInputRow(sheet, row, 'DNS設定の確認方法');
+  row = hp_createFormInputRow(sheet, row, '現在のサーバー管理者');
+  row = hp_createFormInputRow(sheet, row, '外部委託先への連絡');
+  row = hp_createFormInputRow(sheet, row, 'サブドメインの使用');
+  row = hp_createFormInputRow(sheet, row, 'FTPサーバー情報');
+  row = hp_createFormInputRow(sheet, row, '現在のHPアップロード方法');
+  row = hp_createFormInputRow(sheet, row, 'メールアカウント数');
+  row = hp_createFormInputRow(sheet, row, '過去メールの保持希望');
+  row = hp_createFormInputRow(sheet, row, 'メールサーバーのログイン情報');
+  row = hp_createHearingInputRow(sheet, row, 'デプロイパターン（A/B/C）');
+  row = hp_createHearingInputRow(sheet, row, '備考');
+  row++;
+
+  // Part④ 処理データ
+  row = hp_createPartHeader(sheet, row, 'Part④ 処理データ（システム管理）');
+  row = hp_createDataStorageRow(sheet, row, '企業フォルダURL');
+  row = hp_createDataStorageRow(sheet, row, '素材フォルダURL');
+  row = hp_createDataStorageRow(sheet, row, '文字起こし原文');
+  row = hp_createDataStorageRow(sheet, row, '選択テンプレート');
+  row = hp_createDataStorageRow(sheet, row, '構成案');
+  row = hp_createDataStorageRow(sheet, row, '公開URL');
+  row++;
+
+  // 罫線
+  const lastRow = row;
+  sheet.getRange(1, 1, lastRow, 7).setBorder(
+    true, true, true, true, true, true,
+    HP_COLORS.BORDER, SpreadsheetApp.BorderStyle.SOLID
+  );
+
+  // ログヘッダーを作成（I列〜N列）
+  hp_createLogHeader(sheet);
+
+  SpreadsheetApp.getUi().alert('✅ テンプレートの初期設定が完了しました');
+}
+
+// ===== テンプレートヘルパー関数 =====
+
+/**
+ * ステータス欄作成（2-3行目）
+ */
+function hp_createStatusSection(sheet, startRow) {
+  const taskList = HP_TASKS.map(t => t.no + '.' + t.name);
+
+  // メンバー一覧を設定シートから取得（なければデフォルト）
+  const members = hp_getMembers();
+
+  const headerRow = startRow;
+  const valueRow = startRow + 1;
+
+  // 2行目: ヘッダー
+  const headers = ['現在タスク', 'タスク保持者', '状態', '期限', '最終更新日', '全体ステータス'];
+  headers.forEach((header, i) => {
+    sheet.getRange(headerRow, 2 + i)
+      .setValue(header)
+      .setBackground('#E3F2FD')
+      .setFontWeight('bold')
+      .setFontColor('#000000');
+  });
+
+  // 3行目: 入力欄
+  const inputBg = '#FFFDE7';
+
+  // B列: 現在タスク
+  sheet.getRange(valueRow, 2).setValue(taskList[0]).setBackground(inputBg).setFontColor('#000000');
+  const taskRule = SpreadsheetApp.newDataValidation().requireValueInList(taskList, true).build();
+  sheet.getRange(valueRow, 2).setDataValidation(taskRule);
+
+  // C列: タスク保持者（設定シートから取得したメンバーを使用）
+  sheet.getRange(valueRow, 3).setValue(members[0]).setBackground(inputBg).setFontColor('#000000');
+  const holderRule = SpreadsheetApp.newDataValidation().requireValueInList(members, true).build();
+  sheet.getRange(valueRow, 3).setDataValidation(holderRule);
+
+  // D列: 状態
+  sheet.getRange(valueRow, 4).setValue(HP_STATUS_STATES[0]).setBackground(inputBg).setFontColor('#000000');
+  const stateRule = SpreadsheetApp.newDataValidation().requireValueInList(HP_STATUS_STATES, true).build();
+  sheet.getRange(valueRow, 4).setDataValidation(stateRule);
+
+  // E列: 期限
+  sheet.getRange(valueRow, 5).setBackground(inputBg).setFontColor('#000000').setNumberFormat('M/d');
+
+  // F列: 最終更新日（自動）
+  sheet.getRange(valueRow, 6).setBackground('#E0E0E0').setFontColor('#666666').setNumberFormat('M/d');
+
+  // G列: 全体ステータス
+  sheet.getRange(valueRow, 7).setValue(HP_STATUS_OVERALL[0]).setBackground(inputBg).setFontColor('#000000');
+  const overallRule = SpreadsheetApp.newDataValidation().requireValueInList(HP_STATUS_OVERALL, true).build();
+  sheet.getRange(valueRow, 7).setDataValidation(overallRule);
+
+  return startRow + 2;
+}
+
+/**
+ * Partヘッダー作成（A〜G列を結合）
+ */
+function hp_createPartHeader(sheet, row, title) {
+  sheet.getRange(row, 1, 1, 7).merge()
+    .setValue(title)
+    .setBackground(HP_COLORS.PART_HEADER)
+    .setFontColor(HP_COLORS.HEADER_TEXT)
+    .setFontSize(12)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('left')
+    .setVerticalAlignment('middle');
+  sheet.setRowHeight(row, 30);
+  return row + 1;
+}
+
+/**
+ * サブヘッダー作成（A〜G列を結合）
+ */
+function hp_createSubHeader(sheet, row, title) {
+  sheet.getRange(row, 1, 1, 7).merge()
+    .setValue('▼ ' + title)
+    .setBackground(HP_COLORS.SUB_HEADER)
+    .setFontColor('#3949AB')
+    .setFontSize(10)
+    .setFontWeight('bold');
+  sheet.setRowHeight(row, 25);
+  return row + 1;
+}
+
+/**
+ * フォーム転記用入力行（黄色背景、B〜G列を結合）
+ */
+function hp_createFormInputRow(sheet, row, label) {
+  sheet.getRange(row, 1).setValue(label).setBackground(HP_COLORS.LABEL).setFontWeight('bold');
+  sheet.getRange(row, 2, 1, 6).merge().setBackground(HP_COLORS.FORM_INPUT).setWrap(true);
+  return row + 1;
+}
+
+/**
+ * ヒアリング記入用入力行（水色背景、B〜G列を結合）
+ */
+function hp_createHearingInputRow(sheet, row, label) {
+  sheet.getRange(row, 1).setValue(label).setBackground(HP_COLORS.LABEL).setFontWeight('bold');
+  sheet.getRange(row, 2, 1, 6).merge().setBackground(HP_COLORS.HEARING_INPUT).setWrap(true);
+  return row + 1;
+}
+
+/**
+ * Part④ データ保存用行（B〜G列を結合）
+ */
+function hp_createDataStorageRow(sheet, row, label) {
+  sheet.getRange(row, 1).setValue(label).setBackground(HP_COLORS.DATA_LABEL).setFontWeight('bold').setFontColor('#333');
+  sheet.getRange(row, 2, 1, 6).merge().setBackground(HP_COLORS.DATA_VALUE).setFontColor('#333').setWrap(true);
+  return row + 1;
+}
+
+/**
+ * ログヘッダー作成（I列〜N列）
+ */
+function hp_createLogHeader(sheet) {
+  // タイトル行
+  sheet.getRange(1, 9, 1, 6)
+    .setValues([['更新ログ', '', '', '', '', '']])
+    .setBackground('#4A90D9')
+    .setFontColor('#FFFFFF')
+    .setFontWeight('bold');
+  sheet.getRange(1, 9, 1, 6).merge();
+
+  // ヘッダー行
+  const headers = ['日時', 'タスク変更', '保持者変更', '状態', 'メモ', '工数'];
+  sheet.getRange(2, 9, 1, 6)
+    .setValues([headers])
+    .setBackground('#E3F2FD')
+    .setFontWeight('bold');
+
+  // 列幅調整
+  sheet.setColumnWidth(9, 120);
+  sheet.setColumnWidth(10, 80);
+  sheet.setColumnWidth(11, 100);
+  sheet.setColumnWidth(12, 80);
+  sheet.setColumnWidth(13, 200);
+  sheet.setColumnWidth(14, 80);
+}
+
+// ===== 選択ダイアログHTML生成 =====
+function hp_createSelectionDialog(companyList, action) {
+  const companyListJson = JSON.stringify(companyList);
+
+  return `
+    <html>
+    <head>
+      ${CI_DIALOG_STYLES}
+      <style>
+        .response-select-wrapper { position: relative; margin-bottom: 16px; }
+        .response-select-display {
+          width: 100%;
+          padding: 12px 36px 12px 14px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          background: white;
+          min-height: 48px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          position: relative;
+        }
+        .response-select-display:hover { border-color: #3b82f6; }
+        .response-select-display.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .response-select-display::after {
+          content: '▼';
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 10px;
+          color: #666;
+        }
+        .response-select-display .placeholder { color: #999; }
+        .response-select-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 100;
+          display: none;
+          max-height: 280px;
+          overflow-y: auto;
+          margin-top: 4px;
+        }
+        .response-select-dropdown.show { display: block; }
+        .response-item {
+          padding: 12px 14px;
+          cursor: pointer;
+          border-bottom: 1px solid #f0f0f0;
+          transition: background 0.15s;
+        }
+        .response-item:last-child { border-bottom: none; }
+        .response-item:hover { background: #f5f5f5; }
+        .response-item.selected { background: #e3f2fd; }
+        .response-company {
+          font-weight: bold;
+          color: #333;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .response-timestamp { color: #666; font-size: 12px; margin-top: 4px; }
+        .result { margin-top: 16px; padding: 12px; border-radius: 6px; display: none; }
+        .result.success { display: block; background: #e6f4ea; color: #1e7e34; }
+        .result.error { display: block; background: #fce8e6; color: #c5221f; }
+        .footer { display: flex; gap: 10px; justify-content: flex-end; }
+      </style>
+    </head>
+    <body>
+      <p class="description">転記するフォーム回答を選択してください：</p>
+
+      <div class="response-select-wrapper">
+        <div class="response-select-display" id="responseSelectDisplay" onclick="toggleDropdown()">
+          <span class="placeholder">フォーム回答を選択してください</span>
+        </div>
+        <div class="response-select-dropdown" id="responseSelectDropdown"></div>
+      </div>
+
+      <div class="footer">
+        <button class="btn btn-primary" onclick="execute()" id="executeBtn" disabled>実行</button>
+        <button class="btn btn-gray" onclick="google.script.host.close()">キャンセル</button>
+      </div>
+      <div id="result" class="result"></div>
+
+      ${CI_UI_COMPONENTS}
+      <script>
+        const companyList = ${companyListJson};
+        let selectedIndex = null;
+        let selectedItem = null;
+
+        window.onload = function() {
+          renderDropdown();
+          const activeItem = companyList.find(item => item.isActive);
+          if (activeItem) {
+            selectResponse(activeItem);
+          }
+        };
+
+        function toggleDropdown() {
+          const display = document.getElementById('responseSelectDisplay');
+          const dropdown = document.getElementById('responseSelectDropdown');
+          const isOpen = dropdown.classList.contains('show');
+
+          if (isOpen) {
+            dropdown.classList.remove('show');
+            display.classList.remove('active');
+          } else {
+            dropdown.classList.add('show');
+            display.classList.add('active');
+          }
+        }
+
+        function renderDropdown() {
+          const dropdown = document.getElementById('responseSelectDropdown');
+          dropdown.innerHTML = '';
+
+          companyList.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'response-item';
+            if (selectedIndex === item.index) {
+              div.classList.add('selected');
+            }
+
+            const badge = item.isActive ? '<span class="badge-active">アクティブ</span>' : '';
+
+            div.innerHTML = \`
+              <div class="response-company">\${escapeHtml(item.companyName)}\${badge}</div>
+              <div class="response-timestamp">\${escapeHtml(item.timestamp || '')}</div>
+            \`;
+
+            div.onclick = function(e) {
+              e.stopPropagation();
+              selectResponse(item);
+              toggleDropdown();
+            };
+
+            dropdown.appendChild(div);
+          });
+        }
+
+        function selectResponse(item) {
+          selectedIndex = item.index;
+          selectedItem = item;
+
+          const display = document.getElementById('responseSelectDisplay');
+          const badge = item.isActive ? '<span class="badge-active" style="margin-left:8px;">アクティブ</span>' : '';
+          display.innerHTML = \`<span>\${escapeHtml(item.companyName)}\${badge}</span>\`;
+
+          document.querySelectorAll('.response-item').forEach(el => el.classList.remove('selected'));
+          const items = document.querySelectorAll('.response-item');
+          items.forEach(el => {
+            const name = el.querySelector('.response-company').textContent.replace('アクティブ', '').trim();
+            if (name === item.companyName) {
+              el.classList.add('selected');
+            }
+          });
+
+          document.getElementById('executeBtn').disabled = false;
+        }
+
+        document.addEventListener('click', function(e) {
+          const wrapper = document.querySelector('.response-select-wrapper');
+          if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('responseSelectDropdown').classList.remove('show');
+            document.getElementById('responseSelectDisplay').classList.remove('active');
+          }
+        });
+
+        function execute() {
+          if (!selectedIndex) {
+            alert('回答を選択してください');
+            return;
+          }
+
+          const action = '${action}';
+          if (action === 'createFromFormResponse') {
+            google.script.run
+              .withSuccessHandler(handleCreateResult)
+              .withFailureHandler(handleError)
+              .hp_executeCreateFromFormResponse(selectedIndex);
+          } else if (action === 'transferToExistingSheet') {
+            google.script.run
+              .withSuccessHandler(handleTransferResult)
+              .withFailureHandler(handleError)
+              .hp_executeTransferToExistingSheet(selectedIndex);
+          }
+        }
+
+        function handleCreateResult(result) {
+          const div = document.getElementById('result');
+          div.style.display = 'block';
+          if (result.success) {
+            div.className = 'result success';
+            div.innerHTML = '✅ 作成完了: 「' + result.companyName + '」シートを作成しました<br><br>シートに移動しました。<br><br><button class="btn btn-primary" onclick="google.script.host.close()">閉じる</button>';
+          } else {
+            div.className = 'result error';
+            div.innerHTML = '❌ エラー: ' + result.error;
+          }
+        }
+
+        function handleTransferResult(result) {
+          const div = document.getElementById('result');
+          div.style.display = 'block';
+          if (result.success) {
+            div.className = 'result success';
+            div.innerHTML = '✅ 転記完了: ' + result.sheetName + '<br><br><button class="btn btn-primary" onclick="google.script.host.close()">閉じる</button>';
+          } else if (result.needConfirm) {
+            div.className = 'result error';
+            div.innerHTML = '⚠️ 企業名が一致しません<br><br>' +
+              '<strong>フォーム回答:</strong> ' + result.formCompanyName + '<br>' +
+              '<strong>シート:</strong> ' + result.sheetCompanyName + '<br><br>' +
+              '該当する企業のシートを開いてから実行してください。<br><br>' +
+              '<button class="btn btn-gray" onclick="forceTransfer()">それでも転記する</button>';
+          } else {
+            div.className = 'result error';
+            div.innerHTML = '❌ エラー: ' + result.error;
+          }
+        }
+
+        function forceTransfer() {
+          if (selectedIndex) {
+            google.script.run
+              .withSuccessHandler(handleForceResult)
+              .withFailureHandler(handleError)
+              .hp_executeTransferForce(selectedIndex);
+          }
+        }
+
+        function handleForceResult(result) {
+          const div = document.getElementById('result');
+          div.style.display = 'block';
+          if (result.success) {
+            div.className = 'result success';
+            div.innerHTML = '✅ 転記完了: ' + result.sheetName + '<br><br><button class="btn btn-primary" onclick="google.script.host.close()">閉じる</button>';
+          } else {
+            div.className = 'result error';
+            div.innerHTML = '❌ エラー: ' + result.error;
+          }
+        }
+
+        function handleError(error) {
+          const div = document.getElementById('result');
+          div.style.display = 'block';
+          div.className = 'result error';
+          div.innerHTML = '❌ エラー: ' + error.message;
+        }
+      </script>
+    </body>
+    </html>
+  `;
+}
