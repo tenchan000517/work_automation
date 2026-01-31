@@ -6,7 +6,7 @@
 
 HP制作のフローをツナゲルと同じ設計思想で整備する。
 
-**現在のステータス:** 実装テスト + テンプレート選択問題の検討 ★今ここ
+**現在のステータス:** 製造業の文字起こしサンプル作成 → 実装テスト ★今ここ
 
 ---
 
@@ -31,7 +31,10 @@ HP制作のフローをツナゲルと同じ設計思想で整備する。
 - **STEP 5完了** - 構成案プロンプトにClaude Code用出力指示追加（チェックボックス、HANDOFF生成、wireframe保存）
 - **Claude Code使い方マニュアル作成** - `docs/manuals/hp/99-Claude Code使い方.md`（起動方法4パターン、モード説明、トラブルシューティング、紹介動画）
 - **GitHubテンプレートリポジトリ設定** - sing-hp-templateをTemplate Repositoryに設定
-- **Claude Code指示文フロー改善** - ユーザー向け/Claude Code向け指示を分離、起動場所案内をダイアログに追加、globals.css編集禁止ルール追加、テンプレートクローン指示を明確化
+- **Claude Code指示文フロー改善** - ユーザー向け/Claude Code向け指示を分離、起動場所案内をダイアログに追加、テンプレートクローン指示を明確化
+- **HANDOFFテンプレート拡充** - 企業情報、ロゴ、ブランドカラー、ヘッダー/フッター仕様、素材ファイル等を追加
+- **コーディングルール改善** - globals.cssの@themeブロック内ブランドカラー変更指示を明確化
+- **HANDOFF_GUIDE.md作成** - sing-hp-template/に配置（HANDOFFの構造標準化ガイド）
 
 #### ✅ HP制作GAS（全て完了）
 
@@ -107,7 +110,23 @@ Claude Code指示文の変更に合わせてマニュアルを更新。
 - `docs/manuals/hp/99-Claude Code使い方.md`
 - スクショ18枚、紹介動画1本（`public/images/hp/claude-code/`）
 
-##### STEP 6: 実装テスト ★今ここ
+##### STEP 6: 製造業の文字起こしサンプル作成 ★今ここ
+
+実装テスト用に、製造業（中部建設とは別の企業）の文字起こしサンプルを作成する。
+
+**要件:**
+- 外から見ると本当にあるような、リアルな内容にする
+- 製造業（精密機械、金属加工、食品製造など）を想定
+- ヒアリング打ち合わせの文字起こしとして自然な会話
+- Part②の39項目に対応する情報を含める
+
+**作成場所:**
+- `docs/samples/hp/` に配置（既存の中部建設サンプルと同様）
+
+**作成後:**
+- 実装テスト（STEP 7）へ進む
+
+##### STEP 7: 実装テスト
 
 構成案プロンプトのClaude Code実行オプションをテストする。
 
@@ -118,7 +137,7 @@ Claude Code指示文の変更に合わせてマニュアルを更新。
    - `client_hp/{{companyNameEn}}/HANDOFF.md`
    - `client_hp/{{companyNameEn}}/doc/wireframe/*.md`
 
-##### STEP 7: テンプレート選択問題の検討
+##### STEP 8: テンプレート選択問題の検討
 
 **問題:**
 sing-hp-templateリポジトリ内に5つのテンプレートがあるが、選択UIがない。
@@ -144,7 +163,7 @@ templates/
   - `hp.ts` relatedLinks - テンプレートURLが変わる場合
   - マニュアル類 - 手順・説明が変わる場合
 
-##### STEP 8: hp.tsのflowSteps詳細化
+##### STEP 9: hp.tsのflowSteps詳細化
 ツナゲルのようにflowStepsに詳細情報を追加。
 - `summary`: ステップの概要
 - `description`: 詳細な手順説明
@@ -419,6 +438,7 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-31 | HP制作: HANDOFFテンプレート拡充（企業情報、ロゴ、ブランドカラー、ヘッダー/フッター仕様等追加）、コーディングルール改善（@themeブロックのブランドカラー変更指示）、HANDOFF_GUIDE.md作成。次タスク: 製造業の文字起こしサンプル作成 → 実装テスト |
 | 2026-01-31 | HP制作: Claude Code指示文フロー改善 - ユーザー向け/Claude Code向け指示を分離、ダイアログに起動場所案内追加（client_hp/ + WSL注意書き）、globals.css編集禁止ルール追加、テンプレートクローン指示を明確化（cp -r方式） |
 | 2026-01-31 | HP制作: STEP 5完了（構成案プロンプトにClaude Code用出力指示追加）、Claude Code使い方マニュアル作成（99-Claude Code使い方.md）、GitHubテンプレートリポジトリ設定完了。次タスク: 実装テスト + テンプレート選択問題の検討 |
 | 2026-01-31 | HP制作: 中部建設の構成案作成完了 → 次タスクとして「Claude Code用出力指示追加」をHANDOFFに記載。成功例を `/mnt/c/work-manual/chubu-kensetsu-hp/doc/wireframe/` に保存（9ファイル、128KB） |
