@@ -25,17 +25,6 @@ const HP_CLAUDE_CODE_OUTPUT_INSTRUCTION = `
 
 # 【Claude Code用 出力指示】
 
-## 0. 作業環境の確認（最初に実行）
-
-1. カレントディレクトリを確認: \`pwd\`
-2. \`client_hp\` ディレクトリを探す:
-   - カレントディレクトリに \`client_hp/\` があればそこを使用
-   - なければ親ディレクトリを確認（例: Cドライブ直下、ホームディレクトリ等）
-   - 見つからなければカレントディレクトリに \`client_hp/\` を新規作成
-3. 以降の作業は \`client_hp/\` 内で行う
-
-※ Windows環境とWSL環境で実行される可能性があります。環境に応じたパスを使用してください。
-
 ## 出力先ディレクトリ
 \`\`\`
 client_hp/{{companyNameEn}}/
@@ -67,7 +56,93 @@ client_hp/{{companyNameEn}}/
    | 企業名 | {{companyName}} |
    | ディレクトリ | client_hp/{{companyNameEn}}/ |
    | 作成日 | {{date}} |
-   | テンプレート | sing-hp-template（GitHub Template Repository） |
+   | テンプレート | sing-hp-template |
+
+   ## 企業基本情報
+
+   | 項目 | 内容 |
+   |------|------|
+   | 代表者 | （構成案から抽出） |
+   | 設立 | （構成案から抽出） |
+   | 所在地 | （構成案から抽出） |
+   | 電話番号 | （構成案から抽出） |
+   | 事業内容 | （構成案から抽出） |
+
+   ## ロゴ
+
+   | 項目 | 内容 |
+   |------|------|
+   | ファイル一覧 | （未定の場合は「未定」と記載） |
+   | ヘッダー用 | ファイル名、サイズ（PC/SP） |
+   | フッター用 | ファイル名、サイズ |
+   | ファビコン用 | ファイル名 |
+   | カラー | ロゴの色、反転が必要な場面 |
+
+   ## ブランドカラー
+
+   | 項目 | コード | 用途 |
+   |------|--------|------|
+   | メインカラー | #XXXXXX | ヘッダー、見出し等 |
+   | アクセントカラー | #XXXXXX | CTA、ボタン等 |
+   | サブカラー | #XXXXXX | 背景、装飾等 |
+   | テキスト（濃） | #333333 | 本文 |
+   | テキスト（淡） | #666666 | 補足テキスト |
+
+   ## ヘッダー仕様
+
+   | 項目 | PC | SP |
+   |------|----|----|
+   | ロゴ位置 | 左 | 左 |
+   | ナビ構成 | 横並び | ハンバーガー |
+   | 背景 | 白/透明 | 白 |
+   | スクロール時 | 固定/変化 | 固定 |
+
+   ## フッター仕様
+
+   | 項目 | 内容 |
+   |------|------|
+   | レイアウト | 3カラム等 |
+   | 背景色 | #XXXXXX |
+   | PC | 横並び配置 |
+   | SP | 縦並び配置 |
+
+   ## ページ別セクション構成
+
+   ### TOPページ
+   | セクション | 背景色 |
+   |-----------|--------|
+   | ヒーロー | 画像 |
+   | ... | ... |
+   | CTA | メインカラー |
+
+   （他ページも同様に記載）
+
+   ## 素材ファイル
+
+   | 項目 | 内容 |
+   |------|------|
+   | 画像ディレクトリ | public/images/ |
+   | 画像一覧 | （ファイル名と用途） |
+   | 未撮影/未生成 | （必要だが未準備の素材） |
+
+   ## 技術スタック
+
+   - Next.js 16.x（App Router）
+   - React 19.x
+   - TypeScript 5.x
+   - Tailwind CSS 4.x
+   - Framer Motion 12.x
+
+   ## コーディングルール
+
+   - **globals.cssの@themeブロック内のブランドカラーのみ変更する**
+     - \`--color-navy\` → メインカラーに変更
+     - \`--color-navy-dark\` → メインカラー（濃）に変更
+     - \`--color-accent\` → アクセントカラーに変更
+     - \`--color-accent-dark\` → アクセントカラー（濃）に変更
+     - ※変数名は変えない（ユーティリティクラスが参照しているため）
+   - **それ以外のglobals.cssは編集しない**
+   - **Tailwind CSSを使用** - スタイルはユーティリティクラスで記述
 
    ## 参照ファイル
 
@@ -83,7 +158,7 @@ client_hp/{{companyNameEn}}/
    2. 作成したリポジトリをこのディレクトリにクローン
    3. \`npm install\` で依存関係インストール
    4. \`npm run dev\` で開発サーバー起動
-
+   
    ## 実装状況
 
    | ページ | 状態 | 備考 |
@@ -606,33 +681,46 @@ const HP_CLAUDE_CODE_PROMPT_TEMPLATE = `# HP制作セットアップ指示書
 
 ## 概要
 {{companyName}}のHP制作プロジェクトをセットアップしてください。
-このセッションでは実装は行わず、次世代セッションが作業を開始できるように準備します。
 
 ## 1. 企業ディレクトリ作成
 
-以下のディレクトリ構造を作成してください：
+\`{{companyNameEn}}/\` ディレクトリを作成し、以下の構造でファイルを配置：
 
-/mnt/c/hp-projects/{{companyName}}/
+\`\`\`
+{{companyNameEn}}/
 ├── data/
 │   ├── hearing.json      # ヒアリング抽出JSON
 │   └── composition.md    # 構成案全文
-└── HANDOFF.md            # 進捗管理・引き継ぎ用
+├── HANDOFF.md            # 進捗管理・引き継ぎ用
+└── （テンプレートファイル）
+\`\`\`
 
-## 2. hearing.json を作成
+## 2. テンプレートをコピー
 
-以下の内容をそのまま保存してください（整合性チェック用の生データ）：
+\`\`\`bash
+cp -r /mnt/c/sing-hp-template/* {{companyNameEn}}/
+\`\`\`
+
+※ /mnt/c/sing-hp-template/ が存在しない場合は、先にテンプレートをクローンしてください：
+\`\`\`bash
+gh repo clone anthropics/sing-hp-template /mnt/c/sing-hp-template
+\`\`\`
+
+## 3. hearing.json を作成
+
+\`{{companyNameEn}}/data/hearing.json\` に以下を保存：
 
 {{json}}
 
-## 3. composition.md を作成
+## 4. composition.md を作成
 
-以下の構成案全文をそのまま保存してください：
+\`{{companyNameEn}}/data/composition.md\` に以下を保存：
 
 {{composition}}
 
-## 4. HANDOFF.md を作成
+## 5. HANDOFF.md を作成
 
-以下の内容でHANDOFFを作成してください：
+\`{{companyNameEn}}/HANDOFF.md\` に以下を保存：
 
 ---
 
@@ -643,89 +731,140 @@ const HP_CLAUDE_CODE_PROMPT_TEMPLATE = `# HP制作セットアップ指示書
 | 項目 | 内容 |
 |------|------|
 | 企業名 | {{companyName}} |
+| 企業名（英語） | {{companyNameEn}} |
 | 使用テンプレート | {{templateType}} |
-| テンプレートリポジトリ | /mnt/c/sing-hp-template/ |
 | 作成日 | {{date}} |
+
+## 企業基本情報
+
+| 項目 | 内容 |
+|------|------|
+| 代表者 | （hearing.jsonから抽出） |
+| 設立 | （hearing.jsonから抽出） |
+| 所在地 | （hearing.jsonから抽出） |
+| 電話番号 | （hearing.jsonから抽出） |
+| 事業内容 | （hearing.jsonから抽出） |
+
+## ロゴ
+
+| 項目 | 内容 |
+|------|------|
+| ファイル一覧 | （未定の場合は「未定」と記載） |
+| ヘッダー用 | ファイル名、サイズ（PC/SP） |
+| フッター用 | ファイル名、サイズ |
+| ファビコン用 | ファイル名 |
+| カラー | ロゴの色、反転が必要な場面 |
+
+## ブランドカラー
+
+| 項目 | コード | 用途 |
+|------|--------|------|
+| メインカラー | #XXXXXX | ヘッダー、見出し等 |
+| アクセントカラー | #XXXXXX | CTA、ボタン等 |
+| サブカラー | #XXXXXX | 背景、装飾等 |
+| テキスト（濃） | #333333 | 本文 |
+| テキスト（淡） | #666666 | 補足テキスト |
+
+## ヘッダー仕様
+
+| 項目 | PC | SP |
+|------|----|----|
+| ロゴ位置 | 左 | 左 |
+| ナビ構成 | 横並び | ハンバーガー |
+| 背景 | 白/透明 | 白 |
+| スクロール時 | 固定/変化 | 固定 |
+
+## フッター仕様
+
+| 項目 | 内容 |
+|------|------|
+| レイアウト | 3カラム等 |
+| 背景色 | #XXXXXX |
+| PC | 横並び配置 |
+| SP | 縦並び配置 |
+
+## ページ別セクション構成
+
+### TOPページ
+| セクション | 背景色 |
+|-----------|--------|
+| ヒーロー | 画像 |
+| ... | ... |
+| CTA | メインカラー |
+
+（他ページも同様に記載）
+
+## 素材ファイル
+
+| 項目 | 内容 |
+|------|------|
+| 画像ディレクトリ | public/images/ |
+| 画像一覧 | （ファイル名と用途） |
+| 未撮影/未生成 | （必要だが未準備の素材） |
 
 ## 技術スタック
 
-- Next.js 16.1.6（App Router）
-- React 19.2.3
+- Next.js 16.x（App Router）
+- React 19.x
 - TypeScript 5.x
 - Tailwind CSS 4.x
 - Framer Motion 12.x
-- Recharts 3.x（グラフ）
-- Lucide React（アイコン）
 
-## 開発環境の注意点
+## 開発環境
 
-- WSL2環境ではTurbopackが動作しないため --webpack フラグを使用
-- npm run dev = next dev --webpack
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+
+※ WSL2環境では \`npm run dev\` が \`next dev --webpack\` を実行します（Turbopack非対応のため）
+
+## コーディングルール
+
+- **globals.cssの@themeブロック内のブランドカラーのみ変更する**
+  - \`--color-navy\` → メインカラーに変更
+  - \`--color-navy-dark\` → メインカラー（濃）に変更
+  - \`--color-accent\` → アクセントカラーに変更
+  - \`--color-accent-dark\` → アクセントカラー（濃）に変更
+  - ※変数名は変えない（ユーティリティクラスが参照しているため）
+- **それ以外のglobals.cssは編集しない**
+- **Tailwind CSSを使用** - スタイルはユーティリティクラスで記述
+- **コンポーネント単位で開発** - 各ページ・セクションはコンポーネント化
 
 ## 参照ファイル
 
 | ファイル | 用途 |
 |---------|------|
-| data/hearing.json | ヒアリング抽出JSON（整合性チェック用） |
+| data/hearing.json | ヒアリング抽出JSON |
 | data/composition.md | 構成案全文（実装の詳細仕様） |
-| /mnt/c/sing-hp-template/ | HPテンプレートリポジトリ |
-| /mnt/c/sing-hp-template/docs/HANDOFF.md | テンプレートの技術仕様 |
-| https://sing-hp-template.vercel.app/manual | 修正マニュアル（189件のケース） |
 
 ## 実装状況
-
-### ページ一覧
 
 | ページ | 状態 | 備考 |
 |--------|------|------|
 | TOP | 未着手 | |
-| 会社概要（About） | 未着手 | |
-| サービス（Service） | 未着手 | |
-| 採用情報（Recruit） | 未着手 | |
-| お問い合わせ（Contact） | 未着手 | |
-| お知らせ（News） | 未着手 | |
-| FAQ | 未着手 | |
-
-### 共通コンポーネント
-
-| コンポーネント | 状態 | 備考 |
-|---------------|------|------|
-| Header | 未着手 | |
-| Footer | 未着手 | |
-| CTAセクション | 未着手 | |
+| 会社概要 | 未着手 | |
+| サービス | 未着手 | |
+| 採用情報 | 未着手 | |
+| お問い合わせ | 未着手 | |
 
 ## 次にやること
 
-1. テンプレートリポジトリをコピーしてプロジェクト初期化
-2. data/composition.md を読んで全体像を把握
-3. TOPページから実装開始
-4. 実装中は data/hearing.json と照合して整合性を確認
-
-## 作業開始コマンド
-
-このディレクトリでClaude Codeを起動し、以下を実行：
-
-HANDOFFを読んで指示に従って作業を開始してください
+1. data/composition.md を読んで全体像を把握
+2. TOPページから実装開始
+3. 実装中は data/hearing.json と照合して整合性を確認
 
 ---
 
-## 5. 完了メッセージ
+## 6. 依存関係インストール
 
-セットアップ完了後、以下のメッセージを出力してください：
+\`\`\`bash
+cd {{companyNameEn}} && npm install
+\`\`\`
 
----
+## 7. 完了確認
 
-セットアップが完了しました。
-
-次のセッションで以下のコマンドを実行してください：
-
-cd /mnt/c/hp-projects/{{companyName}}
-claude
-
-Claude Codeが起動したら：
-「HANDOFFを読んで指示に従って作業を開始してください」
-
----`;
+セットアップ完了後、ディレクトリ構造を出力して確認してください。`;
 
 // ===== プロンプトシートからテンプレート取得 =====
 /**
@@ -878,6 +1017,13 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     <p style="margin:8px 0 0 0;color:#d32f2f;font-weight:bold;">⚠️ サーバー情報（Part③）は含まれません</p>
   </div>
 
+  <!-- Claude Code用: 起動場所の案内 -->
+  <div class="info-box" id="claudeCodeInfo" style="display:none; background:#e8f5e9; border-color:#81c784;">
+    <h4 style="color:#2e7d32;">📍 Claude Code 起動場所</h4>
+    <p style="margin:0;"><code style="background:#c8e6c9;padding:2px 6px;border-radius:4px;">client_hp/</code> でClaude Codeを起動してください</p>
+    <p style="margin:8px 0 0 0;font-size:12px;color:#555;">※WSL環境の場合: <code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;">/mnt/c/client_hp/</code></p>
+  </div>
+
   <!-- 企業選択 -->
   <div class="input-section">
     <span class="input-label">対象企業を選択</span>
@@ -892,7 +1038,7 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
   <!-- Claude Code用チェックボックス -->
   <div class="input-section" style="margin-top: 12px;">
     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-      <input type="checkbox" id="claudeCodeCheck" style="width: 18px; height: 18px; cursor: pointer;">
+      <input type="checkbox" id="claudeCodeCheck" style="width: 18px; height: 18px; cursor: pointer;" onchange="toggleClaudeCodeInfo()">
       <span style="font-size: 14px; font-weight: 500;">🤖 Claude Codeで実行する（ファイル保存指示を追加）</span>
     </label>
     <div class="note" style="margin-top: 4px; margin-left: 26px;">チェックすると、出力先ディレクトリとファイル分割の指示がプロンプト末尾に追加されます</div>
@@ -952,6 +1098,11 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
         if (i + 1 < step) el.className = 'step done';
         else if (i + 1 === step) el.className = 'step active';
       });
+    }
+
+    function toggleClaudeCodeInfo() {
+      const isChecked = document.getElementById('claudeCodeCheck').checked;
+      document.getElementById('claudeCodeInfo').style.display = isChecked ? 'block' : 'none';
     }
 
     function generatePrompt() {
@@ -1254,6 +1405,13 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
     <p style="margin:0;">外部AIで作成した構成案と、ヒアリングシートの内容を組み合わせて、Claude Code用のHP作成指示文を生成します。</p>
   </div>
 
+  <!-- 起動場所の案内 -->
+  <div class="info-box" style="background:#e8f5e9; border-color:#81c784;">
+    <h4 style="color:#2e7d32;">📍 Claude Code 起動場所</h4>
+    <p style="margin:0;"><code style="background:#c8e6c9;padding:2px 6px;border-radius:4px;">client_hp/</code> でClaude Codeを起動してください</p>
+    <p style="margin:8px 0 0 0;font-size:12px;color:#555;">※WSL環境の場合: <code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;">/mnt/c/client_hp/</code></p>
+  </div>
+
   <!-- 企業選択 -->
   <div class="input-section">
     <span class="input-label">対象企業を選択</span>
@@ -1406,6 +1564,16 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
         .hp_extractJsonData(selectedSheetName);
     }
 
+    // 企業名を英語表記に変換（簡易版）
+    function toEnglishName(name) {
+      // 既に英語の場合はそのまま
+      if (/^[a-zA-Z0-9\\-_\\s]+$/.test(name)) {
+        return name.toLowerCase().replace(/\\s+/g, '-');
+      }
+      // 日本語の場合は {{要入力}} として出力
+      return '{{' + name + 'の英語表記を入力}}';
+    }
+
     function handleJsonResult(result, composition) {
       document.getElementById('generateBtn').disabled = false;
 
@@ -1428,12 +1596,16 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
         String(today.getMonth() + 1).padStart(2, '0') + '-' +
         String(today.getDate()).padStart(2, '0');
 
+      // 企業名を英語表記に変換
+      const companyNameEn = toEnglishName(result.companyName);
+
       currentInstruction = template
         .replaceAll('{{companyName}}', result.companyName)
+        .replaceAll('{{companyNameEn}}', companyNameEn)
         .replaceAll('{{templateType}}', templateName)
         .replace('{{json}}', jsonStr)
         .replace('{{composition}}', composition)
-        .replace('{{date}}', dateStr);
+        .replaceAll('{{date}}', dateStr);
 
       document.getElementById('promptOutput').textContent = currentInstruction;
       document.getElementById('copyBtn').disabled = false;
@@ -1449,6 +1621,10 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
       }
       copyToClipboard(currentInstruction);
       updateStep(4);
+
+      // 次ステップの案内を表示
+      const companyNameEn = toEnglishName(selectedCompanyName);
+      showStatus('✅ コピーしました！ → Claude Codeに貼り付けてください', 'success');
     }
 
     function handleError(error) {

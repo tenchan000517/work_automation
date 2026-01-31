@@ -31,6 +31,7 @@ HP制作のフローをツナゲルと同じ設計思想で整備する。
 - **STEP 5完了** - 構成案プロンプトにClaude Code用出力指示追加（チェックボックス、HANDOFF生成、wireframe保存）
 - **Claude Code使い方マニュアル作成** - `docs/manuals/hp/99-Claude Code使い方.md`（起動方法4パターン、モード説明、トラブルシューティング、紹介動画）
 - **GitHubテンプレートリポジトリ設定** - sing-hp-templateをTemplate Repositoryに設定
+- **Claude Code指示文フロー改善** - ユーザー向け/Claude Code向け指示を分離、起動場所案内をダイアログに追加、globals.css編集禁止ルール追加、テンプレートクローン指示を明確化
 
 #### ✅ HP制作GAS（全て完了）
 
@@ -418,6 +419,7 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-31 | HP制作: Claude Code指示文フロー改善 - ユーザー向け/Claude Code向け指示を分離、ダイアログに起動場所案内追加（client_hp/ + WSL注意書き）、globals.css編集禁止ルール追加、テンプレートクローン指示を明確化（cp -r方式） |
 | 2026-01-31 | HP制作: STEP 5完了（構成案プロンプトにClaude Code用出力指示追加）、Claude Code使い方マニュアル作成（99-Claude Code使い方.md）、GitHubテンプレートリポジトリ設定完了。次タスク: 実装テスト + テンプレート選択問題の検討 |
 | 2026-01-31 | HP制作: 中部建設の構成案作成完了 → 次タスクとして「Claude Code用出力指示追加」をHANDOFFに記載。成功例を `/mnt/c/work-manual/chubu-kensetsu-hp/doc/wireframe/` に保存（9ファイル、128KB） |
 | 2026-01-31 | HP制作: マニュアル更新（04-JSON出力・原稿生成）- メニュー統合反映、テンプレート選択説明追加、セットアップ指示書説明、次世代セッション開始方法追記、技術スタック更新 |
