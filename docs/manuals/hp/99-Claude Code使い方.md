@@ -33,7 +33,7 @@ Claude CodeはAnthropicが提供するAIコーディングアシスタントで�
    claude
    ```
 
-   ![claude起動コマンド](/images/hp/claude-code/claude_command.png)
+   ![claude起動コマンド](/images/hp/claude-code/cd_and_claude.png)
 
 ---
 
@@ -76,6 +76,32 @@ Claude CodeはAnthropicが提供するAIコーディングアシスタントで�
    ![WSL接続](/images/hp/claude-code/wsl_connect.png)
 
 3. **以降は方法Bと同じ**
+
+---
+
+### 方法D: Git Bashから開く
+
+1. **client_hp フォルダを右クリック →「Git Bash Here」を選択**
+
+   ![Git Bash Here](/images/hp/claude-code/gitbash_here.png)
+
+2. **Git Bashで `claude` と入力してEnter**
+
+   ![Git Bashでclaude](/images/hp/claude-code/gitbash_claude.png)
+
+3. **Claude Codeが起動します**
+
+   ![Claude Code起動画面](/images/hp/claude-code/claude_welcome.png)
+
+---
+
+### 初回起動時の確認ダイアログ
+
+初めてのフォルダでClaude Codeを起動すると、信頼確認が表示されます。
+
+![信頼確認ダイアログ](/images/hp/claude-code/trust_dialog.png)
+
+**「1. Yes, proceed」を選択してEnter** で続行できます。
 
 ---
 
