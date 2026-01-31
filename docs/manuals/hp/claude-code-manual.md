@@ -94,7 +94,11 @@ Claude Codeが自動的に以下を実行します：
 
 ### STEP 3: 完了確認
 
-全てのファイルが作成されると、ディレクトリ構造が表示されます。
+全てのファイルが作成されると、以下のようなメッセージが表示されます。
+
+![完了画面](/images/hp/claude-code/complete_screen.png)
+
+「HANDOFF.mdに記載のテンプレートセットアップ手順に従い、実装を開始できます」と表示されれば完了です。
 
 ```
 chubu-kensetsu/
@@ -109,7 +113,31 @@ chubu-kensetsu/
 
 ---
 
-## 3. トラブルシューティング
+## 3. Claude Codeのモードについて
+
+画面下部にモード表示があります。`Shift+Tab` で切り替えられます。
+
+### accept edits on（編集許可モード）
+
+Claude Codeがファイルを編集できる状態です。通常はこのモードで使用します。
+
+![accept edits on](/images/hp/claude-code/mode_accept_edits.png)
+
+### plan mode on（計画モード）
+
+Claude Codeが計画を立てるだけで、実際の編集は行わない状態です。
+
+![plan mode on](/images/hp/claude-code/mode_plan.png)
+
+### ショートカット一覧
+
+`?` キーを押すとショートカット一覧が表示されます。
+
+![ショートカットヘルプ](/images/hp/claude-code/shortcuts_help.png)
+
+---
+
+## 4. トラブルシューティング
 
 ### Q: 「claude」コマンドが見つからない
 
@@ -160,7 +188,7 @@ npm install -g @anthropic-ai/claude-code
 
 ---
 
-## 4. 補足：ターミナルの基本操作
+## 5. 補足：ターミナルの基本操作
 
 | 操作 | コマンド |
 |------|---------|
