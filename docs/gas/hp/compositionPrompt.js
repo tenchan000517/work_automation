@@ -18,6 +18,98 @@
  * hearingSheetManager.jsと同じスプレッドシートに追加
  */
 
+// ===== Claude Code用出力指示テンプレート =====
+const HP_CLAUDE_CODE_OUTPUT_INSTRUCTION = `
+
+---
+
+# 【Claude Code用 出力指示】
+
+## 出力先ディレクトリ
+\`\`\`
+client_hp/{{companyNameEn}}/
+\`\`\`
+
+※ \`client_hp\` ディレクトリが見つからない場合は、カレントディレクトリの親階層を探索してください。なければ新規作成してください。
+
+## ファイル構成
+\`\`\`
+{{companyNameEn}}/
+├── HANDOFF.md                    # 進捗管理・引き継ぎ用（必ず最初に作成）
+└── doc/
+    └── wireframe/
+        ├── 00_overview.md        # PART1: サイト全体の戦略設計
+{{pageFiles}}
+        ├── {{commonPartsNum}}_common_parts.md    # ヘッダー・フッター
+        └── {{photoGuideNum}}_photo_guide.md      # 撮影指示書
+\`\`\`
+
+## 出力ルール
+
+1. **最初にHANDOFF.mdを作成**
+   以下の内容で作成してください：
+   \`\`\`markdown
+   # {{companyName}} HP制作 HANDOFF
+
+   ## プロジェクト情報
+
+   | 項目 | 内容 |
+   |------|------|
+   | 企業名 | {{companyName}} |
+   | ディレクトリ | client_hp/{{companyNameEn}}/ |
+   | 作成日 | {{date}} |
+   | テンプレート | sing-hp-template（GitHub Template Repository） |
+
+   ## 参照ファイル
+
+   | ファイル | 用途 |
+   |---------|------|
+   | doc/wireframe/*.md | 各ページの詳細設計 |
+   | doc/wireframe/00_overview.md | サイト全体の戦略設計 |
+
+   ## テンプレートのセットアップ
+
+   このプロジェクトディレクトリで以下を実行：
+   1. GitHubでsing-hp-templateから「Use this template」で新規リポジトリ作成
+   2. 作成したリポジトリをこのディレクトリにクローン
+   3. \`npm install\` で依存関係インストール
+   4. \`npm run dev\` で開発サーバー起動
+
+   ## 実装状況
+
+   | ページ | 状態 | 備考 |
+   |--------|------|------|
+   {{pageStatusTable}}
+   | 共通パーツ | 未着手 | ヘッダー・フッター |
+
+   ## 次にやること
+
+   1. HANDOFF.mdを読んで全体像を把握
+   2. doc/wireframe/00_overview.md でサイト戦略を確認
+   3. TOPページ（01_top.md）から実装開始
+   \`\`\`
+
+2. **次にワイヤーフレームをファイルごとに作成・保存**
+   - 一度に全て出力しない
+   - 1ファイル作成 → 保存 → 次のファイル
+
+3. **ファイル名の規則**
+   - 番号は2桁ゼロ埋め（01, 02, ...）
+   - ページ名は英語小文字（top, about, service, recruit, contact, news, faq）
+
+4. **各ファイルの冒頭にメタ情報**
+   \`\`\`markdown
+   # [ページ名] ページ詳細設計
+
+   > 企業名: {{companyName}}
+   > 作成日: {{date}}
+   > ファイル: XX_pagename.md
+   \`\`\`
+
+5. **完了後の確認**
+   - 全ファイル作成後、ディレクトリ構造を出力して確認
+`;
+
 // ===== 構成案プロンプトテンプレート（3人の専門家バージョン） =====
 const HP_COMPOSITION_PROMPT_TEMPLATE = `あなたは以下の3人の世界最高峰の専門家として、HP制作の完全な構成案を作成してください。
 
@@ -693,6 +785,12 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     .replace(/`/g, '\\`')
     .replace(/\$/g, '\\$');
 
+  // 出力指示テンプレートもエスケープ
+  const outputInstructionEscaped = HP_CLAUDE_CODE_OUTPUT_INSTRUCTION
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
+
   return `
 <!DOCTYPE html>
 <html>
@@ -785,6 +883,15 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     </div>
   </div>
 
+  <!-- Claude Code用チェックボックス -->
+  <div class="input-section" style="margin-top: 12px;">
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <input type="checkbox" id="claudeCodeCheck" style="width: 18px; height: 18px; cursor: pointer;">
+      <span style="font-size: 14px; font-weight: 500;">🤖 Claude Codeで実行する（ファイル保存指示を追加）</span>
+    </label>
+    <div class="note" style="margin-top: 4px; margin-left: 26px;">チェックすると、出力先ディレクトリとファイル分割の指示がプロンプト末尾に追加されます</div>
+  </div>
+
   <!-- プロンプト出力 -->
   <div class="output-header">
     <span class="input-label" style="margin-bottom:0;">生成されたプロンプト</span>
@@ -811,7 +918,9 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
   <script>
     const sheetData = ${sheetDataJson};
     const template = \`${templateEscaped}\`;
+    const outputInstruction = \`${outputInstructionEscaped}\`;
     let selectedSheetName = '';
+    let selectedCompanyName = '';
     let currentPrompt = '';
 
     window.onload = function() {
@@ -821,6 +930,7 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
         isActiveCompanySheet: sheetData.isActiveCompanySheet,
         onSelect: function(item, isActive) {
           selectedSheetName = item.sheetName;
+          selectedCompanyName = item.companyName;
           document.getElementById('generateBtn').disabled = false;
           document.getElementById('promptOutput').textContent = '（「プロンプト生成」をクリックしてください）';
           document.getElementById('copyBtn').disabled = true;
@@ -866,23 +976,99 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
 
       // 選択ページをフォーマット
       let pagesStr = '指定なし（全ページ）';
-      if (result.selectedPages && result.selectedPages.length > 0) {
-        pagesStr = result.selectedPages.map((p, i) => (i + 1) + '. ' + p).join('\\n');
+      const selectedPages = result.selectedPages || [];
+      if (selectedPages.length > 0) {
+        pagesStr = selectedPages.map((p, i) => (i + 1) + '. ' + p).join('\\n');
       }
 
       currentPrompt = template
         .replace('{{json}}', jsonStr)
         .replace('{{pages}}', pagesStr);
 
+      // Claude Code用チェックボックスがONの場合、出力指示を追加
+      const isClaudeCode = document.getElementById('claudeCodeCheck').checked;
+      if (isClaudeCode && selectedPages.length > 0) {
+        currentPrompt += buildOutputInstruction(result.companyName, selectedPages);
+      }
+
       document.getElementById('promptOutput').textContent = currentPrompt;
       document.getElementById('copyBtn').disabled = false;
       updateStep(2);
 
       // 選択ページの情報も表示
-      const pageInfo = result.selectedPages && result.selectedPages.length > 0
-        ? '（' + result.selectedPages.length + 'ページ）'
+      const pageInfo = selectedPages.length > 0
+        ? '（' + selectedPages.length + 'ページ）'
         : '（ページ未設定）';
-      showStatus('✅ プロンプト生成完了（' + result.companyName + pageInfo + '）', 'success');
+      const claudeCodeInfo = isClaudeCode ? ' + Claude Code出力指示' : '';
+      showStatus('✅ プロンプト生成完了（' + result.companyName + pageInfo + claudeCodeInfo + '）', 'success');
+    }
+
+    // 出力指示を構築
+    function buildOutputInstruction(companyName, selectedPages) {
+      // 企業名を英語表記に変換（簡易版：ひらがな・カタカナ・漢字をローマ字に変換は難しいので、入力を促す形にする）
+      const companyNameEn = toEnglishName(companyName);
+
+      // ページファイル一覧を生成
+      const pageNameMap = {
+        'TOP': 'top',
+        'About': 'about',
+        '会社概要': 'about',
+        'Service': 'service',
+        'サービス': 'service',
+        '事業内容': 'service',
+        'Recruit': 'recruit',
+        '採用情報': 'recruit',
+        '採用': 'recruit',
+        'Contact': 'contact',
+        'お問い合わせ': 'contact',
+        'News': 'news',
+        'お知らせ': 'news',
+        'FAQ': 'faq',
+        'よくある質問': 'faq',
+        'Works': 'works',
+        '実績': 'works',
+        'Blog': 'blog',
+        'ブログ': 'blog'
+      };
+
+      const pageFiles = selectedPages.map((page, i) => {
+        const num = String(i + 1).padStart(2, '0');
+        const pageName = pageNameMap[page] || page.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return '        ├── ' + num + '_' + pageName + '.md';
+      }).join('\\n');
+
+      // ページステータステーブルを生成
+      const pageStatusTable = selectedPages.map(page => {
+        return '| ' + page + ' | 未着手 | |';
+      }).join('\\n   ');
+
+      const commonPartsNum = String(selectedPages.length + 1).padStart(2, '0');
+      const photoGuideNum = String(selectedPages.length + 2).padStart(2, '0');
+
+      // 今日の日付
+      const today = new Date();
+      const dateStr = today.getFullYear() + '-' +
+        String(today.getMonth() + 1).padStart(2, '0') + '-' +
+        String(today.getDate()).padStart(2, '0');
+
+      return outputInstruction
+        .replace(/{{companyName}}/g, companyName)
+        .replace(/{{companyNameEn}}/g, companyNameEn)
+        .replace('{{pageFiles}}', pageFiles)
+        .replace('{{pageStatusTable}}', pageStatusTable)
+        .replace('{{commonPartsNum}}', commonPartsNum)
+        .replace('{{photoGuideNum}}', photoGuideNum)
+        .replace(/{{date}}/g, dateStr);
+    }
+
+    // 企業名を英語表記に変換（簡易版）
+    function toEnglishName(name) {
+      // 既に英語の場合はそのまま
+      if (/^[a-zA-Z0-9\\-_\\s]+$/.test(name)) {
+        return name.toLowerCase().replace(/\\s+/g, '-');
+      }
+      // 日本語の場合は {{要入力}} として出力
+      return '{{' + name + 'の英語表記を入力}}';
     }
 
     function copyPrompt() {
