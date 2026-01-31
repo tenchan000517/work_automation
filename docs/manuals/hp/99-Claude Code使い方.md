@@ -2,6 +2,11 @@
 
 HP制作で構成案プロンプトを実行する際に使用するClaude Codeの使い方を説明します。
 
+<video controls width="100%" style="max-width: 800px; margin: 20px 0;">
+  <source src="/images/hp/claude-code/intro-video.mp4" type="video/mp4">
+  お使いのブラウザは動画再生に対応していません。
+</video>
+
 ---
 
 ## Claude Codeとは
