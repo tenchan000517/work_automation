@@ -25,12 +25,21 @@ const HP_CLAUDE_CODE_OUTPUT_INSTRUCTION = `
 
 # 【Claude Code用 出力指示】
 
+## 0. 作業環境の確認（最初に実行）
+
+1. カレントディレクトリを確認: \`pwd\`
+2. \`client_hp\` ディレクトリを探す:
+   - カレントディレクトリに \`client_hp/\` があればそこを使用
+   - なければ親ディレクトリを確認（例: Cドライブ直下、ホームディレクトリ等）
+   - 見つからなければカレントディレクトリに \`client_hp/\` を新規作成
+3. 以降の作業は \`client_hp/\` 内で行う
+
+※ Windows環境とWSL環境で実行される可能性があります。環境に応じたパスを使用してください。
+
 ## 出力先ディレクトリ
 \`\`\`
 client_hp/{{companyNameEn}}/
 \`\`\`
-
-※ \`client_hp\` ディレクトリが見つからない場合は、カレントディレクトリの親階層を探索してください。なければ新規作成してください。
 
 ## ファイル構成
 \`\`\`
@@ -785,11 +794,8 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     .replace(/`/g, '\\`')
     .replace(/\$/g, '\\$');
 
-  // 出力指示テンプレートもエスケープ
-  const outputInstructionEscaped = HP_CLAUDE_CODE_OUTPUT_INSTRUCTION
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\$/g, '\\$');
+  // 出力指示テンプレートはJSON.stringifyでエスケープ（バッククォート対策）
+  const outputInstructionJson = JSON.stringify(HP_CLAUDE_CODE_OUTPUT_INSTRUCTION);
 
   return `
 <!DOCTYPE html>
@@ -918,7 +924,7 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
   <script>
     const sheetData = ${sheetDataJson};
     const template = \`${templateEscaped}\`;
-    const outputInstruction = \`${outputInstructionEscaped}\`;
+    const outputInstruction = ${outputInstructionJson};
     let selectedSheetName = '';
     let selectedCompanyName = '';
     let currentPrompt = '';
