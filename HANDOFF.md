@@ -6,7 +6,7 @@
 
 HP制作のフローをツナゲルと同じ設計思想で整備する。
 
-**現在のステータス:** hp.tsのflowSteps詳細化 ★今ここ
+**現在のステータス:** 実装テスト + テンプレート選択問題の検討 ★今ここ
 
 ---
 
@@ -28,6 +28,9 @@ HP制作のフローをツナゲルと同じ設計思想で整備する。
 - **構成案プロンプト大幅改善** - 3人の専門家プロンプト、反AIデザイン哲学、選択ページ連携
 - **メニュー統合（2回目）** - 「4.JSON出力」と「5.構成案作成」を統合（メニュー5→4個に）
 - **Claude Code指示文大幅改善** - 実装指示→セットアップ指示に変更、HANDOFF生成方式
+- **STEP 5完了** - 構成案プロンプトにClaude Code用出力指示追加（チェックボックス、HANDOFF生成、wireframe保存）
+- **Claude Code使い方マニュアル作成** - `docs/manuals/hp/99-Claude Code使い方.md`（起動方法4パターン、モード説明、トラブルシューティング、紹介動画）
+- **GitHubテンプレートリポジトリ設定** - sing-hp-templateをTemplate Repositoryに設定
 
 #### ✅ HP制作GAS（全て完了）
 
@@ -91,68 +94,56 @@ Claude Code指示文の変更に合わせてマニュアルを更新。
 - 技術スタックを最新版に更新（Next.js 16.1.6等）
 - トラブルシューティング追加（セットアップ・次世代セッション関連）
 
-##### STEP 5: 構成案プロンプトにClaude Code用出力指示を追加 ★今ここ
+##### ~~STEP 5: 構成案プロンプトにClaude Code用出力指示を追加~~ ✅完了
 
-**背景:**
-構成案プロンプトを使って中部建設の構成案を作成したが、現状のプロンプトには「どこに」「どう保存するか」の指示がない。そのため：
-- コンソールに全出力しようとしてトークンオーバーする可能性
-- ファイル分割・保存をAIが適切に判断できない
+**実装内容:**
+- `HP_CLAUDE_CODE_OUTPUT_INSTRUCTION` テンプレート追加
+- ダイアログに「Claude Codeで実行する」チェックボックス追加
+- チェックON時: HANDOFF.md生成指示 + wireframe保存指示を追加
+- 出力先: `client_hp/{{companyNameEn}}/doc/wireframe/`
 
-**成功例（中部建設）:**
+**作成したマニュアル:**
+- `docs/manuals/hp/99-Claude Code使い方.md`
+- スクショ18枚、紹介動画1本（`public/images/hp/claude-code/`）
+
+##### STEP 6: 実装テスト ★今ここ
+
+構成案プロンプトのClaude Code実行オプションをテストする。
+
+**テスト内容:**
+1. 構成案プロンプト生成（「Claude Codeで実行する」チェックON）
+2. Claude Codeで実行
+3. 以下が正しく生成されるか確認:
+   - `client_hp/{{companyNameEn}}/HANDOFF.md`
+   - `client_hp/{{companyNameEn}}/doc/wireframe/*.md`
+
+##### STEP 7: テンプレート選択問題の検討
+
+**問題:**
+sing-hp-templateリポジトリ内に5つのテンプレートがあるが、選択UIがない。
+
 ```
-/mnt/c/work-manual/chubu-kensetsu-hp/doc/wireframe/
-├── README.md              # 概要・ファイル構成
-├── 00_overview.md         # PART1: サイト全体の戦略設計
-├── 01_top.md              # TOPページ詳細
-├── 02_about.md            # Aboutページ詳細
-├── ...（ページ数分）
-├── 07_common_parts.md     # ヘッダー・フッター
-└── 08_photo_guide.md      # 撮影指示書
+templates/
+├── data-driven
+├── qa-type
+├── simple
+├── story-type
+└── visual
 ```
 
-**実装方針:**
+**検討事項:**
+1. テンプレート選択はどのタイミングで行う？
+2. テンプレートの説明・特徴はどこで管理？
+3. 選択基準は？（企業の業種？予算？好み？）
 
-1. **出力指示の追記テンプレートを作成**
-   - `HP_COMPOSITION_PROMPT_TEMPLATE` はそのまま維持
-   - Claude Code用に使う場合、追記部分（出力先・ファイル分割指示）を末尾に追加
+**影響範囲:**
+- リポジトリ（sing-hp-template）更新 → 新規プロジェクトには自動反映
+- work-manual側:
+  - `compositionPrompt.js` - テンプレート選択UIを追加する場合
+  - `hp.ts` relatedLinks - テンプレートURLが変わる場合
+  - マニュアル類 - 手順・説明が変わる場合
 
-2. **ダイアログでの選択方式**
-   - 「構成案プロンプト生成」ダイアログに選択肢を追加:
-     - [ ] Claude Codeで実行する（ファイル保存指示を追加）
-   - チェックON時: プロンプト末尾に出力指示を追加
-
-3. **出力指示テンプレートの内容**
-   ```markdown
-   ## 【出力方法】
-
-   以下のディレクトリ構造で保存してください：
-
-   /mnt/c/work-manual/{{companyName}}-hp/doc/wireframe/
-   ├── README.md
-   ├── 00_overview.md         # PART1: サイト全体の戦略設計
-   ├── 01_[ページ名].md       # 各ページ詳細（選択ページ分）
-   ├── ...
-   ├── [N]_common_parts.md    # ヘッダー・フッター
-   └── [N+1]_photo_guide.md   # 撮影指示書
-
-   ※ 一度に全て出力せず、ファイルごとに作成・保存すること
-   ※ ページファイルは選択ページに応じて動的に生成
-   ```
-
-4. **注意点**
-   - ページ詳細のファイル名は固定値ではなく、選択ページから動的に生成
-   - 例: 選択ページが「TOP, About, Service」なら → `01_top.md`, `02_about.md`, `03_service.md`
-
-**対象ファイル:**
-- `docs/gas/hp/compositionPrompt.js`
-  - `HP_CLAUDE_CODE_OUTPUT_INSTRUCTION` 追加（出力指示テンプレート）
-  - `hp_createCompositionPromptDialogHTML()` にチェックボックス追加
-  - チェックON時に出力指示を末尾追加するロジック
-
-**参考:**
-- 成功例: `/mnt/c/work-manual/chubu-kensetsu-hp/doc/wireframe/` （全9ファイル、計128KB）
-
-##### STEP 6: hp.tsのflowSteps詳細化
+##### STEP 8: hp.tsのflowSteps詳細化
 ツナゲルのようにflowStepsに詳細情報を追加。
 - `summary`: ステップの概要
 - `description`: 詳細な手順説明
@@ -427,6 +418,7 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-31 | HP制作: STEP 5完了（構成案プロンプトにClaude Code用出力指示追加）、Claude Code使い方マニュアル作成（99-Claude Code使い方.md）、GitHubテンプレートリポジトリ設定完了。次タスク: 実装テスト + テンプレート選択問題の検討 |
 | 2026-01-31 | HP制作: 中部建設の構成案作成完了 → 次タスクとして「Claude Code用出力指示追加」をHANDOFFに記載。成功例を `/mnt/c/work-manual/chubu-kensetsu-hp/doc/wireframe/` に保存（9ファイル、128KB） |
 | 2026-01-31 | HP制作: マニュアル更新（04-JSON出力・原稿生成）- メニュー統合反映、テンプレート選択説明追加、セットアップ指示書説明、次世代セッション開始方法追記、技術スタック更新 |
 | 2026-01-31 | HP制作: Claude Code指示文大幅改善 - 「実装指示」→「セットアップ指示」に変更、ダイアログにテンプレート選択追加、企業ディレクトリ・HANDOFF生成方式に変更 |
