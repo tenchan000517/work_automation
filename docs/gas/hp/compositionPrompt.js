@@ -25,27 +25,40 @@ const HP_CLAUDE_CODE_OUTPUT_INSTRUCTION = `
 
 # 【Claude Code用 出力指示】
 
+**あなたはこの指示に従って、プロジェクトをセットアップし、ファイルを作成・保存してください。**
+
 ## 出力先ディレクトリ
 \`\`\`
-client_hp/{{companyNameEn}}/
+/mnt/c/client_hp/{{companyNameEn}}/
 \`\`\`
 
-## ファイル構成
+## 最終的なファイル構成
 \`\`\`
 {{companyNameEn}}/
-├── HANDOFF.md                    # 進捗管理・引き継ぎ用（必ず最初に作成）
-└── doc/
-    └── wireframe/
-        ├── 00_overview.md        # PART1: サイト全体の戦略設計
+├── HANDOFF.md                    # 進捗管理・引き継ぎ用
+├── doc/
+│   └── wireframe/
+│       ├── 00_overview.md        # PART1: サイト全体の戦略設計
 {{pageFiles}}
-        ├── {{commonPartsNum}}_common_parts.md    # ヘッダー・フッター
-        └── {{photoGuideNum}}_photo_guide.md      # 撮影指示書
+│       ├── {{commonPartsNum}}_common_parts.md    # ヘッダー・フッター
+│       └── {{photoGuideNum}}_photo_guide.md      # 撮影指示書
+├── public/images/                # 素材画像（後で配置）
+├── src/                          # Next.jsソースコード
+└── （その他テンプレートファイル）
 \`\`\`
 
-## 出力ルール
+## 作成手順
 
-1. **最初にHANDOFF.mdを作成**
-   以下の内容で作成してください：
+### STEP 1: 出力先ディレクトリを作成
+
+\`\`\`bash
+mkdir -p /mnt/c/client_hp/{{companyNameEn}}/doc/wireframe
+cd /mnt/c/client_hp/{{companyNameEn}}
+\`\`\`
+
+### STEP 2: HANDOFF.mdを作成
+
+以下の内容で HANDOFF.md を作成してください：
    \`\`\`markdown
    # {{companyName}} HP制作 HANDOFF
 
@@ -151,14 +164,6 @@ client_hp/{{companyNameEn}}/
    | doc/wireframe/*.md | 各ページの詳細設計 |
    | doc/wireframe/00_overview.md | サイト全体の戦略設計 |
 
-   ## テンプレートのセットアップ
-
-   このプロジェクトディレクトリで以下を実行：
-   1. GitHubでsing-hp-templateから「Use this template」で新規リポジトリ作成
-   2. 作成したリポジトリをこのディレクトリにクローン
-   3. \`npm install\` で依存関係インストール
-   4. \`npm run dev\` で開発サーバー起動
-   
    ## 実装状況
 
    | ページ | 状態 | 備考 |
@@ -166,32 +171,62 @@ client_hp/{{companyNameEn}}/
    {{pageStatusTable}}
    | 共通パーツ | 未着手 | ヘッダー・フッター |
 
-   ## 次にやること
+   ## 最初にやること（セットアップ）
 
-   1. HANDOFF.mdを読んで全体像を把握
-   2. doc/wireframe/00_overview.md でサイト戦略を確認
-   3. TOPページ（01_top.md）から実装開始
+   \`\`\`bash
+   # 1. テンプレートをクローン
+   cd /mnt/c/client_hp
+   gh repo clone tenchan000517/template-standard {{companyNameEn}}
+
+   # 2. docディレクトリがあれば移動
+   # （構成案プロンプトで先にdocを作成していた場合）
+   # cp -r {{companyNameEn}}_doc/doc {{companyNameEn}}/
+
+   # 3. 依存関係インストール
+   cd {{companyNameEn}}
+   npm install
+
+   # 4. 開発サーバー起動（WSL2環境）
+   npm run dev
    \`\`\`
 
-2. **次にワイヤーフレームをファイルごとに作成・保存**
-   - 一度に全て出力しない
-   - 1ファイル作成 → 保存 → 次のファイル
+   ## 次にやること（実装）
 
-3. **ファイル名の規則**
-   - 番号は2桁ゼロ埋め（01, 02, ...）
-   - ページ名は英語小文字（top, about, service, recruit, contact, news, faq）
-
-4. **各ファイルの冒頭にメタ情報**
-   \`\`\`markdown
-   # [ページ名] ページ詳細設計
-
-   > 企業名: {{companyName}}
-   > 作成日: {{date}}
-   > ファイル: XX_pagename.md
+   1. doc/wireframe/00_overview.md でサイト戦略を確認
+   2. TOPページ（01_top.md）から実装開始
    \`\`\`
 
-5. **完了後の確認**
-   - 全ファイル作成後、ディレクトリ構造を出力して確認
+### STEP 3: ワイヤーフレームをファイルごとに作成・保存
+
+- 一度に全て出力しない
+- 1ファイル作成 → 保存 → 次のファイル
+- **ファイル名の規則**: 番号は2桁ゼロ埋め（01, 02, ...）、ページ名は英語小文字
+
+### STEP 4: 各ファイルの冒頭にメタ情報を記載
+
+\`\`\`markdown
+# [ページ名] ページ詳細設計
+
+> 企業名: {{companyName}}
+> 作成日: {{date}}
+> ファイル: XX_pagename.md
+\`\`\`
+
+### STEP 5: 完了後の確認
+
+全ファイル作成後、ディレクトリ構造を出力して確認
+
+---
+
+## 実行順序
+
+1. STEP 1を実行（出力先ディレクトリ作成）
+2. **HANDOFF.md** を作成
+3. **doc/wireframe/00_overview.md** を作成
+4. **各ページのwireframe** を順番に作成
+5. **common_parts.md** と **photo_guide.md** を作成
+
+ファイル作成を開始してください。
 `;
 
 // ===== 構成案プロンプトテンプレート（3人の専門家バージョン） =====
@@ -668,12 +703,72 @@ function hp_extractCompositionData(sheetName) {
 }
 
 // ===== テンプレート一覧 =====
+// 各テンプレートは独立したリポジトリとして管理
+// nameJa: ダイアログ表示用の日本語名
 const HP_TEMPLATE_TYPES = [
-  { id: 'story-type', name: 'ストーリー型', pages: 7, description: '社員インタビュー重視、共感採用' },
-  { id: 'data-driven', name: 'データ訴求型', pages: 7, description: '数字・実績重視、グラフ活用' },
-  { id: 'visual', name: 'ビジュアル型', pages: 9, description: '写真・動画重視、没入感' },
-  { id: 'simple', name: 'シンプル型', pages: 1, description: 'ミニマルデザイン、1ページ完結' },
-  { id: 'qa-type', name: 'Q&A解決型', pages: 7, description: '不安解消、FAQ重視' }
+  {
+    id: 'standard',
+    name: 'Standard',
+    nameJa: '標準テンプレート',
+    pages: 6,
+    description: '企業HP標準テンプレート',
+    repo: 'tenchan000517/template-standard',
+    branch: 'master'
+  },
+  {
+    id: 'fullorder',
+    name: 'Full Order',
+    nameJa: 'フルオーダー',
+    pages: 0,
+    description: 'ページなし、完全カスタム',
+    repo: 'tenchan000517/template-fullorder',
+    branch: 'master'
+  },
+  {
+    id: 'recruit-magazine',
+    name: 'Recruit Magazine',
+    nameJa: '採用サイト（マガジン形式）',
+    pages: 7,
+    description: '採用サイト特化、読ませるエディトリアル',
+    repo: 'tenchan000517/template-recruit-magazine',
+    branch: 'master'
+  },
+  {
+    id: 'leadgen-minimal',
+    name: 'LeadGen Minimal',
+    nameJa: 'リード獲得型（ミニマル）',
+    pages: 4,
+    description: 'CV最短ルート設計、余白とタイポグラフィ',
+    repo: 'tenchan000517/template-leadgen-minimal',
+    branch: 'master'
+  },
+  {
+    id: 'leadgen-visual',
+    name: 'LeadGen Visual',
+    nameJa: '地域密着型（ビジュアル）',
+    pages: 5,
+    description: '地域商圏×SEO、写真・動画主役',
+    repo: 'tenchan000517/template-leadgen-visual',
+    branch: 'master'
+  },
+  {
+    id: 'trust-visual',
+    name: 'Trust Visual',
+    nameJa: '信頼構築型（ビジュアル）',
+    pages: 6,
+    description: '社会的証明の最大化、写真・動画主役',
+    repo: 'tenchan000517/template-trust-visual',
+    branch: 'master'
+  },
+  {
+    id: 'authority-minimal',
+    name: 'Authority Minimal',
+    nameJa: '権威性訴求（ミニマル）',
+    pages: 8,
+    description: '専門性・実績で説得、余白とタイポグラフィ',
+    repo: 'tenchan000517/template-authority-minimal',
+    branch: 'master'
+  }
 ];
 
 // ===== Claude Code指示文テンプレート =====
@@ -1356,11 +1451,11 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
     }
     .template-select-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
     .template-option {
-      padding: 10px 8px;
+      padding: 8px 6px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       cursor: pointer;
@@ -1378,9 +1473,10 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
     }
     .template-option .name {
       font-weight: bold;
-      font-size: 12px;
+      font-size: 11px;
       color: #333;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
+      line-height: 1.3;
     }
     .template-option .pages {
       font-size: 10px;
@@ -1468,11 +1564,13 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
     const sheetData = ${sheetDataJson};
     const template = \`${templateEscaped}\`;
     const templateTypes = [
-      { id: 'story-type', name: 'ストーリー型', pages: 7 },
-      { id: 'data-driven', name: 'データ訴求型', pages: 7 },
-      { id: 'visual', name: 'ビジュアル型', pages: 9 },
-      { id: 'simple', name: 'シンプル型', pages: 1 },
-      { id: 'qa-type', name: 'Q&A解決型', pages: 7 }
+      { id: 'standard', name: 'Standard', nameJa: '標準テンプレート', pages: 6, repo: 'tenchan000517/template-standard' },
+      { id: 'fullorder', name: 'Full Order', nameJa: 'フルオーダー', pages: 0, repo: 'tenchan000517/template-fullorder' },
+      { id: 'recruit-magazine', name: 'Recruit Magazine', nameJa: '採用サイト（マガジン形式）', pages: 7, repo: 'tenchan000517/template-recruit-magazine' },
+      { id: 'leadgen-minimal', name: 'LeadGen Minimal', nameJa: 'リード獲得型（ミニマル）', pages: 4, repo: 'tenchan000517/template-leadgen-minimal' },
+      { id: 'leadgen-visual', name: 'LeadGen Visual', nameJa: '地域密着型（ビジュアル）', pages: 5, repo: 'tenchan000517/template-leadgen-visual' },
+      { id: 'trust-visual', name: 'Trust Visual', nameJa: '信頼構築型（ビジュアル）', pages: 6, repo: 'tenchan000517/template-trust-visual' },
+      { id: 'authority-minimal', name: 'Authority Minimal', nameJa: '権威性訴求（ミニマル）', pages: 8, repo: 'tenchan000517/template-authority-minimal' }
     ];
     let selectedSheetName = '';
     let selectedCompanyName = '';
@@ -1499,8 +1597,9 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
       const grid = document.getElementById('templateSelectGrid');
       grid.innerHTML = templateTypes.map(t => \`
         <div class="template-option" data-id="\${t.id}" onclick="selectTemplate('\${t.id}')">
-          <div class="name">\${t.name}</div>
-          <div class="pages">\${t.pages}ページ</div>
+          <div class="name">\${t.nameJa}</div>
+          <div class="pages">\${t.pages > 0 ? t.pages + 'ページ' : 'カスタム'}</div>
+          <div class="repo" style="font-size:9px;color:#999;margin-top:2px;">\${t.id}</div>
         </div>
       \`).join('');
     }
@@ -1586,9 +1685,9 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
       jsonData = result.data;
       const jsonStr = JSON.stringify(result.data, null, 2);
 
-      // テンプレート名を取得
+      // テンプレート名を取得（日本語名を優先）
       const selectedTemplate = templateTypes.find(t => t.id === selectedTemplateType);
-      const templateName = selectedTemplate ? selectedTemplate.name : selectedTemplateType;
+      const templateName = selectedTemplate ? selectedTemplate.nameJa : selectedTemplateType;
 
       // 今日の日付を取得
       const today = new Date();
