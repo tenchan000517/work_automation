@@ -1,5 +1,22 @@
 import type { Product } from "./index";
-import { FB_REPORT_TEMPLATE } from "./common";
+import {
+  FB_REPORT_TEMPLATE,
+  // NOTTA関連（ツナゲルと共通）
+  NOTTA_START_IMAGES,
+  NOTTA_END_IMAGES,
+  NOTTA_PREP_IMAGES,
+  NOTTA_LAYOUT_IMAGE,
+  // GAS認証（共通）
+  GAS_AUTH_IMAGES,
+  // HP制作専用
+  HP_NO1_SHEET_IMAGES,
+  HP_NO1_FOLDER_IMAGES,
+  HP_TRANSCRIPT_IMAGES,
+  HP_TRANSFER_IMAGES,
+  HP_COMPOSITION_IMAGES,
+  HP_GAS_MENU_IMAGES,
+  HP_GIJIROKU_IMAGES,
+} from "./common";
 
 export const hp: Product = {
   id: "hp",
@@ -7,6 +24,7 @@ export const hp: Product = {
   taskCount: 11,
   description: "ヒアリング、AI原稿生成、Claude Code実装、運用",
   hasOverallFlow: true,
+  hasOverallManual: true,
   tasks: [
     // ==================== Phase 0: 受注・立ち上げ ====================
     {
@@ -42,11 +60,40 @@ export const hp: Product = {
       hasManual: true,
       issues: "",
       flowSteps: [
-        { label: "シート作成", summary: "ヒアリングシートを作成" },
-        { label: "フォルダ作成", summary: "素材用フォルダを作成" },
+        {
+          label: "シート作成",
+          summary: "ヒアリングシートを作成",
+          description: `【手順】
+1. フォーム回答があるか確認
+2. ヒアリングシートのメニュー「1.📋 HP制作」を開く
+3. 「🆕 新規ヒアリングシート作成」を選択
+4. フォーム回答から企業を選択（または手動入力）
+5. シート作成完了を確認`,
+          images: [...HP_NO1_SHEET_IMAGES, ...GAS_AUTH_IMAGES],
+          links: [
+            { label: "ヒアリングシート", type: "link", url: "https://docs.google.com/spreadsheets/d/1GO5fyOd-0lT_OMpLNw6rIZDRA6jrK4lzIAt-0tDxGvc/" }
+          ]
+        },
+        {
+          label: "フォルダ作成",
+          summary: "素材用フォルダを作成",
+          description: `【手順】
+1. メニュー「📂 企業フォルダ作成」を選択
+2. 作成するページを選択（トップ、会社概要、サービス等）
+3. 「作成」をクリック
+4. 作成されたフォルダを確認`,
+          images: HP_NO1_FOLDER_IMAGES,
+        },
         { label: "撮影日確認", summary: "撮影担当者の空き日程を確認" },
         { label: "リマインド", summary: "打ち合わせ参加者にリマインド送信" },
-        { label: "録画準備", summary: "NOTTAの録画設定を確認" },
+        {
+          label: "録画準備",
+          summary: "NOTTAの録画設定を確認",
+          images: NOTTA_PREP_IMAGES,
+          links: [
+            { label: "NOTTA", type: "link", url: "https://app.notta.ai/" }
+          ]
+        },
         { label: "ステータス更新", summary: "ステータスを更新して次の担当者へ" },
       ],
     },
@@ -63,10 +110,35 @@ export const hp: Product = {
       hasManual: true,
       issues: "",
       flowSteps: [
-        { label: "NOTTA起動", summary: "録画・文字起こしを開始" },
-        { label: "ヒアリング実施", summary: "ヒアリングシートに沿って情報収集" },
+        {
+          label: "NOTTA起動",
+          summary: "録画・文字起こしを開始",
+          description: `【NOTTA起動手順】
+1. NOTTAにログイン
+2. 「Web会議の文字起こし」をクリック
+3. GoogleカレンダーからMeet URLをコピー
+4. NOTTAにURLを貼り付け
+5. MeetでNotta Botの参加を承認`,
+          images: NOTTA_START_IMAGES,
+          links: [
+            { label: "NOTTA", type: "link", url: "https://app.notta.ai/" }
+          ]
+        },
+        {
+          label: "ヒアリング実施",
+          summary: "ヒアリングシートに沿って情報収集",
+          images: [NOTTA_LAYOUT_IMAGE],
+        },
         { label: "撮影日程確定", summary: "撮影日程を先方と調整" },
-        { label: "NOTTA終了", summary: "録画を終了し保存" },
+        {
+          label: "NOTTA終了",
+          summary: "録画を終了し保存",
+          description: `【終了手順】
+1. Meetを終了（自動でNOTTAも停止）
+2. AI文字起こし改善を待つ（約1分）
+3. テキストでダウンロード`,
+          images: NOTTA_END_IMAGES,
+        },
         { label: "ステータス更新", summary: "ステータスを更新して次の担当者へ" },
       ],
     },
@@ -83,8 +155,34 @@ export const hp: Product = {
       hasManual: true,
       issues: "",
       flowSteps: [
-        { label: "文字起こし確認", summary: "NOTTAの文字起こしを確認" },
-        { label: "GAS転記", summary: "GASでヒアリングシートに転記" },
+        {
+          label: "文字起こし確認",
+          summary: "NOTTAの文字起こしを確認",
+          links: [
+            { label: "NOTTA", type: "link", url: "https://app.notta.ai/" }
+          ]
+        },
+        {
+          label: "AI整理",
+          summary: "文字起こしをAIで整理",
+          description: `【手順】
+1. メニュー「2.📝 ヒアリング反映」を開く
+2. 「📋 文字起こしを整理（プロンプト生成）」を選択
+3. 文字起こしを貼り付け→完成版をコピー
+4. AIに貼り付けて実行
+5. JSON形式の出力を確認しコピー`,
+          images: HP_TRANSCRIPT_IMAGES,
+        },
+        {
+          label: "GAS転記",
+          summary: "AI出力をヒアリングシートに転記",
+          description: `【手順】
+1. メニュー「📥 AI出力を転記」を選択
+2. JSON貼り付け→解析して比較
+3. 内容確認→「チェック項目を転記」をクリック
+4. 転記結果を確認`,
+          images: HP_TRANSFER_IMAGES,
+        },
         { label: "内容確認", summary: "転記内容を確認・修正" },
         { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
       ],
@@ -102,8 +200,35 @@ export const hp: Product = {
       hasManual: true,
       issues: "",
       flowSteps: [
-        { label: "JSON出力", summary: "ヒアリングシートの内容をJSONで出力" },
-        { label: "AIプロンプト実行", summary: "JSON＋プロンプトでAIに原稿生成" },
+        {
+          label: "JSON出力",
+          summary: "ヒアリングシートの内容をJSONで出力",
+          description: `【手順】
+1. メニュー「4.📝 構成案作成」を開く
+2. 「📤 HP制作用JSON出力」を選択
+3. JSON形式で出力される（自動でPart④に保存）`,
+          images: [HP_COMPOSITION_IMAGES[0], HP_COMPOSITION_IMAGES[1]],
+        },
+        {
+          label: "構成案プロンプト",
+          summary: "テンプレートを選択して構成案プロンプトを生成",
+          description: `【手順】
+1. 「📋 構成案プロンプト生成」を選択
+2. テンプレートを選択（Standard / Recruit Magazine / LeadGen等）
+3. 「Claude Codeで実行する」にチェック
+4. プロンプトをコピーしてAI（Claude）に貼り付け`,
+          images: [HP_COMPOSITION_IMAGES[2]],
+        },
+        {
+          label: "Claude Code指示文",
+          summary: "Claude Code用の指示文を生成",
+          description: `【手順】
+1. 「🤖 Claude Code指示文生成」を選択
+2. テンプレートを選択
+3. 指示文をコピー
+4. Claude Codeを起動して貼り付け`,
+          images: [HP_COMPOSITION_IMAGES[3]],
+        },
         { label: "原稿確認", summary: "生成された原稿を確認・修正" },
         { label: "ステータス更新", summary: "ステータスを更新して次の工程へ" },
       ],

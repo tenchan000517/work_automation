@@ -361,7 +361,7 @@ function hp_getCompanySheetListForPrompt(saveKey, inputKey) {
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
     if (!hp_isExcludedSheet(sheetName)) {
-      const companyName = String(sheet.getRange(6, 2).getValue() || '').trim();
+      const companyName = String(sheet.getRange(5, 2).getValue() || '').trim();
 
       // Part④から保存済みデータを取得
       let savedData = '';

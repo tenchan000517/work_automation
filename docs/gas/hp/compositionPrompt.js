@@ -173,27 +173,35 @@ cd /mnt/c/client_hp/{{companyNameEn}}
 
    ## 最初にやること（セットアップ）
 
+   **※すでにdocフォルダとHANDOFF.mdが存在する場合（構成案プロンプトで作成済み）:**
+
    \`\`\`bash
-   # 1. テンプレートをクローン
+   # 1. docフォルダとHANDOFFを一時退避
+   cd /mnt/c/client_hp/{{companyNameEn}}
+   mv doc ../{{companyNameEn}}_doc_backup
+   mv HANDOFF.md ../{{companyNameEn}}_HANDOFF_backup.md
+
+   # 2. 一度親ディレクトリに移動してディレクトリを削除
    cd /mnt/c/client_hp
+   rm -rf {{companyNameEn}}
+
+   # 3. テンプレートをクローン
    gh repo clone tenchan000517/template-standard {{companyNameEn}}
 
-   # 2. docディレクトリがあれば移動
-   # （構成案プロンプトで先にdocを作成していた場合）
-   # cp -r {{companyNameEn}}_doc/doc {{companyNameEn}}/
+   # 4. docフォルダとHANDOFFを戻す
+   mv {{companyNameEn}}_doc_backup {{companyNameEn}}/doc
+   mv {{companyNameEn}}_HANDOFF_backup.md {{companyNameEn}}/HANDOFF.md
 
-   # 3. 依存関係インストール
+   # 5. 依存関係インストール
    cd {{companyNameEn}}
    npm install
-
-   # 4. 開発サーバー起動（WSL2環境）
-   npm run dev
    \`\`\`
 
    ## 次にやること（実装）
 
    1. doc/wireframe/00_overview.md でサイト戦略を確認
    2. TOPページ（01_top.md）から実装開始
+   3. 各ページはdoc/wireframe/XX_pagename.mdを参照しながら実装
    \`\`\`
 
 ### STEP 3: ワイヤーフレームをファイルごとに作成・保存
@@ -1000,7 +1008,7 @@ function hp_getCompositionPromptTemplate() {
 function hp_getClaudeCodePromptTemplate() {
   // プロンプトシートからの取得は無効化（バッククォート等のエスケープ問題があるため）
   // 将来的にはプロンプトシートのテンプレートを安全にエスケープする処理を追加
-  return HP_CLAUDE_CODE_PROMPT_TEMPLATE;
+  return HP_CLAUDE_CODE_PROMPT_TEMPLATE_ORIGINAL;
 }
 
 // ===== メニュー追加（JSON出力と構成案作成を統合） =====
@@ -1248,7 +1256,7 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
 
       // Claude Code用チェックボックスがONの場合、出力指示を追加
       const isClaudeCode = document.getElementById('claudeCodeCheck').checked;
-      if (isClaudeCode && selectedPages.length > 0) {
+      if (isClaudeCode) {
         currentPrompt += buildOutputInstruction(result.companyName, selectedPages);
       }
 
@@ -1292,19 +1300,29 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
         'ブログ': 'blog'
       };
 
-      const pageFiles = selectedPages.map((page, i) => {
-        const num = String(i + 1).padStart(2, '0');
-        const pageName = pageNameMap[page] || page.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return '        ├── ' + num + '_' + pageName + '.md';
-      }).join('\\n');
+      // ページ未選択時のデフォルト
+      let pageFiles, pageStatusTable, commonPartsNum, photoGuideNum;
 
-      // ページステータステーブルを生成
-      const pageStatusTable = selectedPages.map(page => {
-        return '| ' + page + ' | 未着手 | |';
-      }).join('\\n   ');
+      if (selectedPages.length > 0) {
+        pageFiles = selectedPages.map((page, i) => {
+          const num = String(i + 1).padStart(2, '0');
+          const pageName = pageNameMap[page] || page.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return '│       ├── ' + num + '_' + pageName + '.md';
+        }).join('\\n');
 
-      const commonPartsNum = String(selectedPages.length + 1).padStart(2, '0');
-      const photoGuideNum = String(selectedPages.length + 2).padStart(2, '0');
+        pageStatusTable = selectedPages.map(page => {
+          return '| ' + page + ' | 未着手 | |';
+        }).join('\\n   ');
+
+        commonPartsNum = String(selectedPages.length + 1).padStart(2, '0');
+        photoGuideNum = String(selectedPages.length + 2).padStart(2, '0');
+      } else {
+        // ページ未選択時: 構成案に基づいて生成するよう指示
+        pageFiles = '│       ├── 01_top.md             # TOPページ\\n│       ├── 02_about.md           # 会社概要\\n│       ├── ...                   # （構成案のページ構成に従って作成）';
+        pageStatusTable = '| TOP | 未着手 | |\\n   | 会社概要 | 未着手 | |\\n   | ... | 未着手 | （構成案に従って追加） |';
+        commonPartsNum = 'XX';
+        photoGuideNum = 'XX';
+      }
 
       // 今日の日付
       const today = new Date();

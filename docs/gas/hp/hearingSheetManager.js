@@ -797,6 +797,44 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
     }
     .loading { display: none; margin-left: 10px; color: #1565C0; }
     .badge-folder { background: #4CAF50; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+    /* カスタムフォルダ */
+    .custom-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .custom-item input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .custom-item button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      background: #FFCDD2;
+      color: #C62828;
+    }
+
+    /* トースト */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #323232;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      display: none;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -814,7 +852,7 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
   </div>
 
   <!-- サブフォルダ作成（アコーディオン） -->
-  <div class="accordion-section">
+  <div class="accordion-section" id="mainForm">
     <div class="accordion-header" onclick="toggleAccordion()">
       <span class="accordion-arrow" id="accordionArrow">▶</span>
       <span class="accordion-title">📁 サブフォルダも一緒に作成する（オプション）</span>
@@ -826,6 +864,13 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
         決まっていない場合はスキップして、親フォルダのみ作成できます。
       </p>
       <div class="page-grid" id="pageGrid"></div>
+
+      <!-- カスタムフォルダ追加 -->
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;">
+        <p style="margin: 0 0 8px 0; color: #E65100; font-weight: bold; font-size: 13px;">➕ カスタムフォルダを追加</p>
+        <div id="customList"></div>
+        <button style="background: #1565C0; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px;" onclick="addCustomFolder()">＋ フォルダを追加</button>
+      </div>
     </div>
   </div>
 
@@ -836,7 +881,7 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
   </div>
 
   <!-- フッター -->
-  <div class="footer">
+  <div class="footer" id="footer">
     <button class="btn btn-primary" id="createBtn" onclick="createFolder()" disabled>
       📂 フォルダを作成
     </button>
@@ -846,12 +891,35 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
 
   <div class="status" id="status"></div>
 
+  <!-- 完了セクション（最初は非表示） -->
+  <div id="successSection" style="display: none;">
+    <div style="background: #E8F5E9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="color: #2E7D32; margin: 0 0 15px 0;">✅ 企業フォルダを作成しました</h3>
+      <p id="successCompanyName" style="font-weight: bold; margin: 0 0 10px 0;"></p>
+      <div style="background: white; padding: 12px; border-radius: 4px; word-break: break-all; font-size: 12px; color: #666; margin-bottom: 15px;">
+        <span id="successUrl"></span>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="openFolder()">🔗 フォルダを開く</button>
+        <button class="btn btn-green" onclick="copyUrl()">📋 URLをコピー</button>
+      </div>
+      <div id="subfoldersInfo" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #C8E6C9;"></div>
+    </div>
+    <div style="text-align: right;">
+      <button class="btn btn-gray" onclick="google.script.host.close()">閉じる</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">コピーしました</div>
+
   ${CI_UI_COMPONENTS}
 
   <script>
     const sheetList = ${sheetListJson};
     const pageOptions = ${pageOptionsJson};
     let selectedSheet = null;
+    let customFolders = [];
+    let createdFolderUrl = '';
 
     window.onload = function() {
       renderPageGrid();
@@ -863,6 +931,43 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
         selectCompany(activeItem);
       }
     };
+
+    // ===== カスタムフォルダ =====
+    function addCustomFolder() {
+      customFolders.push('');
+      renderCustomList();
+      updateSelectedCount();
+      updatePreview();
+    }
+
+    function removeCustomFolder(index) {
+      customFolders.splice(index, 1);
+      renderCustomList();
+      updateSelectedCount();
+      updatePreview();
+    }
+
+    function updateCustomFolder(index, value) {
+      customFolders[index] = value;
+      updatePreview();
+    }
+
+    function renderCustomList() {
+      const list = document.getElementById('customList');
+      list.innerHTML = '';
+
+      customFolders.forEach((folder, index) => {
+        const div = document.createElement('div');
+        div.className = 'custom-item';
+        div.innerHTML = \`
+          <input type="text" value="\${escapeHtml(folder)}"
+                 placeholder="フォルダ名を入力"
+                 oninput="updateCustomFolder(\${index}, this.value)">
+          <button onclick="removeCustomFolder(\${index})">×</button>
+        \`;
+        list.appendChild(div);
+      });
+    }
 
     // ===== アコーディオン =====
     function toggleAccordion() {
@@ -1018,10 +1123,17 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
 
     function getSelectedFolders() {
       const folders = [];
+      // 選択されたページ
       pageOptions.forEach(page => {
         const checkbox = document.getElementById('page_' + page.id);
         if (checkbox && checkbox.checked) {
           folders.push(page.name);
+        }
+      });
+      // カスタムフォルダ
+      customFolders.forEach(folder => {
+        if (folder.trim()) {
+          folders.push(folder.trim());
         }
       });
       return folders;
@@ -1075,17 +1187,54 @@ function hp_createCompanyFolderDialogHtml(sheetList) {
       document.getElementById('loading').style.display = 'none';
 
       if (result.success) {
-        showStatus('✅ 企業フォルダを作成しました！ URL: ' + result.folderUrl, 'success');
-        // 2秒後に閉じる
-        setTimeout(() => {
-          if (confirm('フォルダを開きますか？')) {
-            window.open(result.folderUrl, '_blank');
-          }
-          google.script.host.close();
-        }, 1500);
+        // フォーム部分を非表示、完了セクションを表示
+        document.querySelector('.input-section').style.display = 'none';
+        document.getElementById('mainForm').style.display = 'none';
+        document.querySelector('.preview-section').style.display = 'none';
+        document.getElementById('footer').style.display = 'none';
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('successSection').style.display = 'block';
+
+        // 完了情報を表示
+        const companyName = selectedSheet.officialName || selectedSheet.companyName || selectedSheet.sheetName;
+        document.getElementById('successCompanyName').textContent = '📁 ' + companyName;
+        document.getElementById('successUrl').textContent = result.folderUrl;
+        createdFolderUrl = result.folderUrl;
+
+        // サブフォルダ情報
+        const subfoldersInfo = document.getElementById('subfoldersInfo');
+        if (result.subfolders && result.subfolders.length > 0) {
+          let html = '<strong>作成したサブフォルダ:</strong><br>';
+          result.subfolders.forEach(name => {
+            html += '<span style="color: #2E7D32; margin-right: 10px;">✅ ' + escapeHtml(name) + '</span>';
+          });
+          subfoldersInfo.innerHTML = html;
+        } else {
+          subfoldersInfo.innerHTML = '<span style="color: #666;">（サブフォルダなし）</span>';
+        }
+
+        if (result.isExisting) {
+          document.querySelector('#successSection h3').textContent = '✅ 既存フォルダのURLを保存しました';
+        }
       } else {
         showStatus('❌ ' + result.error, 'error');
         document.getElementById('createBtn').disabled = false;
+      }
+    }
+
+    function openFolder() {
+      if (createdFolderUrl) {
+        window.open(createdFolderUrl, '_blank');
+      }
+    }
+
+    function copyUrl() {
+      if (createdFolderUrl) {
+        navigator.clipboard.writeText(createdFolderUrl).then(function() {
+          const toast = document.getElementById('toast');
+          toast.style.display = 'block';
+          setTimeout(function() { toast.style.display = 'none'; }, 2000);
+        });
       }
     }
 

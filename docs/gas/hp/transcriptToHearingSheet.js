@@ -269,7 +269,7 @@ function hp_getCompanySheetListWithNamesAndData() {
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
     if (!hp_isExcludedSheet(sheetName)) {
-      const companyName = String(sheet.getRange(6, 2).getValue() || '').trim();
+      const companyName = String(sheet.getRange(5, 2).getValue() || '').trim();
 
       // Part④から保存済みデータを取得
       let savedTranscript = '';
@@ -628,7 +628,7 @@ function hp_getCompanySheetListWithSavedJson() {
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
     if (!hp_isExcludedSheet(sheetName)) {
-      const companyName = String(sheet.getRange(6, 2).getValue() || '').trim();
+      const companyName = String(sheet.getRange(5, 2).getValue() || '').trim();
 
       let savedJson = '';
       try {
@@ -1043,7 +1043,7 @@ function hp_compareWithSelectedSheet(jsonData, targetSheetName) {
   }
 
   // シートの企業名を取得（行5, B列）
-  const sheetCompanyName = String(sheet.getRange(6, 2).getValue() || '').trim();
+  const sheetCompanyName = String(sheet.getRange(5, 2).getValue() || '').trim();
   const jsonCompanyName = String(jsonData.企業名 || '').trim();
 
   // 企業名チェック

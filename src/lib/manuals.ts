@@ -11,8 +11,85 @@ export interface ManualData {
 }
 
 /**
+ * Markdownファイル内の <!-- include: path/to/file.md --> を処理して
+ * 参照先ファイルの内容を埋め込む
+ *
+ * 構文: <!-- include: common/pre-meeting-flow.md -->
+ * パスは docs/manuals/ からの相対パス
+ *
+ * @param content Markdownコンテンツ
+ * @param maxDepth 最大ネスト深度（無限ループ防止）
+ * @param currentDepth 現在の深度
+ */
+function processIncludes(
+  content: string,
+  maxDepth: number = 5,
+  currentDepth: number = 0
+): string {
+  if (currentDepth >= maxDepth) {
+    console.warn("Include depth limit reached");
+    return content;
+  }
+
+  // <!-- include: path/to/file.md --> パターンを検索
+  const includePattern = /<!--\s*include:\s*([^\s]+)\s*-->/g;
+
+  return content.replace(includePattern, (match, includePath) => {
+    const filePath = path.join(manualsDirectory, includePath.trim());
+
+    if (!fs.existsSync(filePath)) {
+      console.warn(`Include file not found: ${filePath}`);
+      return `<!-- include error: file not found: ${includePath} -->`;
+    }
+
+    try {
+      const includedContent = fs.readFileSync(filePath, "utf-8");
+      // 再帰的にincludeを処理
+      return processIncludes(includedContent, maxDepth, currentDepth + 1);
+    } catch (error) {
+      console.error(`Error reading include file: ${filePath}`, error);
+      return `<!-- include error: ${includePath} -->`;
+    }
+  });
+}
+
+/**
+ * 指定された商材・ファイル名のマニュアルmdファイルを読み込む
+ * ファイル名形式: {fileName}.md (例: 00-overall-manual.md)
+ *
+ * <!-- include: path/to/file.md --> 構文をサポート
+ */
+export function getManual(
+  productId: string,
+  fileName: string
+): ManualData | null {
+  const productDir = path.join(manualsDirectory, productId);
+
+  if (!fs.existsSync(productDir)) {
+    return null;
+  }
+
+  const targetFile = fileName.endsWith(".md") ? fileName : `${fileName}.md`;
+  const filePath = path.join(productDir, targetFile);
+
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const rawContent = fs.readFileSync(filePath, "utf-8");
+  const content = processIncludes(rawContent);
+
+  return {
+    content,
+    fileName: targetFile,
+  };
+}
+
+/**
  * 指定された商材・タスク番号のマニュアルmdファイルを読み込む
  * ファイル名形式: {taskNo}-{name}.md (例: 00-受注・ワークス立ち上げ.md)
+ *
+ * <!-- include: path/to/file.md --> 構文をサポート
  */
 export function getManualByTaskNo(
   productId: string,
@@ -38,7 +115,8 @@ export function getManualByTaskNo(
 
   // mdファイルを読み込み
   const filePath = path.join(productDir, targetFile);
-  const content = fs.readFileSync(filePath, "utf-8");
+  const rawContent = fs.readFileSync(filePath, "utf-8");
+  const content = processIncludes(rawContent);
 
   return {
     content,
@@ -65,6 +143,8 @@ export function getAllManualsByProduct(productId: string): string[] {
 /**
  * 共通マニュアルを読み込む
  * ファイル配置: docs/manuals/common/{name}.md
+ *
+ * <!-- include: path/to/file.md --> 構文をサポート
  */
 export function getCommonManual(name: string): ManualData | null {
   const commonDir = path.join(manualsDirectory, "common");
@@ -80,7 +160,8 @@ export function getCommonManual(name: string): ManualData | null {
     return null;
   }
 
-  const content = fs.readFileSync(filePath, "utf-8");
+  const rawContent = fs.readFileSync(filePath, "utf-8");
+  const content = processIncludes(rawContent);
 
   return {
     content,

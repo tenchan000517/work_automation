@@ -3,3 +3,4 @@
 export * from './gas-auth';
 export * from './notta';
 export * from './works-reaction';
+export * from './hp-images';

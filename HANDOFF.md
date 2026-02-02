@@ -1,6 +1,6 @@
 # 業務効率化・マニュアル作成プロジェクト HANDOFF
 
-## 🎯 次世代セッションタスク（2026-02-02 更新）
+## 🎯 次世代セッションタスク（2026-02-03 更新）
 
 ### 次にやること
 
@@ -182,12 +182,13 @@ HP制作の全体マニュアルを作成し、スクショ付きで完成させ
 
 ### 📋 マニュアル検証進捗（共立工業）
 
-**現在のタスク:** No.4 JSON出力・原稿生成 > 構成案プロンプト生成
+**現在のタスク:** No.5 HP実装（共立工業）
 
 | タスク | ステップ | 状態 | 備考 |
 |--------|---------|------|------|
 | No.1 打ち合わせ前準備 | 全ステップ | ✅ 完了 | スクショ11枚取得 |
 | No.4 JSON出力・原稿生成 | 全ステップ | ✅ 完了 | スクショ4枚取得 |
+| No.5 HP実装 | STEP 4まで | 🔄 進行中 | コンテキスト限界対応をマニュアル追加、スクショ2枚取得 |
 | No.3 文字起こし・転記 | | ⬜ | テンプレート決定後に実施 |
 | No.6 素材撮影 | | ⬜ | 素材フォルダ作成のみ |
 
@@ -213,8 +214,25 @@ HP制作の全体マニュアルを作成し、スクショ付きで完成させ
 | 16 | e4f4f77a...png | step2-composition-prompt.png | No.4 STEP2 構成案プロンプト生成ダイアログ | ✅ 配置済み |
 | 17 | 07687ee8...png | step2-composition-ai.png | No.4 STEP2 外部AIでの構成案作成 | ✅ 配置済み |
 | 18 | e3a55890...png | step2-claude-code-dialog.png | No.4 STEP3 Claude Code指示文生成ダイアログ | ✅ 配置済み |
+| 19 | 7674979f...png | step0-clear.png | No.4 STEP4 /clear実行 | ✅ 配置済み |
+| 20 | c4fb8b37...png | step0-cd-claude.png | No.4 STEP4 cd→claude起動 | ✅ 配置済み |
+| 21 | 0e4d7274...png | step0-claude-welcome.png | No.4 STEP4 Claude Code Welcome画面 | ✅ 配置済み |
+| 22 | 7c6b6515...png | step1-setup-complete.png | No.5 STEP1 セットアップ完了 | ✅ 配置済み |
+| 23 | f05fd979...png | step1-next-steps.png | No.5 STEP1 次のステップ表示 | ✅ 配置済み |
+| 24 | 868eeef8...png | context-low-warning.png | No.5 コンテキスト限界警告 | ✅ 配置済み |
+| 25 | 328c2d4a...png | auto-setup-progress.png | No.5 自動セットアップの様子 | ✅ 配置済み |
+| 26 | 9a851aea...png | next-session-start.png | No.5 次世代セッション開始の例 | ✅ 配置済み |
+| 27 | 173ce2f2...png | build-example.png | No.5 STEP2 ビルド実行の例 | ✅ 配置済み |
+| 28 | 877069a9...png | handoff-phase-check.png | No.5 STEP3 HANDOFFフェーズ完了確認 | ✅ 配置済み |
+| 29 | f622f8d1...png | handoff-complete-report.png | No.5 STEP3 残作業の完了報告 | ✅ 配置済み |
+| 30 | bde5664b...png | npm-permission-error.png | No.5 STEP2 npmパーミッションエラー | ✅ 配置済み |
+| 31 | 92558ca0...png | rm-node-modules.png | No.5 STEP4 node_modules削除 | ✅ 配置済み |
+| 32 | ef0148ff...png | npm-install-success.png | No.5 STEP4 npm install成功 | ✅ 配置済み |
+| 33 | 4bd90814...png | npm-run-dev.png | No.5 STEP4 npm run dev実行 | ✅ 配置済み |
+| 34 | 936dfcdf...jpg | hp-preview-pc.jpg | No.5 STEP4 HPプレビュー（PC） | ✅ 配置済み |
+| 35 | 851473a4...jpg | hp-preview-responsive.jpg | No.5 STEP4 レスポンシブ確認 | ✅ 配置済み |
 
-**配置先:** `public/images/hp/no1/`、`public/images/hp/`（ステータス更新）、`public/images/hp/no4/`（構成案作成）
+**配置先:** `public/images/hp/no1/`、`public/images/hp/`（ステータス更新）、`public/images/hp/no4/`（構成案作成）、`public/images/hp/no5/`（HP実装）
 **マニュアル:** `docs/manuals/hp/00-overall-manual.md` No.1セクション
 
 ### 📝 気づいたことメモ（後で一括修正）
@@ -899,6 +917,8 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-02-03 | HP制作: **No.5 HP実装マニュアル構造整理**。(1) 自動フロー（HANDOFFから実装）をメインに変更、(2) 手動セットアップを最後のアコーディオンに移動、(3) 「前提条件」セクション追加（No.4からの継続状態を明示）、(4) コンテキスト限界時の対応セクション追加、(5) スクショ2枚追加（context-low-warning.png、auto-setup-progress.png） |
+| 2026-02-03 | HP制作: **構成案プロンプト→HP実装フロー整備完了**。(1) 構成案プロンプトのチェックボックスON時の出力指示を修正（ページ未選択でも動作）、(2) Claude Code指示文テンプレートを完全版に戻した、(3) HANDOFFテンプレート（GAS）のセットアップ手順修正（docフォルダ退避→クローン→戻す）、(4) 全体マニュアルNo.4-5のフロー整理・起動術式追加、(5) `99-Claude Code使い方.md`→`99-claude-code.md`にリネーム（includeのスペース問題対応）、(6) No.5にClaude Codeマニュアルのincludeアコーディオン追加、(7) No.4にスクショ2枚追加 |
 | 2026-02-02 | **ガイドラインV4作成完了**（`docs/manual-creation-guideline-v4.md`）。V3をベースに5〜9章を新規追加（GAS共通概念、マニュアル作成フロー、全体マニュアル設計、共通マニュアル管理、マニュアル検証フロー）。リファレンス・チェックリストを拡張。次タスク: マニュアル検証（共立工業サンプルで実証） |
 | 2026-02-02 | HP制作: **共通マニュアル3件作成完了**（`status-update.md`, `gijiroku.md`, `json-output.md`）。HP全体マニュアルにアコーディオン埋め込み完了（No.0ステータス更新、No.3議事録作成、No.4 JSON出力）。構成案プロンプト・Claude Code指示文はHP固有のため共通化しない。次タスク: マニュアル検証（共立工業サンプルで実証） |
 | 2026-02-02 | HP制作: **全体マニュアル作成完了**（`docs/manuals/hp/00-overall-manual.md`）。全11タスク + Claude Code使い方を1ファイルに統合。既存マニュアル（00〜10, 99）は個別参照用として残す。`getManual`関数追加（`src/lib/manuals.ts`）。次タスク: GASテスト（共立工業サンプルで実証） |

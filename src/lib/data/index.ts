@@ -174,6 +174,7 @@ export interface Product {
   tasks: Task[];
   issues: string[];
   hasOverallFlow?: boolean; // 商材レベルの全体フロー
+  hasOverallManual?: boolean; // 商材レベルの全体マニュアル（一連の統合マニュアル）
 }
 
 // 各商材データのインポート

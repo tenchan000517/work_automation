@@ -73,17 +73,29 @@ export function Sidebar({ product, isOpen, onToggle, isMobile = false }: Sidebar
           </button>
         </div>
 
-        {/* 全体フロー - ボタン形式 */}
-        {product.hasOverallFlow && (
-          <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
-            <a
-              href={`/products/${product.id}/overall-flow`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full px-4 py-2 text-sm font-medium text-center text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
-            >
-              全体フローを見る
-            </a>
+        {/* 全体フロー・全体マニュアル - ボタン形式 */}
+        {(product.hasOverallFlow || product.hasOverallManual) && (
+          <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 space-y-2">
+            {product.hasOverallFlow && (
+              <a
+                href={`/products/${product.id}/overall-flow`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2 text-sm font-medium text-center text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+              >
+                全体フローを見る
+              </a>
+            )}
+            {product.hasOverallManual && (
+              <a
+                href={`/products/${product.id}/overall-manual`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2 text-sm font-medium text-center text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors"
+              >
+                全体マニュアルを見る
+              </a>
+            )}
           </div>
         )}
 

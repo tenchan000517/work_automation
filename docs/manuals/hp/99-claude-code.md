@@ -219,6 +219,67 @@ npm install -g @anthropic-ai/claude-code
 
 ---
 
+### Q: 構成案を投げたのにファイルが保存されない
+
+**症状:** 「ファイルとして保存しますか？」「保存先やファイル形式の指定はありません」と聞かれる
+
+**解決策:** 以下をコピペして返答（★部分は自分で埋める）
+
+```
+はい。以下のフォルダ・ファイル構成で作成してください：
+
+★企業名（英語）★/
+├── HANDOFF.md
+└── doc/
+    └── wireframe/
+        ├── 00_overview.md
+        ├── ★構成案に含まれる各ページのmdファイル★
+        ├── XX_common_parts.md
+        └── XX_photo_guide.md
+
+上の構成案の内容をもとに、各ファイルを作成してください。
+```
+
+**例:** 三河精密工業の場合
+```
+mikawa-seimitsu/
+├── HANDOFF.md
+└── doc/
+    └── wireframe/
+        ├── 00_overview.md
+        ├── 01_top.md
+        ├── 02_about.md
+        ├── 03_service.md
+        ├── 04_contact.md
+        ├── 05_common_parts.md
+        └── 06_photo_guide.md
+```
+
+---
+
+### Q: ディレクトリを先に作ってしまった（テンプレートをクローンしていない）
+
+**症状:** Claude Codeがテンプレートからクローンせずに、先に`mkdir`でディレクトリを作ってドキュメントを保存してしまった
+
+**解決策:** ドキュメントを退避 → テンプレートクローン → ドキュメントを戻す
+
+```bash
+# 1. ドキュメントを一時退避
+mv /mnt/c/client_hp/{{企業名英語}} /mnt/c/client_hp/{{企業名英語}}_backup
+
+# 2. テンプレートからクローン
+cd /mnt/c/client_hp
+gh repo create {{企業名英語}} --template tenchan000517/sing-hp-template --clone --private
+
+# 3. ドキュメントを戻す
+cp -r /mnt/c/client_hp/{{企業名英語}}_backup/* /mnt/c/client_hp/{{企業名英語}}/
+
+# 4. バックアップ削除
+rm -rf /mnt/c/client_hp/{{企業名英語}}_backup
+```
+
+---
+
 ## 5. 補足：ターミナルの基本操作
 
 | 操作 | コマンド |
