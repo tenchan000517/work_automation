@@ -772,7 +772,8 @@ const HP_TEMPLATE_TYPES = [
 ];
 
 // ===== Claude Code指示文テンプレート =====
-const HP_CLAUDE_CODE_PROMPT_TEMPLATE = `# HP制作セットアップ指示書
+// テスト用に一時的に短いテンプレートを使用
+const HP_CLAUDE_CODE_PROMPT_TEMPLATE_ORIGINAL = `# HP制作セットアップ指示書
 
 ## 概要
 {{companyName}}のHP制作プロジェクトをセットアップしてください。
@@ -961,6 +962,20 @@ cd {{companyNameEn}} && npm install
 
 セットアップ完了後、ディレクトリ構造を出力して確認してください。`;
 
+// テスト用：短いテンプレート（問題切り分け用）
+const HP_CLAUDE_CODE_PROMPT_TEMPLATE = `# テスト指示文
+
+企業名: {{companyName}}
+テンプレート: {{templateType}}
+日付: {{date}}
+
+## JSON
+{{json}}
+
+## 構成案
+{{composition}}
+`;
+
 // ===== プロンプトシートからテンプレート取得 =====
 /**
  * 構成案プロンプトテンプレートを取得
@@ -980,17 +995,11 @@ function hp_getCompositionPromptTemplate() {
 
 /**
  * Claude Code指示文テンプレートを取得
- * プロンプトシートに「Claude Code指示文」があればそちらを使用、なければデフォルト
+ * ※プロンプトシートのテンプレートはエスケープ問題があるため、常にデフォルトを使用
  */
 function hp_getClaudeCodePromptTemplate() {
-  try {
-    const prompt = hp_getPromptByName('Claude Code指示文');
-    if (prompt && prompt.template) {
-      return prompt.template;
-    }
-  } catch (e) {
-    // プロンプトシートがない場合など
-  }
+  // プロンプトシートからの取得は無効化（バッククォート等のエスケープ問題があるため）
+  // 将来的にはプロンプトシートのテンプレートを安全にエスケープする処理を追加
   return HP_CLAUDE_CODE_PROMPT_TEMPLATE;
 }
 
@@ -1364,6 +1373,10 @@ function hp_showClaudeCodePromptDialog() {
  */
 function hp_createClaudeCodePromptDialogHTML(sheetData) {
   const sheetDataJson = JSON.stringify(sheetData);
+  // HTMLに埋め込むため、</script>やバッククォートをエスケープ
+  const templateTypesJson = JSON.stringify(HP_TEMPLATE_TYPES)
+    .replace(/<\/script>/gi, '<\\/script>')
+    .replace(/`/g, '\\`');
   // プロンプトシートから取得（なければデフォルト）
   const template = hp_getClaudeCodePromptTemplate();
   const templateEscaped = template
@@ -1522,7 +1535,12 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
   <!-- テンプレート選択 -->
   <div class="input-section">
     <span class="input-label">テンプレートを選択</span>
-    <div class="template-select-grid" id="templateSelectGrid"></div>
+    <div class="company-select-wrapper">
+      <div class="company-select-display" id="templateSelectDisplay" onclick="toggleTemplateDropdown()">
+        <span class="placeholder">テンプレートを選択してください</span>
+      </div>
+      <div class="company-select-dropdown" id="templateSelectDropdown"></div>
+    </div>
   </div>
 
   <!-- 構成案入力 -->
@@ -1563,15 +1581,7 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
   <script>
     const sheetData = ${sheetDataJson};
     const template = \`${templateEscaped}\`;
-    const templateTypes = [
-      { id: 'standard', name: 'Standard', nameJa: '標準テンプレート', pages: 6, repo: 'tenchan000517/template-standard' },
-      { id: 'fullorder', name: 'Full Order', nameJa: 'フルオーダー', pages: 0, repo: 'tenchan000517/template-fullorder' },
-      { id: 'recruit-magazine', name: 'Recruit Magazine', nameJa: '採用サイト（マガジン形式）', pages: 7, repo: 'tenchan000517/template-recruit-magazine' },
-      { id: 'leadgen-minimal', name: 'LeadGen Minimal', nameJa: 'リード獲得型（ミニマル）', pages: 4, repo: 'tenchan000517/template-leadgen-minimal' },
-      { id: 'leadgen-visual', name: 'LeadGen Visual', nameJa: '地域密着型（ビジュアル）', pages: 5, repo: 'tenchan000517/template-leadgen-visual' },
-      { id: 'trust-visual', name: 'Trust Visual', nameJa: '信頼構築型（ビジュアル）', pages: 6, repo: 'tenchan000517/template-trust-visual' },
-      { id: 'authority-minimal', name: 'Authority Minimal', nameJa: '権威性訴求（ミニマル）', pages: 8, repo: 'tenchan000517/template-authority-minimal' }
-    ];
+    const templateTypes = ${templateTypesJson};
     let selectedSheetName = '';
     let selectedCompanyName = '';
     let selectedTemplateType = '';
@@ -1579,36 +1589,77 @@ function hp_createClaudeCodePromptDialogHTML(sheetData) {
     let jsonData = null;
 
     window.onload = function() {
-      initCompanyDropdown({
-        sheets: sheetData.companySheets,
-        activeSheetName: sheetData.activeSheetName,
-        isActiveCompanySheet: sheetData.isActiveCompanySheet,
-        onSelect: function(item, isActive) {
-          selectedSheetName = item.sheetName;
-          selectedCompanyName = item.companyName;
-          jsonData = null;
-          checkInputs();
-        }
-      });
-      initTemplateSelect();
+      try {
+        initCompanyDropdown({
+          sheets: sheetData.companySheets,
+          activeSheetName: sheetData.activeSheetName,
+          isActiveCompanySheet: sheetData.isActiveCompanySheet,
+          onSelect: function(item, isActive) {
+            selectedSheetName = item.sheetName;
+            selectedCompanyName = item.companyName;
+            jsonData = null;
+            checkInputs();
+          }
+        });
+        console.log('initCompanyDropdown completed');
+      } catch (e) {
+        console.error('initCompanyDropdown error:', e);
+      }
+      try {
+        initTemplateSelect();
+        console.log('initTemplateSelect completed');
+      } catch (e) {
+        console.error('initTemplateSelect error:', e);
+      }
     };
 
     function initTemplateSelect() {
-      const grid = document.getElementById('templateSelectGrid');
-      grid.innerHTML = templateTypes.map(t => \`
-        <div class="template-option" data-id="\${t.id}" onclick="selectTemplate('\${t.id}')">
-          <div class="name">\${t.nameJa}</div>
-          <div class="pages">\${t.pages > 0 ? t.pages + 'ページ' : 'カスタム'}</div>
-          <div class="repo" style="font-size:9px;color:#999;margin-top:2px;">\${t.id}</div>
-        </div>
-      \`).join('');
+      const dropdown = document.getElementById('templateSelectDropdown');
+      dropdown.innerHTML = templateTypes.map(function(t) {
+        var pagesText = t.pages > 0 ? t.pages + 'ページ' : 'カスタム';
+        return '<div class="company-select-item" data-id="' + t.id + '" onclick="selectTemplate(\\'' + t.id + '\\')">' +
+          '<span class="check-icon"></span>' +
+          '<span class="company-name">' + t.nameJa + '</span>' +
+          '<span style="color:#888;font-size:12px;margin-left:8px;">' + pagesText + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    function toggleTemplateDropdown() {
+      var display = document.getElementById('templateSelectDisplay');
+      var dropdown = document.getElementById('templateSelectDropdown');
+      var isOpen = dropdown.classList.contains('show');
+      if (isOpen) {
+        dropdown.classList.remove('show');
+        display.classList.remove('active');
+      } else {
+        dropdown.classList.add('show');
+        display.classList.add('active');
+      }
     }
 
     function selectTemplate(id) {
       selectedTemplateType = id;
-      document.querySelectorAll('.template-option').forEach(el => {
-        el.classList.toggle('selected', el.dataset.id === id);
+      var selected = templateTypes.find(function(t) { return t.id === id; });
+      var display = document.getElementById('templateSelectDisplay');
+      var pagesText = selected.pages > 0 ? selected.pages + 'ページ' : 'カスタム';
+      display.innerHTML = '<span class="selected-check">✓</span>' +
+        '<span class="selected-name">' + selected.nameJa + '</span>' +
+        '<span style="color:#888;font-size:12px;margin-left:8px;">' + pagesText + '</span>';
+
+      // ドロップダウン内の選択状態を更新
+      document.querySelectorAll('#templateSelectDropdown .company-select-item').forEach(function(el) {
+        el.classList.remove('selected');
+        el.querySelector('.check-icon').textContent = '';
       });
+      document.querySelectorAll('#templateSelectDropdown .company-select-item').forEach(function(el) {
+        if (el.dataset.id === id) {
+          el.classList.add('selected');
+          el.querySelector('.check-icon').textContent = '✓';
+        }
+      });
+
+      toggleTemplateDropdown();
       checkInputs();
     }
 
