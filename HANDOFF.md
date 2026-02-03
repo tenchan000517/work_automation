@@ -1,683 +1,67 @@
 # 業務効率化・マニュアル作成プロジェクト HANDOFF
 
-## 🎯 次世代セッションタスク（2026-02-03 更新）
-
-### 次にやること
-
-**マニュアル検証（共立工業サンプルで実証）** - 下記「📖 統一マニュアル作成」セクション参照
-
----
-
-## ✅ 解決済み: Claude Code指示文ダイアログ（2026-02-02）
-
-### 問題
-
-**メニュー「4.📝 構成案作成」→「🤖 Claude Code指示文生成」ダイアログで、企業選択・テンプレート選択ができなかった**
-
-### 原因
-
-**プロンプトシートに登録されていた「Claude Code指示文」テンプレートに、バッククォート等の特殊文字が含まれていた。**
-
-`hp_getClaudeCodePromptTemplate()` がプロンプトシートからテンプレートを取得 → HTMLに埋め込み時にエスケープが不完全 → JavaScriptのパースエラー → スクリプト全体が実行されない → `toggleTemplateDropdown` 等の関数が未定義
-
-### 解決策
-
-1. プロンプトシートからのテンプレート取得を無効化（常にデフォルトを使用）
-2. テンプレート選択UIをグリッドからドロップダウンに変更
-3. `HP_TEMPLATE_TYPES` を `JSON.stringify` でクライアントに渡すように修正
-
-### 修正ファイル
-
-- `docs/gas/hp/compositionPrompt.js`
-
----
-
-## ✅ 完了: ガイドラインV4作成（2026-02-02）
-
-**成果物:** `docs/manual-creation-guideline-v4.md`
-
-**V4の構成（11章）:**
-1. 設計思想（V3ベース）
-2. 共通概念（V3ベース）
-3. ルール（V3ベース）
-4. 作り方（V3ベース）
-5. **GAS共通概念**（新規）- メニュー構成パターン、命名規則、商材固有vs共通の判断基準
-6. **マニュアル作成フロー**（新規）- パターンA（個別→統合）/パターンB（完全→切り取り）
-7. **全体マニュアル設計**（新規）- include機能、アコーディオン色パターン
-8. **共通マニュアル管理**（新規）- 配置先、一覧テーブル
-9. **マニュアル検証フロー**（新規）- スクショ管理、気づいたことメモ、段階的完成
-10. リファレンス（V3の5章を拡張）- HP制作構成追加、GASメニュー構成パターン追加
-11. チェックリスト（V3の6章を拡張）- 全体マニュアル・共通マニュアル・検証時のチェック項目追加
-
----
-
-## 📖 統一マニュアル（全体マニュアル）作成
-
-HP制作の全体マニュアルを作成し、スクショ付きで完成させる。
-
-### 全体マニュアル作成フロー
-
-```
-①既存マニュアルをコピーして統合 → ②スクショ撮りながら実証 → ③検証したものから完成 → ④全体マニュアル完成 → ⑤業務カードごとに分割（既存の状態に戻す）
-```
-
-**重要:** 既存マニュアル（00〜10, 99）は削除しない。全体マニュアルはこれらの「統合版」であり、各マニュアルは「切り抜き」として残る。
-
-### 実装済み（このセッション）
-
-- [x] Product型に`hasOverallManual`追加（`src/lib/data/index.ts`）
-- [x] hp.tsに`hasOverallManual: true`追加
-- [x] Sidebar.tsxに「全体マニュアルを見る」ボタン追加（緑色）
-- [x] 全体マニュアルページ作成（`/products/[id]/overall-manual/page.tsx`）
-- [x] 全体フロー作成（`docs/flows/hp/overall-flow.md`）
-- [x] Recruit Magazine用サンプル作成（共立工業）
-- [x] **全体マニュアル作成完了**（`docs/manuals/hp/00-overall-manual.md`）
-  - 全11タスク + Claude Code使い方を統合
-  - 既存マニュアル（00〜10, 99）は削除せず残す
-- [x] `getManual`関数追加（`src/lib/manuals.ts`）- ファイル名指定でマニュアル読み込み
-- [x] **マニュアルinclude機能追加**（`src/lib/manuals.ts`）
-  - `<!-- include: common/xxx.md -->` 構文で別ファイルを埋め込み可能に
-  - 共通マニュアル配置先: `docs/manuals/common/`
-- [x] **共通マニュアル作成**
-  - `common/pre-meeting-steps-4-8.md` - 打ち合わせ前準備ステップ4〜8
-  - HP・ツナゲル両方で使用
-- [x] **NOTTAマニュアルをアコーディオン化**
-  - `common/notta.md` を `<details>` タグでカード風アコーディオンに
-  - HP全体マニュアル No.2 に挿入
-- [x] **No.1 打ち合わせ前準備にスクショ挿入**（11枚）
-  - 配置先: `public/images/hp/no1/`
-  - 全体マニュアル（00-overall-manual.md）に画像タグ挿入済み
-- [x] **共通マニュアル作成 + アコーディオン埋め込み**
-  - `docs/manuals/common/gas-auth.md` - GAS認証手順（スクショ5枚）
-  - `docs/manuals/common/transcript.md` - 文字起こし整理手順（スクショ4枚）
-  - `docs/manuals/common/transfer.md` - AI出力転記手順（スクショ4枚）
-  - HP全体マニュアルにアコーディオン埋め込み
-    - No.1 シート作成 → GAS認証アコーディオン
-    - No.3 文字起こし・転記 → transcript.md、transfer.mdアコーディオン
-  - ツナゲル・HP制作で共通利用可能
-
-### 次にやること（優先順）
-
-1. **共通マニュアル作成の続き（転用候補）**
-
-   以下の手順を共通マニュアル化して、HP全体マニュアルにアコーディオンで埋め込む。
-
-   | 転用候補 | 共通マニュアル | 埋め込み先 | 状態 |
-   |---------|--------------|-----------|------|
-   | GAS認証 | `common/gas-auth.md` | No.1 シート作成 | ✅ 完了 |
-   | NOTTA起動〜終了 | `common/notta.md` | No.2 初回打ち合わせ | ✅ 完了 |
-   | 文字起こし整理 | `common/transcript.md` | No.3 文字起こし・転記 | ✅ 完了 |
-   | AI出力転記 | `common/transfer.md` | No.3 文字起こし・転記 | ✅ 完了 |
-   | ステータス更新 | `common/status-update.md` | No.0（全タスク共通） | ✅ 完了 |
-   | 議事録作成 | `common/gijiroku.md` | No.3 | ✅ 完了 |
-   | JSON出力 | `common/json-output.md` | No.4 | ✅ 完了 |
-   | ~~構成案プロンプト~~ | - | - | HP固有（共通化しない） |
-   | ~~Claude Code指示文~~ | - | - | HP固有（共通化しない） |
-
-   **作業フロー:**
-   ```
-   1. ツナゲルで使っている画像を確認（/images/）
-   2. 共通マニュアル（Markdown）を作成（docs/manuals/common/xxx.md）
-      - スクショ付きのステップ形式
-      - notta.md を参考に
-   3. HP全体マニュアルの該当箇所に<details>アコーディオンで埋め込み
-      <details style="border: 2px solid #色; ...">
-      <summary>タイトル（クリックで展開）</summary>
-      <!-- include: common/xxx.md -->
-      </details>
-   4. ツナゲルのマニュアルでも同じincludeで共通利用
-   ```
-
-   **⚠️ 重要: tsunageru.tsの読み方**
-
-   `src/lib/data/tsunageru.ts` は約26000トークンあり、1回で全文読めない。
-   **必ず分割して全文読むこと:**
-   ```
-   Read tsunageru.ts offset=0 limit=500
-   Read tsunageru.ts offset=500 limit=500
-   Read tsunageru.ts offset=1000 limit=500
-   ...（必要な箇所まで繰り返す）
-   ```
-   または、Grepで必要な箇所を検索してから該当部分を読む。
-
-2. **マニュアル検証（共立工業サンプルで実証）**
-   - 制作担当者が全体マニュアル（No.0〜No.10）を見ながら実際に作業を進める
-   - マニュアルの記載が正しいか・わかりやすいかを検証
-   - スクショを撮りながら進める
-   - **Claude Codeの役割:** マニュアルの該当箇所を提示、問題があれば修正
-
-3. **マニュアル完成**
-   - 検証したものから順次完成させる
-
-### テンプレート別サンプル進捗
-
-### 進捗状況
-
-| # | テンプレート | サンプル | マニュアル検証 | スクショ | 完成 |
-|---|-------------|----------|---------------|----------|------|
-| 1 | Standard | ✅ 中部建設 | ⬜ | ⬜ | ⬜ |
-| 2 | Recruit Magazine | ✅ 共立工業 | ⬜ | ⬜ | ⬜ |
-| 3 | LeadGen Minimal | ⬜ | ⬜ | ⬜ | ⬜ |
-| 4 | LeadGen Visual | ✅ 三河精密 | ⬜ | ⬜ | ⬜ |
-| 5 | Trust Visual | ⬜ | ⬜ | ⬜ | ⬜ |
-| 6 | Authority Minimal | ⬜ | ⬜ | ⬜ | ⬜ |
-| 7 | Full Order | ⬜ | ⬜ | ⬜ | ⬜ |
-
-※ 1回の検証で複数テンプレートをカバーできる可能性あり
-
-### 🔄 検証フロー（毎ステップ実施）
-
-```
-1. Claude Code → マニュアルの該当ステップを表示
-2. ユーザー → 操作を実行、スクショを撮影
-3. ユーザー → スクショのパスを共有、気づいた点を報告
-4. Claude Code → スクショを確認して内容を把握
-5. Claude Code → HANDOFFのスクショ管理に追加
-6. Claude Code → 問題があれば気づいたことメモに追加
-7. Claude Code → 進捗を更新
-8. 次のステップへ
-```
-
-**重要:** スクショはいきなり配置せず、必ず内容確認→HANDOFF記録→後で一括配置
-
-### 📋 マニュアル検証進捗（共立工業）
-
-**現在のタスク:** マニュアル検証（次のタスク選択待ち）
-
-| タスク | ステップ | 状態 | 備考 |
-|--------|---------|------|------|
-| No.1 打ち合わせ前準備 | 全ステップ | ✅ 完了 | スクショ11枚 |
-| No.4 JSON出力・原稿生成 | 全ステップ | ✅ 完了 | スクショ4枚 |
-| No.5 HP実装 | 全ステップ | ✅ 完了 | スクショ14枚（自動フロー・動作確認・レスポンシブ） |
-| No.3 文字起こし・転記 | | ⬜ | テンプレート決定後に実施 |
-| No.6 素材撮影 | | ⬜ | 素材フォルダ作成のみ |
-
-### 📸 スクショ管理
-
-| # | ファイル名 | 配置後ファイル名 | マニュアル挿入位置 | 状態 |
-|---|-----------|-----------------|------------------|------|
-| 1 | 04abf4ee...png | step1-form-response.png | No.1 ステップ1 回答確認 | ✅ 配置済み |
-| 2 | f17dce5b...png | step2-menu.png | No.1 ステップ2 メニュー | ✅ 配置済み |
-| 3 | 43e54d7f...png | step2-dialog-new.png | No.1 ステップ2 ダイアログ | ✅ 配置済み |
-| 4 | b1c683b1...png | step2-dialog-select.png | No.1 ステップ2 企業選択 | ✅ 配置済み |
-| 5 | c969ebbd...png | step2-dialog-complete.png | No.1 ステップ2 完了時 | ✅ 配置済み |
-| 6 | 496505c4...png | step2-dialog-manual.png | No.1 ステップ2 パターンB | ✅ 配置済み |
-| 7 | cc8fa47a...png | step2-sheet-upper.png | No.1 ステップ2 転記確認 | ✅ 配置済み |
-| 8 | 86bb7f82...png | step2-sheet-lower.png | （未使用） | 📥 取得済み |
-| 9 | 7443a46b...png | step3-folder-select.png | No.1 ステップ3 企業選択 | ✅ 配置済み |
-| 10 | 2c2ecab6...png | step3-folder-options.png | No.1 ステップ3 ページ選択 | ✅ 配置済み |
-| 11 | ecb3b3de...png | step3-folder-complete.png | No.1 ステップ3 作成完了 | ✅ 配置済み |
-| 12 | a85d2b5b...png | step3-folder-result.png | No.1 ステップ3 作成結果 | ✅ 配置済み |
-| 13 | 32da7548...png | status-menu.png | ステータス更新メニュー | ✅ 配置済み |
-| 14 | da945b8a...png | status-dialog.png | ステータス更新ダイアログ | ✅ 配置済み |
-| 15 | f2d711f5...png | step2-menu.png | No.4 STEP2 構成案作成メニュー | ✅ 配置済み |
-| 16 | e4f4f77a...png | step2-composition-prompt.png | No.4 STEP2 構成案プロンプト生成ダイアログ | ✅ 配置済み |
-| 17 | 07687ee8...png | step2-composition-ai.png | No.4 STEP2 外部AIでの構成案作成 | ✅ 配置済み |
-| 18 | e3a55890...png | step2-claude-code-dialog.png | No.4 STEP3 Claude Code指示文生成ダイアログ | ✅ 配置済み |
-| 19 | 7674979f...png | step0-clear.png | No.4 STEP4 /clear実行 | ✅ 配置済み |
-| 20 | c4fb8b37...png | step0-cd-claude.png | No.4 STEP4 cd→claude起動 | ✅ 配置済み |
-| 21 | 0e4d7274...png | step0-claude-welcome.png | No.4 STEP4 Claude Code Welcome画面 | ✅ 配置済み |
-| 22 | 7c6b6515...png | step1-setup-complete.png | No.5 STEP1 セットアップ完了 | ✅ 配置済み |
-| 23 | f05fd979...png | step1-next-steps.png | No.5 STEP1 次のステップ表示 | ✅ 配置済み |
-| 24 | 868eeef8...png | context-low-warning.png | No.5 コンテキスト限界警告 | ✅ 配置済み |
-| 25 | 328c2d4a...png | auto-setup-progress.png | No.5 自動セットアップの様子 | ✅ 配置済み |
-| 26 | 9a851aea...png | next-session-start.png | No.5 次世代セッション開始の例 | ✅ 配置済み |
-| 27 | 173ce2f2...png | build-example.png | No.5 STEP2 ビルド実行の例 | ✅ 配置済み |
-| 28 | 877069a9...png | handoff-phase-check.png | No.5 STEP3 HANDOFFフェーズ完了確認 | ✅ 配置済み |
-| 29 | f622f8d1...png | handoff-complete-report.png | No.5 STEP3 残作業の完了報告 | ✅ 配置済み |
-| 30 | bde5664b...png | npm-permission-error.png | No.5 STEP2 npmパーミッションエラー | ✅ 配置済み |
-| 31 | 92558ca0...png | rm-node-modules.png | No.5 STEP4 node_modules削除 | ✅ 配置済み |
-| 32 | ef0148ff...png | npm-install-success.png | No.5 STEP4 npm install成功 | ✅ 配置済み |
-| 33 | 4bd90814...png | npm-run-dev.png | No.5 STEP4 npm run dev実行 | ✅ 配置済み |
-| 34 | 936dfcdf...jpg | hp-preview-pc.jpg | No.5 STEP4 HPプレビュー（PC） | ✅ 配置済み |
-| 35 | 851473a4...jpg | hp-preview-responsive.jpg | No.5 STEP4 レスポンシブ確認 | ✅ 配置済み |
-
-**配置先:** `public/images/hp/no1/`、`public/images/hp/`（ステータス更新）、`public/images/hp/no4/`（構成案作成）、`public/images/hp/no5/`（HP実装）
-**マニュアル:** `docs/manuals/hp/00-overall-manual.md` No.1セクション
-
-### 📝 気づいたことメモ（後で一括修正）
-
-| # | 箇所 | 内容 | 種別 |
-|---|------|------|------|
-| 1 | GAS: 手動作成ダイアログ | 「正式名称で入力してください」的な赤文字テキストがほしい（例はあるが注意書きがない） | GAS改善 |
-| 2 | GAS: シート作成実行ボタン | クリック後にローディング表示がない。実行中か反応しているかわからない | GAS改善 |
-| 3 | GAS: 企業フォルダ作成 | 作成後にブラウザのダイアログが出て「開く」をクリックしても開かない。→ ダイアログ内に完了メッセージ + URL表示 + 開くボタンを表示すべき | GAS改善 |
-| 4 | GAS: 企業フォルダ作成 | サブフォルダのページ選択が8種類固定。カスタムページを追加できる入力欄がほしい | GAS改善 |
-| 5 | GAS: メニュー番号 | メニュー番号と実際の作業順序が不一致。現状: 1→4→3→2。改善案: 1.HP制作→2.構成案作成(旧4)→3.素材フォルダ→4.ヒアリング反映(旧2) | GAS改善 |
-| 6 | マニュアル: アコーディオン | No.3 Step2〜5の概要をアコーディオンの外に追加済み | ✅ 修正済み |
-| 7 | GAS: 企業名取得（全ファイル） | 企業名取得が6行目だった → 5行目に修正済み。対象: transcriptToHearingSheet.js（272行目、631行目、1046行目）、jsonOutputDialog.js（199行目）、promptDialog.js（364行目） | ✅ 修正済み |
-
-### STEP 1: サンプル作成
-
-**参照:** `docs/samples/hp/README.md`（サンプル作成ガイド）
-
-**既存サンプル:**
-- ✅ 中部建設（建設業）→ Standard用
-- ✅ 三河精密工業（製造業）→ LeadGen Visual用
-
-**必要なサンプル:**
-- [x] 採用特化企業 → Recruit Magazine用 ✅ 共立工業（道路・橋梁維持管理）
-- [ ] サービス業（リフォーム等）→ LeadGen Minimal用
-- [ ] 士業・専門家 → Trust Visual用
-- [ ] コンサル・BtoB → Authority Minimal用
-- [ ] 特殊業種 → Full Order用
-
-**差別化ポイント（業種・サーバー・素材等を変える）**
-
-### STEP 2: GASテスト（全体フロー通し）
-
-各テンプレートで以下を検証：
-
-1. **ヒアリングシート作成**
-   - [ ] フォーム回答からシート作成
-   - [ ] Part①②③の転記確認
-
-2. **ヒアリング反映**
-   - [ ] 文字起こし→AI整理→Part②転記
-   - [ ] 議事録作成
-
-3. **素材フォルダ作成**
-   - [ ] ページ選択→フォルダ作成
-   - [ ] Part④に選択ページ保存
-
-4. **構成案作成**
-   - [ ] JSON出力
-   - [ ] 構成案プロンプト生成（テンプレート別）
-   - [ ] Claude Code指示文生成
-
-5. **進捗管理**
-   - [ ] ステータス更新
-   - [ ] 進捗一覧表示
-
-### STEP 3: スクショ撮影
-
-**撮影対象:**
-- GASダイアログ（各メニュー）
-- 生成されるプロンプト・指示文
-- Claude Codeでのセットアップ結果
-- 完成したHP（テンプレート別）
-
-**保存先:** `public/images/hp/`
-
-### STEP 4: マニュアル作成・更新
-
-**対象ファイル:**
-- `docs/manuals/hp/00-全体フロー.md`（新規or更新）
-- `docs/manuals/hp/04-JSON出力・原稿生成.md`（テンプレート選択の説明追加）
-- `docs/manuals/hp/99-Claude Code使い方.md`（テンプレート別Tips追加）
-
-**記載内容:**
-- テンプレート選択の判断基準
-- テンプレート別の構成案プロンプトの違い
-- テンプレート別のClaude Code指示のコツ
-
----
-
-### その他のタスク
-
-1. **hp.tsのflowSteps詳細化**
-   - ツナゲルのようにflowStepsに詳細情報を追加
-
-2. **GASテスト（進捗管理）**
-   - 📊 進捗管理メニューの動作確認
-
----
-
-## 📋 テンプレート拡充計画
-
-### 設計方針
-
-```
-テンプレート = 型（目的・心理設計） × 表現（デザインパターン）
-```
-
-- **型（Type）**: 専門家①②が決める「何を達成するか」
-- **表現（Design）**: 専門家③が決める「どう見せるか」
-
-### 型（Type）一覧
-
-| ID | 型名 | 本質 |
-|----|------|------|
-| `recruit` | Recruit | 求職者の意思決定プロセス対応 |
-| `leadgen` | Lead Gen | CV最短ルート設計 |
-| `trust` | Trust Builder | 社会的証明の最大化 |
-| `local` | Local Business | 地域商圏×SEO |
-| `authority` | Authority | 専門性・実績で説得 |
-
-### 表現（Design）一覧
-
-| ID | 表現名 | 特徴 |
-|----|--------|------|
-| `visual` | Visual Impact | 写真・動画主役、テキスト最小 |
-| `minimal` | Minimal Pro | 余白とタイポグラフィで勝負 |
-| `dynamic` | Dynamic Flow | アニメーション・インタラクション |
-| `magazine` | Magazine | 読ませるエディトリアル |
-
-### 実装済みテンプレート一覧（全7種類）✅
-
-| テンプレート | 型×表現 | ページ数 | サンプル企業 | リポジトリ |
-|-------------|---------|----------|-------------|-----------|
-| Standard | 汎用 | 6 | 中部建設株式会社 | `template-standard` |
-| Recruit Magazine | recruit × magazine | 7 | 株式会社ネクストステージ | `template-recruit-magazine` |
-| LeadGen Minimal | leadgen × minimal | 4 | スカイリフォーム株式会社 | `template-leadgen-minimal` |
-| LeadGen Visual | leadgen × visual | 5 | 三河精密工業株式会社 | `template-leadgen-visual` |
-| Trust Visual | trust × visual | 6 | あおぞら法律事務所 | `template-trust-visual` |
-| Authority Minimal | authority × minimal | 8 | 株式会社テックフロンティア | `template-authority-minimal` |
-| Full Order | フルカスタム | 自由 | 東海プレシジョン株式会社 | `template-fullorder` |
-
-### 関連リソース
-
-| リソース | パス/URL |
-|---------|---------|
-| テンプレート本体 | `/mnt/c/hp-template/` |
-| ショーケースサイト | `/mnt/c/sing-hp-template/` |
-| ショーケースURL | https://sing-hp-template.vercel.app/ |
-
-### テンプレート構造
-
-```
-/mnt/c/hp-template/
-├── template-standard/          # 標準テンプレート（6ページ）
-├── template-recruit-magazine/  # 採用サイト・マガジン形式（7ページ）
-├── template-leadgen-minimal/   # リード獲得型・ミニマル（4ページ）
-├── template-leadgen-visual/    # 地域密着型・ビジュアル（5ページ）
-├── template-trust-visual/      # 信頼構築型・ビジュアル（6ページ）
-├── template-authority-minimal/ # 権威性訴求・ミニマル（8ページ）
-└── template-fullorder/         # フルオーダー・完全カスタム
-```
-
-### 設計ドキュメント
-
-| ファイル | 内容 |
-|---------|------|
-| `docs/plans/hp-template-expansion/00-template-creation-workflow.md` | ワークフローガイド（完全手順書） |
-| `docs/plans/hp-template-expansion/01-expert-consultation-raw.md` | 専門家諮問の生出力（全文保存） |
-| `docs/plans/hp-template-expansion/02-template-matrix-plan.md` | 計画書（詳細設計） |
-
----
-
-### ✅ 完了: 全テンプレート実装 + ショーケースサイト
-
-**完了日:** 2026-02-02
-
-**成果物:**
-- `/mnt/c/hp-template/` - 7種類のテンプレート本体
-- `/mnt/c/sing-hp-template/` - クライアント向けショーケースサイト
-- GAS `compositionPrompt.js` - 7種類のテンプレート選択UI
-
-**実装内容:**
-- 全7テンプレートをNext.js 16 + React 19 + Tailwind 4で実装
-- 各テンプレートにサンプル企業データを設定
-- ショーケースサイトで全テンプレートをプレビュー可能
-- GASのテンプレート選択UIを7種類に対応
-
-**テンプレート設計思想:**
-- 型（Type）× 表現（Design）のマトリクス設計
-- `template-fullorder` をベースに各テンプレートを作成
-- `site.json` でナビゲーション・基本情報を管理
-- 各ページ.tsx でコンテンツを直接編集
-
----
-
-### HP制作フロー改善
-
-HP制作のフローをツナゲルと同じ設計思想で整備する。
-
-**現在のステータス:** STEP 8完了、テンプレートリポジトリ分離完了
-
----
-
-#### ✅ 完了した作業
-
-- タスク分割設計（11タスク構成）
-- hp.tsの再構築
-- Googleフォーム設計・作成・GAS適用
-- ヒアリングシート構造設計（4パート構成）
-- Part②ヒアリング項目設計（39項目）
-- **全10個のGASファイル作成完了**
-- **マニュアル全11タスク詳細化完了**（No.0〜10）
-- **GASテスト（Part①〜③転記）** - フォーム回答からの転記動作確認＆修正
-- **マニュアル更新（01-打ち合わせ前準備）** - メニュー名修正、スクショ追加
-- **プロンプトシート構造統一** - settingsSheet.jsに一本化（6列構造）
-- **メニュー統合** - 「3.文字起こし転記」を「2.ヒアリング反映」に統合（メニュー6→5個に）
-- **JSON出力自動保存** - 生成時にPart④へ自動保存
-- **サンプルデータ作成** - 中部建設のCSV・文字起こしサンプル
-- **構成案プロンプト大幅改善** - 3人の専門家プロンプト、反AIデザイン哲学、選択ページ連携
-- **メニュー統合（2回目）** - 「4.JSON出力」と「5.構成案作成」を統合（メニュー5→4個に）
-- **Claude Code指示文大幅改善** - 実装指示→セットアップ指示に変更、HANDOFF生成方式
-- **STEP 5完了** - 構成案プロンプトにClaude Code用出力指示追加（チェックボックス、HANDOFF生成、wireframe保存）
-- **Claude Code使い方マニュアル作成** - `docs/manuals/hp/99-Claude Code使い方.md`（起動方法4パターン、モード説明、トラブルシューティング、紹介動画）
-- **GitHubテンプレートリポジトリ設定** - sing-hp-templateをTemplate Repositoryに設定
-- **Claude Code指示文フロー改善** - ユーザー向け/Claude Code向け指示を分離、起動場所案内をダイアログに追加、テンプレートクローン指示を明確化
-- **HANDOFFテンプレート拡充** - 企業情報、ロゴ、ブランドカラー、ヘッダー/フッター仕様、素材ファイル等を追加
-- **コーディングルール改善** - globals.cssの@themeブロック内ブランドカラー変更指示を明確化
-- **HANDOFF_GUIDE.md作成** - sing-hp-template/に配置（HANDOFFの構造標準化ガイド）
-- **製造業サンプル作成（三河精密工業）** - 文字起こし・CSV作成、サンプル作成ガイド作成
-- **構成案プロンプト改善** - ファイル保存指示を明示的に追加（「Writeツールで作成してください」等）
-- **マニュアル更新（99-Claude Code使い方）** - トラブルシューティング追加（構成案投げてもファイル保存されない場合の対処法）
-
-#### ✅ HP制作GAS（全て完了）
-
-| ファイル | 機能 |
-|---------|------|
-| `formCreator.js` | Googleフォームセットアップ |
-| `hearingSheetManager.js` | メインGAS（onOpen、シート作成、フォーム転記、企業フォルダ作成） |
-| `settingsSheet.js` | 設定シート・プロンプトシート管理 |
-| `commonStyles.js` | 共通スタイル（ツナゲルから流用） |
-| `progressManager.js` | ステータス管理・進捗一覧 |
-| `promptDialog.js` | 議事録作成・プロンプト実行 |
-| `createFolder.js` | 素材フォルダ作成（チェックボックス選択式） |
-| `transcriptToHearingSheet.js` | 文字起こし転記（Part②39項目対応） |
-| `jsonOutputDialog.js` | JSON出力（Part①②、サーバー情報除外） |
-| `compositionPrompt.js` | 構成案プロンプト + Claude Code指示文 |
-
----
-
-#### 📋 次にやること（優先順）
-
-##### ~~STEP 1: マニュアル更新・スクショ挿入~~ ✅完了
-スクショ挿入と最新GASに合わせた更新が完了。
-
-##### ~~STEP 2: 構成案プロンプト改善~~ ✅完了
-3人の専門家プロンプトを実装：
-- **専門家①**: WEBマーケティングプロ（コンバージョンファネル、心理トリガー、ABテスト）
-- **専門家②**: 求人コンサルタント（求職者インサイト、情報開示戦略、感情設計）
-- **専門家③**: WEBデザイナー（反AIデザイン哲学、余白の呼吸、装飾の引き算）
-
-**修正したGAS:**
-- `createFolder.js` - 選択ページをPart④に保存
-- `compositionPrompt.js` - 3人の専門家プロンプト、プロンプトシート読み込み、選択ページ連携
-- `settingsSheet.js` - プロンプトシート作成時に構成案プロンプト自動登録
-
-##### ~~STEP 3: Claude Code指示文ブラッシュアップ~~ ✅完了
-Claude Code指示文を「実装指示」から「セットアップ指示」に変更。
-
-**変更内容:**
-- ダイアログにテンプレート選択UI追加（5種類）
-- 技術スタック修正（Next.js 16.1.6、React 19.2.3、Tailwind 4.x等）
-- 開発環境の注意点追加（WSL2でTurbopack不可→--webpackフラグ）
-- 指示文の役割を変更:
-  1. 企業ディレクトリ作成（`/mnt/c/hp-projects/{{companyName}}/`）
-  2. 生データ保存（`data/hearing.json`, `data/composition.md`）
-  3. HANDOFF.md作成（進捗管理・引き継ぎ用）
-  4. 次世代セッションへの引き継ぎ指示出力
-
-**修正したGAS:**
-- `compositionPrompt.js` - HP_CLAUDE_CODE_PROMPT_TEMPLATE全面改修、ダイアログにテンプレート選択追加
-
-##### ~~STEP 4: マニュアル更新~~ ✅完了
-Claude Code指示文の変更に合わせてマニュアルを更新。
-
-**対象マニュアル:** `docs/manuals/hp/04-JSON出力・原稿生成.md`
-
-**更新内容:**
-- メニュー番号を「4.📝 構成案作成」に統一
-- テンプレート選択の説明を追加（5種類）
-- 生成される指示文の役割（セットアップ指示書）を説明
-- STEP 5〜6追加（Claude Codeセットアップ実行、次世代セッション開始）
-- 技術スタックを最新版に更新（Next.js 16.1.6等）
-- トラブルシューティング追加（セットアップ・次世代セッション関連）
-
-##### ~~STEP 5: 構成案プロンプトにClaude Code用出力指示を追加~~ ✅完了
-
-**実装内容:**
-- `HP_CLAUDE_CODE_OUTPUT_INSTRUCTION` テンプレート追加
-- ダイアログに「Claude Codeで実行する」チェックボックス追加
-- チェックON時: HANDOFF.md生成指示 + wireframe保存指示を追加
-- 出力先: `client_hp/{{companyNameEn}}/doc/wireframe/`
-
-**作成したマニュアル:**
-- `docs/manuals/hp/99-Claude Code使い方.md`
-- スクショ18枚、紹介動画1本（`public/images/hp/claude-code/`）
-
-##### ~~STEP 6: 製造業の文字起こしサンプル作成~~ ✅完了
-
-**作成ファイル:**
-- `docs/samples/hp/meeting-transcript-mikawa-seimitsu.txt` - 文字起こし
-- `docs/samples/hp/sample_form_response_mikawa.csv` - フォーム回答CSV
-- `docs/samples/hp/README.md` - サンプル作成ガイド
-
-**企業設定（三河精密工業）:**
-- 業種: 製造業（精密金属加工）
-- サーバー: C. 自社管理（外部委託先と連絡取れない）
-- 素材: ほぼない
-- 中部建設との差別化を意識
-
-##### ~~STEP 7: 実装テスト~~ ✅完了
-
-構成案プロンプトのClaude Code実行オプションをテストした。
-
-**テスト結果:**
-- `client_hp/mikawa-seimitsu/HANDOFF.md` ✅生成済み
-- `client_hp/mikawa-seimitsu/doc/wireframe/*.md` ✅生成済み
-
-**発見した問題と対応:**
-| 問題 | 対応 |
-|------|------|
-| Claude Codeが「ファイル保存しますか？」と聞いてくる | プロンプトに明示的な保存指示を追加済み |
-| Claude Codeが先にmkdirでディレクトリを作ってしまう | トラブルシューティングに対処法追加（docを退避→クローン→戻す） |
-| sing-hp-templateが「ショーケースサイト」であり「1企業用テンプレート」ではない | STEP 8で解決 |
-
-**修正したファイル:**
-- `compositionPrompt.js` - セットアップ手順を最初のセッションから分離、HANDOFF.mdに記載
-- `docs/manuals/hp/99-Claude Code使い方.md` - トラブルシューティング追加
-
-##### ~~STEP 8: テンプレートリポジトリ再構築~~ ✅完了
-
-**問題:**
-現在のsing-hp-templateは「テンプレートのショーケースサイト」であり、クローンしても5種類のテンプレートが全部入ってしまう。1企業用HPとして使えない。
-
-**解決策:**
-1. **中部建設HPを第一のテンプレートとして完成**
-2. **テンプレートを別リポジトリに分離** → `template-standard`
-3. **GASで選択 → リポジトリURL動的生成**
-
-**設計方針（ハイブリッド方式）:**
-- `data/site.json` → 基本情報（会社名、連絡先、SEO、ブランドカラー）
-- 各ページ.tsx → ページ固有コンテンツは直接編集
-
-**完了した作業:**
-- [x] 中部建設HPを `/mnt/c/hp-template/template-standard/` にコピー（node_modules除外）
-- [x] `data/site.json` 作成（空の構造）
-- [x] `src/lib/site.ts` 作成（型定義＋データ読み込みユーティリティ）
-- [x] `tsconfig.json` 更新（`@data/*` パスエイリアス追加）
-- [x] `src/app/layout.tsx` 修正（site.jsonから読み込み）
-- [x] `src/components/Header.tsx` 修正（site.jsonから読み込み）
-- [x] `src/components/Footer.tsx` 修正（site.jsonから読み込み）
-- [x] ロゴファイル名汎用化（中部建設ロゴ.png → logo.png等）
-- [x] `src/app/page.tsx` 修正（コンテンツデータを上部に集約、site.jsonと連携）
-
-**残りの作業:** ✅全て完了
-1. [x] 残りのページをプレースホルダー化（about, service, recruit, contact, privacy, news）
-2. [x] 不要ファイル削除（HANDOFF.md, doc/wireframe等）
-3. [x] テンプレート用README.md作成
-4. [x] 新リポジトリ `template-standard` を作成してプッシュ
-5. [x] `compositionPrompt.js` のテンプレート選択UIを修正
-6. [x] 動作テスト（ビルドは未実施、コード修正完了）
-
-**作業ディレクトリ:**
-- テンプレート作業場所: `/mnt/c/hp-template/template-standard/`
-- 元の中部建設HP（変更禁止）: `/mnt/c/client_hp/chubu-kensetsu/`
-
-**ファイル構造（現在）:**
-```
-/mnt/c/hp-template/template-standard/
-├── data/
-│   └── site.json          # 基本情報（空の構造）★新規作成
-├── src/
-│   ├── lib/
-│   │   └── site.ts        # データ読み込みユーティリティ ★新規作成
-│   ├── app/
-│   │   ├── layout.tsx     # ★修正済み（site.json読み込み）
-│   │   ├── page.tsx       # ★修正済み（コンテンツ上部集約）
-│   │   └── ...            # 残りのページ（未修正）
-│   └── components/
-│       ├── Header.tsx     # ★修正済み（site.json読み込み）
-│       └── Footer.tsx     # ★修正済み（site.json読み込み）
-├── public/images/
-│   ├── logo.png           # ★リネーム済み（旧:中部建設ロゴ.png）
-│   ├── logo-square.png    # ★リネーム済み
-│   └── logo-only.png      # ★リネーム済み
-└── tsconfig.json          # ★修正済み（@data/* 追加）
-```
-
-**page.tsxの構造（参考）:**
-```tsx
-// コンテンツデータ（構成案に基づいて編集してください）
-const FIRST_VIEW = { catchphrase: "...", subCopy: "...", ... };
-const STATS = [...];
-const ABOUT = {...};
-const SERVICES = [...];
-// ... 他のセクションデータ
-
-// セクションコンポーネント
-function FirstView() { ... }  // site.jsonのcompany.catchphraseを参照
-function StatsSection() { ... }  // site.statsがあれば使用、なければSTATS
-// ...
-```
-
-**参照:**
-- 現テンプレート: `https://github.com/tenchan000517/sing-hp-template`
-
-##### STEP 9: hp.tsのflowSteps詳細化
-ツナゲルのようにflowStepsに詳細情報を追加。
-- `summary`: ステップの概要
-- `description`: 詳細な手順説明
-- `links`: 必要なリンク
-
-##### STEP 6: GASテスト（残り）
-- [x] 1.📋 HP制作 ✅
-- [x] ⚙️ 設定 ✅
-- [x] 2.📝 ヒアリング反映 ✅（旧:議事録作成+文字起こし転記を統合）
-- [x] 3.📁 素材フォルダ ✅
-- [x] 4.📤 JSON出力 ✅（自動保存機能追加）
-- [x] 5.📝 構成案作成 ✅
-- [ ] 📊 進捗管理
-
----
-
-#### 📊 マニュアル進捗状況（全完了）
-
-全11タスクのマニュアル詳細化が完了。各マニュアルには以下が含まれる：
-- 基本情報テーブル（担当者、使用ツール、前後工程）
-- フロー概要（図解）
-- 作業手順（STEP形式）
-- チェックポイント
-- トラブルシューティング
-
-**マニュアル格納場所:** `docs/manuals/hp/`
-
----
+## 🎯 次にやること
+
+### HP制作: GAS改善（気づいたことメモから）
+
+| # | 箇所 | 内容 |
+|---|------|------|
+| 1 | 手動作成ダイアログ | 「正式名称で入力してください」の赤文字注意書き追加 |
+| 2 | シート作成実行ボタン | ローディング表示追加 |
+| 3 | 企業フォルダ作成 | 完了メッセージ + URL表示 + 開くボタンをダイアログ内に |
+| 4 | 企業フォルダ作成 | カスタムページ追加入力欄 |
+| 5 | メニュー番号 | 作業順序と一致させる（1→4→3→2 を 1→2→3→4 に） |
 
 ### ツナゲル検証・インフォ更新
 
-新しいフローでの検証を行い、スクショ撮影→インフォ更新→マニュアル更新を進める。
-
-**現状:**
 - No.0〜5: インフォ/マニュアル作成済み（更新が必要な可能性）
 - No.6〜13: 基本情報のみ、詳細フロー未確定
 
-**必読ドキュメント:** `docs/manual-creation-guideline-v3.md`
+---
+
+## ✅ HP制作マニュアル完成（2026-02-03）
+
+### 成果物
+
+| 種類 | パス |
+|------|------|
+| 全体マニュアル | `docs/manuals/hp/00-overall-manual.md` |
+| 個別マニュアル | `docs/manuals/hp/01〜10.md`, `99-claude-code.md` |
+| 共通マニュアル | `docs/manuals/common/`（7件） |
+| スクショ | `public/images/hp/`（35枚） |
+| ガイドライン | `docs/manual-creation-guideline-v4.md` |
+
+### 共通マニュアル一覧
+
+| ファイル | 内容 |
+|---------|------|
+| `gas-auth.md` | GAS認証手順 |
+| `notta.md` | NOTTA起動〜終了 |
+| `transcript.md` | 文字起こし整理 |
+| `transfer.md` | AI出力転記 |
+| `status-update.md` | ステータス更新 |
+| `gijiroku.md` | 議事録作成 |
+| `json-output.md` | JSON出力 |
+
+### テンプレート（7種類）
+
+| テンプレート | サンプル企業 | リポジトリ |
+|-------------|-------------|-----------|
+| Standard | 中部建設 | `template-standard` |
+| Recruit Magazine | 共立工業 | `template-recruit-magazine` |
+| LeadGen Minimal | スカイリフォーム | `template-leadgen-minimal` |
+| LeadGen Visual | 三河精密工業 | `template-leadgen-visual` |
+| Trust Visual | あおぞら法律事務所 | `template-trust-visual` |
+| Authority Minimal | テックフロンティア | `template-authority-minimal` |
+| Full Order | 東海プレシジョン | `template-fullorder` |
+
+### 検証済みタスク
+
+| タスク | スクショ |
+|--------|---------|
+| No.1 打ち合わせ前準備 | 11枚 |
+| No.4 JSON出力・原稿生成 | 4枚 |
+| No.5 HP実装 | 14枚 |
 
 ---
 
@@ -687,9 +71,9 @@ function StatsSection() { ... }  // site.statsがあれば使用、なければS
 9商材・52業務を対象に、AI活用による効率化とマニュアル改善を推進。
 
 **ガイドライン:**
-- `docs/manual-creation-guideline-v3.md` ★最新版（新商材作成の完全ガイド）
+- `docs/manual-creation-guideline-v4.md` ★最新版（HP制作での学びを反映）
+- `docs/manual-creation-guideline-v3.md` 新商材作成の完全ガイド
 - `docs/manual-creation-guideline-v2.md` UI仕様詳細（GASダイアログ）
-- `docs/manual-creation-guideline.md` 旧版（データ構造参照用）
 
 ---
 
@@ -727,7 +111,7 @@ function StatsSection() { ... }  // site.statsがあれば使用、なければS
 | 商材 | 業務数 | 進捗 |
 |------|--------|------|
 | ツナゲル | 14 | GAS実装済み |
-| HP制作 | 11 | GAS完了・マニュアル完了（GASテスト待ち） |
+| HP制作 | 11 | ✅ GAS・マニュアル完了（GAS改善待ち） |
 | バツグン | 5 | 基本情報のみ |
 | LP制作 | 5 | 基本情報のみ |
 | SNS広告 | 5 | 基本情報のみ |
