@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Monitor, Mic, Terminal } from "lucide-react";
+import { Monitor, Mic, Terminal, MessageSquare } from "lucide-react";
 
 // 共通マニュアルデータ
 const commonManuals = [
@@ -20,6 +20,12 @@ const commonManuals = [
     name: "Claude Code",
     description: "Claude Codeのセットアップと基本的な使い方",
     icon: Terminal,
+  },
+  {
+    id: "claude-code-instructions",
+    name: "Claude Code 指示の出し方",
+    description: "日本語でClaude Codeに指示を出すときの言い方・フレーズ集",
+    icon: MessageSquare,
   },
 ];
 
