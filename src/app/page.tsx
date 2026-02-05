@@ -1,4 +1,27 @@
 import Link from "next/link";
+import { Monitor, Mic, Terminal } from "lucide-react";
+
+// 共通マニュアルデータ
+const commonManuals = [
+  {
+    id: "wsl-setup",
+    name: "WSL環境構築",
+    description: "WindowsでWSL・VS Code・Node.js・Claude Codeをセットアップ",
+    icon: Monitor,
+  },
+  {
+    id: "notta",
+    name: "Notta",
+    description: "文字起こしツールNottaの使い方",
+    icon: Mic,
+  },
+  {
+    id: "claude-code-setup",
+    name: "Claude Code",
+    description: "Claude Codeのセットアップと基本的な使い方",
+    icon: Terminal,
+  },
+];
 
 // 商材データ
 const products = [
@@ -71,6 +94,39 @@ export default function Home() {
                 </p>
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* 共通マニュアル */}
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+            共通マニュアル
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {commonManuals.map((manual) => {
+              const Icon = manual.icon;
+              return (
+                <Link
+                  key={manual.id}
+                  href={`/manuals/common/${manual.id}`}
+                  className="block bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5 hover:border-emerald-400 dark:hover:border-emerald-500 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {manual.name}
+                      </h3>
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                        {manual.description}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
 

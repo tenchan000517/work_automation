@@ -1,12 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
 interface ManualMarkdownRendererProps {
   content: string;
+}
+
+// 見出しテキストからslug（id）を生成する関数
+function generateSlug(children: ReactNode): string {
+  const text = extractText(children);
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf-]/g, "") // 英数字、日本語、ハイフン以外を除去
+    .replace(/\s+/g, "-") // スペースをハイフンに
+    .replace(/^-+|-+$/g, ""); // 先頭・末尾のハイフンを除去
+}
+
+// ReactNodeからテキストを抽出する関数
+function extractText(node: ReactNode): string {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractText).join("");
+  if (node && typeof node === "object" && "props" in node) {
+    return extractText((node as { props: { children?: ReactNode } }).props.children);
+  }
+  return "";
 }
 
 export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps) {
@@ -16,27 +37,39 @@ export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps)
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
-          // 見出し
-          h1: ({ children, ...props }) => (
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4 break-words" {...props}>
-              {children}
-            </h1>
-          ),
-          h2: ({ children, ...props }) => (
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4 break-words border-b-2 border-zinc-200 dark:border-zinc-700 pb-2" {...props}>
-              {children}
-            </h2>
-          ),
-          h3: ({ children, ...props }) => (
-            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-6 mb-3 break-words" {...props}>
-              {children}
-            </h3>
-          ),
-          h4: ({ children, ...props }) => (
-            <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-4 mb-2 break-words" {...props}>
-              {children}
-            </h4>
-          ),
+          // 見出し（idを自動生成してアンカーリンクを有効化）
+          h1: ({ children, ...props }) => {
+            const id = generateSlug(children);
+            return (
+              <h1 id={id} className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4 break-words scroll-mt-20" {...props}>
+                {children}
+              </h1>
+            );
+          },
+          h2: ({ children, ...props }) => {
+            const id = generateSlug(children);
+            return (
+              <h2 id={id} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4 break-words border-b-2 border-zinc-200 dark:border-zinc-700 pb-2 scroll-mt-20" {...props}>
+                {children}
+              </h2>
+            );
+          },
+          h3: ({ children, ...props }) => {
+            const id = generateSlug(children);
+            return (
+              <h3 id={id} className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-6 mb-3 break-words scroll-mt-20" {...props}>
+                {children}
+              </h3>
+            );
+          },
+          h4: ({ children, ...props }) => {
+            const id = generateSlug(children);
+            return (
+              <h4 id={id} className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-4 mb-2 break-words scroll-mt-20" {...props}>
+                {children}
+              </h4>
+            );
+          },
           // 段落
           p: ({ children, ...props }) => (
             <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed my-4 break-words" {...props}>
