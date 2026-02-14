@@ -941,6 +941,7 @@ npm run dev
 |---------|------|
 | data/hearing.json | ヒアリング抽出JSON |
 | data/composition.md | 構成案全文（実装の詳細仕様） |
+| SEO_LLMO_GUIDE.md | SEO・LLMO実装ガイド（最終フェーズで使用） |
 
 ## 実装状況
 
@@ -957,6 +958,19 @@ npm run dev
 1. data/composition.md を読んで全体像を把握
 2. TOPページから実装開始
 3. 実装中は data/hearing.json と照合して整合性を確認
+4. 全ページ実装完了後、SEO_LLMO_GUIDE.md に従ってSEO・LLMO対策を実施
+
+### 最終フェーズ: SEO・LLMO対策（必須）
+
+実装完了後、SEO_LLMO_GUIDE.md を参照して以下を実施:
+
+- [ ] robots.txt 作成
+- [ ] sitemap.ts 作成
+- [ ] 全ページに metadata（title, description）設定
+- [ ] JSON-LD 構造化データ設置（業種に応じたスキーマタイプ）
+- [ ] 見出し構造の最適化（h1 > h2 > h3）
+- [ ] 画像の alt 属性設定
+- [ ] 型チェック（npx tsc --noEmit）
 
 ---
 
