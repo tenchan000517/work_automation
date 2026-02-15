@@ -974,6 +974,42 @@ npm run dev
 
 ---
 
+## 実装完了後: 必要素材リストの出力
+
+実装完了後、HANDOFF.md に以下の「必要素材リスト」セクションを追加してください。
+
+### 必要素材リスト
+
+コード内の全画像参照を抽出し、以下のJSON形式で出力:
+
+\`\`\`json
+{
+  "company": "{{companyName}}",
+  "generatedAt": "{{date}}",
+  "totalAssets": 12,
+  "assets": [
+    {
+      "id": 1,
+      "fileName": "hero.jpg",
+      "destPath": "public/images/",
+      "page": "TOP",
+      "usage": "ヒーロー背景",
+      "currentSrc": "/images/placeholder-hero.jpg",
+      "shootingNote": "会社外観 or 作業風景、横長推奨",
+      "size": "1920x1080推奨"
+    }
+  ]
+}
+\`\`\`
+
+**抽出ルール:**
+1. \`public/images/\` 以下の全画像参照を抽出
+2. プレースホルダー画像（placeholder-*, sample-* など）を特定
+3. 各画像の用途をコードのコメントやコンテキストから推測
+4. 撮影指示（shootingNote）を用途から自動生成
+
+---
+
 ## 6. 依存関係インストール
 
 \`\`\`bash

@@ -39,9 +39,10 @@ const HP_PAGE_OPTIONS = [
 
 // ===== メニュー追加 =====
 function hp_addFolderMenu(ui) {
-  ui.createMenu('3.📁 ページフォルダ')
-    .addItem('📂 ページフォルダ追加', 'hp_showCreateFolderDialog')
+  ui.createMenu('3.📁 素材フォルダ')
+    .addItem('📂 素材フォルダ作成（JSON入力）', 'hp_showAssetFolderDialog')
     .addSeparator()
+    .addItem('📂 ページフォルダ追加', 'hp_showCreateFolderDialog')
     .addItem('📋 最近追加したフォルダ一覧', 'hp_showRecentFolders')
     .addToUi();
 }
