@@ -2,13 +2,17 @@
  * HP制作 更新・修正・校正 プロンプト GAS
  *
  * 【機能】
- * 1. カンプ差分確認 - 実装済みコードとカンプの差分を検出
- * 2. セクション単位修正 - 選択した項目のみ修正指示を生成
- * 3. プレースホルダー更新 - カンプ更新後のテキスト置き換え
+ * 1. カンプ差分確認・修正 - 実装済みコードとカンプの差分を検出・修正
+ * 2. プレースホルダー更新 + SEO/LLMO - ヒアリングシートJSONでプレースホルダー置換 + SEO/LLMO対策
  *
  * 【用途】
  * - 実装後のカンプとのギャップ確認・修正
- * - カンプ更新時のプレースホルダー箇所の実データ反映
+ * - ヒアリングシートのデータでプレースホルダーを実データに置換
+ * - SEO・LLMO対策の実施
+ *
+ * 【依存】
+ * - jsonOutputDialog.js: hp_getCompanySheetListForJsonOutput(), hp_extractAndSaveJsonData()
+ * - compositionPrompt.js: CI_DIALOG_STYLES
  *
  * 【使用方法】
  * onOpen()内で hp_addUpdateMenu(ui) を呼び出し
@@ -21,7 +25,7 @@
 function hp_addUpdateMenu(ui) {
   ui.createMenu('5.🔄 更新・修正・校正')
     .addItem('🔍 カンプ差分確認・修正', 'hp_showKanpuDiffDialog')
-    .addItem('📝 プレースホルダー更新', 'hp_showPlaceholderUpdateDialog')
+    .addItem('📝 プレースホルダー更新 + SEO/LLMO', 'hp_showPlaceholderUpdateDialog')
     .addToUi();
 }
 
@@ -384,13 +388,18 @@ function getKanpuDiffDialogHtml() {
 
 // ===== プレースホルダー更新ダイアログ =====
 function hp_showPlaceholderUpdateDialog() {
-  const html = HtmlService.createHtmlOutput(getPlaceholderUpdateDialogHtml())
-    .setWidth(600)
-    .setHeight(600);
-  SpreadsheetApp.getUi().showModalDialog(html, 'プレースホルダー更新');
+  // 企業シート一覧を取得（jsonOutputDialog.jsの関数を使用）
+  const sheetData = hp_getCompanySheetListForJsonOutput();
+
+  const html = HtmlService.createHtmlOutput(getPlaceholderUpdateDialogHtml(sheetData))
+    .setWidth(700)
+    .setHeight(750);
+  SpreadsheetApp.getUi().showModalDialog(html, 'プレースホルダー更新 + SEO/LLMO');
 }
 
-function getPlaceholderUpdateDialogHtml() {
+function getPlaceholderUpdateDialogHtml(sheetData) {
+  const sheetDataJson = JSON.stringify(sheetData);
+
   return `
 <!DOCTYPE html>
 <html>
@@ -415,32 +424,50 @@ function getPlaceholderUpdateDialogHtml() {
       font-size: 12px;
       color: #333;
     }
-    .path-input {
+    .company-select {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 14px;
-      font-family: 'Consolas', 'Monaco', monospace;
+      background: white;
     }
-    .path-input:focus {
+    .company-select:focus {
       outline: none;
       border-color: #1565C0;
       box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
     }
-    .placeholder-list {
-      width: 100%;
-      height: 120px;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+    .option-section {
+      background: #f8f9fa;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .option-section h4 {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-size: 14px;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .checkbox-item input[type="checkbox"] {
+      margin: 0;
+    }
+    .checkbox-item label {
       font-size: 13px;
-      font-family: 'Consolas', 'Monaco', monospace;
-      resize: vertical;
+      cursor: pointer;
     }
     .prompt-output {
       width: 100%;
-      height: 200px;
+      height: 280px;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
@@ -463,6 +490,10 @@ function getPlaceholderUpdateDialogHtml() {
     .btn-primary:hover {
       background: #0d47a1;
     }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
     .btn-secondary {
       background: #f5f5f5;
       color: #333;
@@ -472,11 +503,38 @@ function getPlaceholderUpdateDialogHtml() {
       font-size: 14px;
       cursor: pointer;
     }
+    .btn-secondary:disabled {
+      background: #eee;
+      color: #999;
+      cursor: not-allowed;
+    }
     .btn-group {
       display: flex;
       gap: 8px;
       justify-content: flex-end;
       margin-top: 16px;
+    }
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+    }
+    .status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      display: block;
+    }
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+      display: block;
+    }
+    .status.loading {
+      background: #fff3e0;
+      color: #e65100;
+      display: block;
     }
   </style>
 </head>
@@ -485,123 +543,249 @@ function getPlaceholderUpdateDialogHtml() {
 
   <!-- 説明 -->
   <div class="info-box">
-    <h4>📝 プレースホルダー更新とは</h4>
-    <p>カンプが更新され、「aaaa」「xxxx」などのプレースホルダーが実データに置き換わった場合に、
-    該当箇所のみを更新する機能です。レイアウトや色は変更しません。</p>
+    <h4>📝 プレースホルダー更新 + SEO/LLMO</h4>
+    <p>ヒアリングシートから最新のJSONデータを取得し、プレースホルダーを実データに置換します。
+    同時にSEO・LLMO対策も実施できます。</p>
   </div>
 
-  <!-- 対象セクション -->
+  <!-- 企業シート選択 -->
   <div class="input-section">
-    <span class="input-label">対象セクション</span>
-    <input type="text" class="path-input" id="sectionName"
-      placeholder="例: HeroSection, CompanyInfo, ContactForm など">
+    <span class="input-label">対象企業を選択</span>
+    <select class="company-select" id="companySelect" onchange="onCompanySelect()">
+      <option value="">-- 企業シートを選択 --</option>
+    </select>
   </div>
 
-  <!-- カンプ画像パス -->
-  <div class="input-section">
-    <span class="input-label">更新後のカンプ画像パス</span>
-    <input type="text" class="path-input" id="kanpuPath"
-      placeholder="例: C:\\Users\\tench\\Downloads\\信藤建設HPデザイン\\1_v2.png">
-  </div>
-
-  <!-- プレースホルダー一覧 -->
-  <div class="input-section">
-    <span class="input-label">更新対象のプレースホルダー（任意）</span>
-    <textarea class="placeholder-list" id="placeholderList"
-      placeholder="例:&#10;aaaa → 会社名&#10;xxxx → 住所&#10;0000-00-0000 → 電話番号"></textarea>
-    <div class="note">※ 空欄の場合、カンプから自動検出します</div>
+  <!-- オプション選択 -->
+  <div class="option-section">
+    <h4>🎯 実行内容（複数選択可）</h4>
+    <div class="checkbox-group">
+      <div class="checkbox-item">
+        <input type="checkbox" id="optPlaceholder" value="placeholder" checked>
+        <label for="optPlaceholder">📝 プレースホルダー更新（aaaa → 実データ）</label>
+      </div>
+      <div class="checkbox-item">
+        <input type="checkbox" id="optSeo" value="seo" checked>
+        <label for="optSeo">🔍 SEO対策（metadata, robots.txt, sitemap等）</label>
+      </div>
+      <div class="checkbox-item">
+        <input type="checkbox" id="optLlmo" value="llmo" checked>
+        <label for="optLlmo">🤖 LLMO対策（JSON-LD構造化データ）</label>
+      </div>
+    </div>
   </div>
 
   <!-- プロンプト出力 -->
   <div class="input-section">
     <span class="input-label">生成されたプロンプト</span>
-    <textarea class="prompt-output" id="promptOutput" readonly></textarea>
+    <textarea class="prompt-output" id="promptOutput" readonly placeholder="企業を選択して「生成」をクリック"></textarea>
   </div>
+
+  <!-- ステータス表示 -->
+  <div class="status" id="status"></div>
 
   <!-- ボタン -->
   <div class="btn-group">
     <button class="btn-secondary" onclick="google.script.host.close()">閉じる</button>
-    <button class="btn-secondary" onclick="copyPrompt()">📋 コピー</button>
-    <button class="btn-primary" onclick="generatePrompt()">生成</button>
+    <button class="btn-secondary" id="copyBtn" onclick="copyPrompt()" disabled>📋 コピー</button>
+    <button class="btn-primary" id="generateBtn" onclick="generatePrompt()" disabled>生成（JSON取得 + 保存）</button>
   </div>
 
   <script>
-    function generatePrompt() {
-      const sectionName = document.getElementById('sectionName').value.trim();
-      const kanpuPath = document.getElementById('kanpuPath').value.trim();
-      const placeholderList = document.getElementById('placeholderList').value.trim();
+    const sheetData = ${sheetDataJson};
+    let selectedSheetName = '';
+    let currentJsonData = null;
 
-      if (!sectionName) {
-        alert('対象セクションを入力してください');
-        return;
-      }
-      if (!kanpuPath) {
-        alert('カンプ画像パスを入力してください');
-        return;
-      }
+    window.onload = function() {
+      const select = document.getElementById('companySelect');
 
-      const prompt = buildPlaceholderPrompt(sectionName, kanpuPath, placeholderList);
-      document.getElementById('promptOutput').value = prompt;
+      sheetData.companySheets.forEach(sheet => {
+        const option = document.createElement('option');
+        option.value = sheet.sheetName;
+        option.textContent = sheet.companyName + (sheet.isActive ? ' (現在のシート)' : '');
+        if (sheet.isActive) {
+          option.selected = true;
+          selectedSheetName = sheet.sheetName;
+        }
+        select.appendChild(option);
+      });
+
+      updateButtonState();
+    };
+
+    function onCompanySelect() {
+      selectedSheetName = document.getElementById('companySelect').value;
+      updateButtonState();
     }
 
-    function buildPlaceholderPrompt(sectionName, kanpuPath, placeholderList) {
-      let prompt = \`# プレースホルダー更新指示
+    function updateButtonState() {
+      document.getElementById('generateBtn').disabled = !selectedSheetName;
+    }
 
-## 基本情報
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+    }
 
-| 項目 | 内容 |
-|------|------|
-| 対象セクション | \${sectionName} |
-| カンプ画像 | \${kanpuPath} |
+    function generatePrompt() {
+      if (!selectedSheetName) {
+        showStatus('企業シートを選択してください', 'error');
+        return;
+      }
+
+      const optPlaceholder = document.getElementById('optPlaceholder').checked;
+      const optSeo = document.getElementById('optSeo').checked;
+      const optLlmo = document.getElementById('optLlmo').checked;
+
+      if (!optPlaceholder && !optSeo && !optLlmo) {
+        showStatus('実行内容を1つ以上選択してください', 'error');
+        return;
+      }
+
+      document.getElementById('generateBtn').disabled = true;
+      document.getElementById('promptOutput').value = '⏳ JSONデータを取得中...';
+      showStatus('ヒアリングシートからJSONを取得・保存しています...', 'loading');
+
+      // GASのhp_extractAndSaveJsonData関数を呼び出し
+      google.script.run
+        .withSuccessHandler(handleJsonResult)
+        .withFailureHandler(handleError)
+        .hp_extractAndSaveJsonData(selectedSheetName);
+    }
+
+    function handleJsonResult(result) {
+      document.getElementById('generateBtn').disabled = false;
+
+      if (!result.success) {
+        document.getElementById('promptOutput').value = '';
+        showStatus('エラー: ' + result.error, 'error');
+        return;
+      }
+
+      currentJsonData = result.data;
+      const jsonStr = JSON.stringify(result.data, null, 2);
+
+      const optPlaceholder = document.getElementById('optPlaceholder').checked;
+      const optSeo = document.getElementById('optSeo').checked;
+      const optLlmo = document.getElementById('optLlmo').checked;
+
+      const prompt = buildUpdatePrompt(jsonStr, optPlaceholder, optSeo, optLlmo);
+      document.getElementById('promptOutput').value = prompt;
+      document.getElementById('copyBtn').disabled = false;
+
+      if (result.saved) {
+        showStatus('✅ JSON取得完了・シートに保存しました（企業: ' + result.companyName + '）', 'success');
+      } else {
+        showStatus('✅ JSON取得完了（保存: ' + (result.saveError || '失敗') + '）', 'success');
+      }
+    }
+
+    function handleError(error) {
+      document.getElementById('generateBtn').disabled = false;
+      document.getElementById('promptOutput').value = '';
+      showStatus('エラー: ' + error.message, 'error');
+    }
+
+    function buildUpdatePrompt(jsonStr, optPlaceholder, optSeo, optLlmo) {
+      const tasks = [];
+      if (optPlaceholder) tasks.push('プレースホルダー更新');
+      if (optSeo) tasks.push('SEO対策');
+      if (optLlmo) tasks.push('LLMO対策');
+
+      let prompt = \`# HP更新指示（\${tasks.join(' + ')}）
+
+## 企業データ（ヒアリングシートから抽出）
+
+\\\`\\\`\\\`json
+\${jsonStr}
+\\\`\\\`\\\`
 
 ---
 
-## 🚨 厳守事項
+## 実行内容
 
-### ✅ やること
-- カンプ画像からテキスト・文言を読み取る
-- プレースホルダー箇所（aaaa, xxxx, 000-0000 等）を実データに置き換える
-
-### ❌ やらないこと（絶対禁止）
-- レイアウト・配置の変更
-- 色・カラーの変更
-- フォント・サイズの変更
-- 余白・間隔の変更
-- 画像の変更
-- テキスト以外のあらゆる変更
-
----
-
-## 作業手順
-
-1. カンプ画像（\${kanpuPath}）を読み込む
-2. \${sectionName} のコードを探して読み込む
-3. プレースホルダー箇所を特定
-4. カンプの実データでプレースホルダーを置き換え
-5. テキスト以外は一切変更しない
 \`;
 
-      if (placeholderList) {
-        prompt += \`
----
+      if (optPlaceholder) {
+        prompt += \`### 1. プレースホルダー更新
 
-## 更新対象のプレースホルダー
+上記JSONデータを使用して、コード内のプレースホルダーを実データに置換してください。
 
-\\\`\\\`\\\`
-\${placeholderList}
-\\\`\\\`\\\`
+**対象パターン:**
+- \\\`aaaa\\\`, \\\`xxxx\\\`, \\\`〇〇〇\\\` → 該当する実データ
+- \\\`000-0000-0000\\\`, \\\`00-0000-0000\\\` → 電話番号
+- \\\`000-0000\\\` → 郵便番号
+- \\\`sample@example.com\\\` → メールアドレス
+
+**厳守事項:**
+- レイアウト・色・フォント等は一切変更しない
+- JSONにないデータは置換しない（プレースホルダーのまま残す）
+
 \`;
       }
 
-      prompt += \`
+      if (optSeo) {
+        prompt += \`### \${optPlaceholder ? '2' : '1'}. SEO対策
+
+\\\`SEO_LLMO_GUIDE.md\\\` を参照して、以下を実施してください：
+
+- [ ] \\\`robots.txt\\\` 作成（public/robots.txt）
+- [ ] \\\`sitemap.ts\\\` 作成（app/sitemap.ts）
+- [ ] 全ページに \\\`metadata\\\` 設定（title, description）
+- [ ] 見出し構造の最適化（h1 > h2 > h3）
+- [ ] 画像の \\\`alt\\\` 属性設定
+
+**metadataの設定例:**
+\\\`\\\`\\\`typescript
+export const metadata: Metadata = {
+  title: '企業名 | ページタイトル',
+  description: 'ページの説明文（120文字程度）',
+};
+\\\`\\\`\\\`
+
+\`;
+      }
+
+      if (optLlmo) {
+        prompt += \`### \${optPlaceholder && optSeo ? '3' : optPlaceholder || optSeo ? '2' : '1'}. LLMO対策（構造化データ）
+
+\\\`SEO_LLMO_GUIDE.md\\\` を参照して、JSON-LD構造化データを設置してください。
+
+**必須スキーマ:**
+- \\\`Organization\\\` - 会社情報（TOPページ）
+- \\\`LocalBusiness\\\` - 店舗・事業所情報（該当する場合）
+- \\\`BreadcrumbList\\\` - パンくずリスト（全ページ）
+- \\\`FAQPage\\\` - よくある質問（該当ページ）
+
+**設置方法:**
+\\\`\\\`\\\`typescript
+// app/layout.tsx または各ページ
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+/>
+\\\`\\\`\\\`
+
+\`;
+      }
+
+      prompt += \`---
+
+## 参照ファイル
+
+| ファイル | 用途 |
+|---------|------|
+| SEO_LLMO_GUIDE.md | SEO・LLMO実装ガイド |
+| data/hearing.json | ヒアリング抽出データ（参考） |
+
 ---
 
-## 出力形式
+## 完了後の確認
 
-\\\`\\\`\\\`diff
-- プレースホルダーの箇所
-+ 実データに置き換えた箇所
-\\\`\\\`\\\`
+- [ ] プレースホルダーが実データに置換されている
+- [ ] ビルドエラーがない（\\\`npm run build\\\`）
+- [ ] 型エラーがない（\\\`npx tsc --noEmit\\\`）
 \`;
 
       return prompt;
