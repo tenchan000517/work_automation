@@ -2,6 +2,24 @@
 
 ## 🎯 次にやること
 
+### 🔥 HP制作: PERMISSION_ERROR修正（最優先）
+
+**問題:** 他アカウント/PCでGAS実行時に「ストレージの読み込み PERMISSION_ERROR」が発生
+
+**原因:** `createFolder.js` で `PropertiesService.getScriptProperties()` を使用
+- 908-923行目: `hp_addFolderHistory()` 関数
+- 925-928行目: `hp_showRecentFolders()` 関数
+
+**なぜエラー:** ScriptPropertiesはGASスクリプトの「編集権限」を持つユーザーのみアクセス可能
+
+**解決策（2択）:**
+1. スクリプトエディタで全ユーザーに編集者権限を付与
+2. 【推奨】コード修正: ScriptProperties → スプレッドシートのセルに履歴保存、または履歴機能削除
+
+**修正対象ファイル:** `/mnt/c/work-manual/docs/gas/hp/createFolder.js`
+
+---
+
 ### HP制作: GAS改善（気づいたことメモから）
 
 | # | 箇所 | 内容 |
@@ -26,7 +44,10 @@
 | 種類 | パス |
 |------|------|
 | 全体マニュアル | `docs/manuals/hp/00-overall-manual.md` |
-| 個別マニュアル | `docs/manuals/hp/01〜10.md`, `99-claude-code.md` |
+| 個別マニュアル | `docs/manuals/hp/01〜11.md`, `99-claude-code.md` |
+| **カンプ版マニュアル** | `docs/manuals/hp/05-HP作成-カンプ版.md` ★2026-02-15追加 |
+| **カンプ版GAS** | `docs/gas/hp/compositionPromptKanpu.js` ★2026-02-15追加 |
+| SEO設定マニュアル | `docs/manuals/hp/11-SEO設定.md` ★2026-02-15追加 |
 | 共通マニュアル | `docs/manuals/common/`（7件） |
 | スクショ | `public/images/hp/`（35枚） |
 | ガイドライン | `docs/manual-creation-guideline-v4.md` |
@@ -301,6 +322,8 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-02-15 | HP制作: **デザインカンプ版フロー追加**。(1) カンプ版GAS作成（`compositionPromptKanpu.js`）- カンプ分析プロンプト生成、カンプ版Claude Code指示文の2機能、(2) カンプ版マニュアル作成（`05-HP作成-カンプ版.md`）- 厳守事項（文言捏造禁止、プレースホルダー維持、デザイン忠実再現）、バッチ処理対応、(3) 既存GASメニューにカンプ版を統合、(4) 全体マニュアルに2つのフロー（通常版/カンプ版）の導線を追加 |
+| 2026-02-15 | HP制作: **No.11 SEO設定マニュアル追加**。GA4設定、サーチコンソール設定、サイトマップ登録（Next.js）、URL検査・インデックス登録の4ステップで構成。全体マニュアルにPhase 7「SEO・LLMO」を追加 |
 | 2026-02-03 | HP制作: **No.5 HP実装マニュアル完成**。(1) STEP 1-5のフロー整理（実装見守り→ビルド自動→HANDOFF完了確認→動作確認→ステータス更新）、(2) 自動フローをメインに、手動セットアップはアコーディオンに、(3) コンテキスト限界時の対応セクション追加、(4) ローカル動作確認フロー追加（npm install/run dev/レスポンシブ確認）、(5) WSLパーミッションエラー対応を補足アコーディオンに、(6) スクショ14枚追加。**Vercelデプロイ完了** |
 | 2026-02-03 | HP制作: **構成案プロンプト→HP実装フロー整備完了**。(1) 構成案プロンプトのチェックボックスON時の出力指示を修正（ページ未選択でも動作）、(2) Claude Code指示文テンプレートを完全版に戻した、(3) HANDOFFテンプレート（GAS）のセットアップ手順修正（docフォルダ退避→クローン→戻す）、(4) 全体マニュアルNo.4-5のフロー整理・起動術式追加、(5) `99-Claude Code使い方.md`→`99-claude-code.md`にリネーム（includeのスペース問題対応）、(6) No.5にClaude Codeマニュアルのincludeアコーディオン追加、(7) No.4にスクショ2枚追加 |
 | 2026-02-02 | **ガイドラインV4作成完了**（`docs/manual-creation-guideline-v4.md`）。V3をベースに5〜9章を新規追加（GAS共通概念、マニュアル作成フロー、全体マニュアル設計、共通マニュアル管理、マニュアル検証フロー）。リファレンス・チェックリストを拡張。次タスク: マニュアル検証（共立工業サンプルで実証） |

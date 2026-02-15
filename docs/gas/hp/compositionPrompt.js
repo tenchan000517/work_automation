@@ -1033,9 +1033,16 @@ function hp_addCompositionMenu(ui) {
     .addItem('📋 構成案プロンプト生成', 'hp_showCompositionPromptDialog')
     .addItem('🤖 Claude Code指示文生成', 'hp_showClaudeCodePromptDialog')
     .addSeparator()
+    .addItem('🎨 カンプ分析プロンプト生成', 'hp_showKanpuAnalysisDialog')
+    .addItem('🖼️ カンプ版 Claude Code指示文', 'hp_showKanpuClaudeCodeDialog')
+    .addSeparator()
     .addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog')
     .addToUi();
 }
+
+// ※ カンプ版の関数は compositionPromptKanpu.js に定義
+// hp_showKanpuAnalysisDialog()
+// hp_showKanpuClaudeCodeDialog()
 
 // ===== 1. 構成案プロンプト生成ダイアログ =====
 function hp_showCompositionPromptDialog() {

@@ -905,27 +905,56 @@ function hp_showFolderSuccessDialog(result) {
 
 
 // ===== 作成履歴機能 =====
+// 履歴用の隠しシートを取得（なければ作成）
+function hp_getHistorySheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('_HP履歴');
+  if (!sheet) {
+    sheet = ss.insertSheet('_HP履歴');
+    sheet.hideSheet();
+    // ヘッダー行を追加
+    sheet.getRange(1, 1, 1, 4).setValues([['会社名', 'URL', 'サブフォルダ', '作成日時']]);
+  }
+  return sheet;
+}
+
+// 履歴データを取得
+function hp_getHistoryData() {
+  const sheet = hp_getHistorySheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return []; // ヘッダーのみ
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  return data.map(row => ({
+    companyName: row[0],
+    url: row[1],
+    subfolders: row[2] ? JSON.parse(row[2]) : [],
+    createdAt: row[3]
+  }));
+}
+
 function hp_addFolderHistory(companyName, mainUrl, subfolders) {
-  const props = PropertiesService.getScriptProperties();
-  let history = JSON.parse(props.getProperty('HP_FOLDER_HISTORY') || '[]');
+  const sheet = hp_getHistorySheet();
 
-  history.unshift({
-    companyName: companyName,
-    url: mainUrl,
-    subfolders: subfolders,
-    createdAt: new Date().toLocaleString('ja-JP')
-  });
+  // 新しい履歴を2行目に挿入（ヘッダーの直後）
+  sheet.insertRowAfter(1);
+  sheet.getRange(2, 1, 1, 4).setValues([[
+    companyName,
+    mainUrl,
+    JSON.stringify(subfolders),
+    new Date().toLocaleString('ja-JP')
+  ]]);
 
-  // 最新20件のみ保持
-  history = history.slice(0, 20);
-
-  props.setProperty('HP_FOLDER_HISTORY', JSON.stringify(history));
+  // 最新20件のみ保持（ヘッダー含めて21行まで）
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 21) {
+    sheet.deleteRows(22, lastRow - 21);
+  }
 }
 
 function hp_showRecentFolders() {
   const ui = SpreadsheetApp.getUi();
-  const props = PropertiesService.getScriptProperties();
-  const history = JSON.parse(props.getProperty('HP_FOLDER_HISTORY') || '[]');
+  const history = hp_getHistoryData();
 
   if (history.length === 0) {
     ui.alert('📋 追加履歴', 'フォルダ追加履歴がありません。', ui.ButtonSet.OK);

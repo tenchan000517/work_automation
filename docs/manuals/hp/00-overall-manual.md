@@ -21,6 +21,7 @@
 - [No.8 MVP確認・修正](#no8-mvp確認修正)
 - [No.9 納品](#no9-納品)
 - [No.10 月次FB](#no10-月次fb)
+- [No.11 SEO設定](#no11-seo設定)
 - [Claude Code使い方](#claude-code使い方)
 
 ---
@@ -61,6 +62,10 @@ No.9 納品（河合）
 【Phase 6: 運用】
 No.10 月次FB（河合）
     ↓ 定期フィードバック
+
+【Phase 7: SEO・LLMO】※納品後に実施
+No.11 SEO設定（河合）
+    ↓ GA4, サーチコンソール, サイトマップ, URL検査
 ```
 
 ### 担当者一覧
@@ -830,6 +835,21 @@ AIが構成案を出力
 ## No.5 HP作成
 
 > **個別マニュアル**: [05-HP作成.md](./05-HP作成.md)
+>
+> **デザインカンプ版**: [05-HP作成-カンプ版.md](./05-HP作成-カンプ版.md) - デザインカンプ画像がある場合はこちら
+
+### 2つのフロー
+
+| フロー | 使用場面 | 入力 | マニュアル |
+|--------|---------|------|-----------|
+| **通常版** | ヒアリング情報から構成案を作成 | JSON + 構成案 | [05-HP作成.md](./05-HP作成.md) |
+| **カンプ版** | デザイナーのカンプを忠実に再現 | デザインカンプ画像 | [05-HP作成-カンプ版.md](./05-HP作成-カンプ版.md) |
+
+**判断基準:**
+- デザインカンプ画像がある → **カンプ版**を使用
+- デザインカンプがない → **通常版**を使用
+
+---
 
 ### 基本情報
 
@@ -1620,6 +1640,150 @@ https://www.example.com/
 
 ---
 
+## No.11 SEO設定
+
+> **個別マニュアル**: [11-SEO設定.md](./11-SEO設定.md)
+
+### 基本情報
+
+| 項目 | 内容 |
+|------|------|
+| 担当者 | 河合 |
+| 実施タイミング | No.9 納品完了後（本番公開後） |
+| 使用ツール | Google Analytics, Google Search Console, ターミナル |
+| 成果物 | GA4設定完了, サーチコンソール連携, サイトマップ登録 |
+
+### 目的
+
+- HPのアクセス解析を可能にする（GA4）
+- 検索エンジンにサイトを正しく認識させる（サーチコンソール）
+- 検索結果への表示を促進する（サイトマップ・URL検査）
+
+### フロー概要
+
+```
+【STEP 1】GA4設定
+    ↓ Googleアナリティクスでプロパティ作成
+測定ID取得 → Next.jsに実装
+    ↓
+
+【STEP 2】サーチコンソール設定
+    ↓ プロパティ追加 → 所有権確認
+    ↓
+
+【STEP 3】サイトマップ設定
+    ↓ sitemap.ts作成 → サーチコンソールに送信
+    ↓
+
+【STEP 4】URL検査・インデックス登録
+    ↓ 各ページのURL検査 → リクエスト送信
+完了
+```
+
+### STEP 1: GA4の設定
+
+#### 1-1. プロパティ作成
+
+1. [Google Analytics](https://analytics.google.com/) にアクセス
+2. 管理 → **「＋ プロパティを作成」**
+3. プロパティ名、タイムゾーン（日本）、通貨（日本円）を設定
+4. **「ウェブ」** を選択 → URL・ストリーム名を入力
+5. **測定ID（G-XXXXXXX）** をメモ
+
+#### 1-2. Next.jsへの実装
+
+```bash
+npm install @next/third-parties
+```
+
+`app/layout.tsx` に追加：
+
+```tsx
+import { GoogleAnalytics } from '@next/third-parties/google'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="ja">
+      <body>{children}</body>
+      <GoogleAnalytics gaId="G-XXXXXXX" />
+    </html>
+  )
+}
+```
+
+#### 1-3. 拡張計測の確認
+
+GA4管理画面 → データストリーム → 拡張計測機能 → **「ブラウザの履歴イベントに基づくページの変更」** にチェック
+
+> ⚠️ これがないとSPAのページ遷移が計測されません
+
+### STEP 2: サーチコンソールの設定
+
+#### 2-1. プロパティ追加
+
+1. [Google Search Console](https://search.google.com/search-console/) にアクセス
+2. **「＋ プロパティを追加」** → **「URLプレフィックス」** を選択
+3. URLを入力（例：`https://www.example.com`）
+
+#### 2-2. 所有権確認
+
+**HTMLタグ方式（推奨）:**
+
+`app/layout.tsx` に追加：
+
+```tsx
+export const metadata = {
+  verification: {
+    google: 'XXXXXXXXXXXXXXX',  // ← メタタグのcontent値
+  },
+}
+```
+
+デプロイ後、サーチコンソールで **「確認」** をクリック
+
+### STEP 3: サイトマップの設定
+
+#### 3-1. sitemap.ts作成
+
+`app/sitemap.ts` を作成：
+
+```typescript
+import { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://www.example.com'
+
+  return [
+    { url: baseUrl, lastModified: new Date(), priority: 1 },
+    { url: `${baseUrl}/about`, lastModified: new Date(), priority: 0.8 },
+    { url: `${baseUrl}/service`, lastModified: new Date(), priority: 0.8 },
+    { url: `${baseUrl}/recruit`, lastModified: new Date(), priority: 0.8 },
+    { url: `${baseUrl}/contact`, lastModified: new Date(), priority: 0.5 },
+  ]
+}
+```
+
+#### 3-2. サーチコンソールに送信
+
+1. サーチコンソール → **「サイトマップ」**
+2. `sitemap.xml` を入力 → **「送信」**
+3. 「成功」と表示されればOK
+
+### STEP 4: URL検査・インデックス登録
+
+1. サーチコンソール上部の検索バーに **URLを入力**
+2. 「URLがGoogleに登録されていません」の場合 → **「インデックス登録をリクエスト」**
+3. 主要ページすべてについて実施
+
+### 完了チェックリスト
+
+- [ ] GA4: 測定ID取得・実装・動作確認
+- [ ] サーチコンソール: 所有権確認
+- [ ] サイトマップ: 送信・成功確認
+- [ ] URL検査: 主要ページのインデックス登録リクエスト
+
+---
+
 ## Claude Code使い方
 
 > **個別マニュアル**: [99-claude-code.md](./99-claude-code.md)
@@ -1808,4 +1972,5 @@ rm -rf /mnt/c/client_hp/{{企業名英語}}_backup
 
 | 日付 | 内容 |
 |------|------|
+| 2026-02-15 | No.11 SEO設定を追加（GA4・サーチコンソール・サイトマップ・URL検査） |
 | 2026-02-02 | 全体マニュアル作成（全11タスク + Claude Code使い方を統合） |
