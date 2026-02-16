@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Monitor, Mic, Terminal, MessageSquare } from "lucide-react";
+import { Monitor, Mic, Terminal, MessageSquare, ClipboardList } from "lucide-react";
 
 // 共通マニュアルデータ
 const commonManuals = [
@@ -134,6 +134,31 @@ export default function Home() {
               );
             })}
           </div>
+        </section>
+
+        {/* ワークログ */}
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+            ワークログ
+          </h2>
+          <Link
+            href="/worklogs"
+            className="block bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                <ClipboardList className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                  クライアント別ワークログ
+                </h3>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                  各クライアントの作業履歴・GitHub・デプロイURL・関連リンク
+                </p>
+              </div>
+            </div>
+          </Link>
         </section>
 
         {/* 進捗状況 */}
