@@ -35,7 +35,7 @@ export default async function ManualPage({
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
@@ -55,7 +55,7 @@ export default async function ManualPage({
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
           {isMarkdown ? (
             <ManualMarkdownRenderer content={content} />
