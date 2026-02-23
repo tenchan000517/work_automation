@@ -58,6 +58,10 @@ function onOpen() {
       .addItem('🎤 SUNO歌詞付き楽曲プロンプト', 'pv_showSunoVocalDialog')
       .addItem('🗣️ ナレーションテキスト出力', 'pv_showNarrationOutputDialog')
     )
+    // 5️⃣ エフェクトシーン
+    .addSubMenu(ui.createMenu('5️⃣ エフェクトシーン')
+      .addItem('✨ エフェクトシーンプロンプト生成', 'pv_showEffectSceneDialog')
+    )
     // ⚙️ 設定
     .addSubMenu(ui.createMenu('⚙️ 設定')
       .addItem('🎨 テンプレート初期設定', 'pv_setupTemplates')
@@ -204,12 +208,16 @@ function pv_getCompanyNameFromSheet(sheet) {
 
 /**
  * ラベルでセルを検索して値を取得
+ * ※ 数値も文字列として返す（ダイアログ読み込みエラー防止）
  */
 function pv_getCellValueByLabel(sheet, label) {
   const data = sheet.getDataRange().getValues();
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === label) {
-      return data[i][1];
+      const value = data[i][1];
+      // 数値や他の型も文字列に変換して返す
+      if (value === null || value === undefined) return '';
+      return String(value);
     }
   }
   return '';
@@ -258,7 +266,8 @@ function pv_getBasicInfoFromSheet(sheet) {
   return {
     companyName: pv_getCellValueByLabel(sheet, '企業名'),
     industry: pv_getCellValueByLabel(sheet, '業種'),
-    purpose: pv_getCellValueByLabel(sheet, '目的'),
+    goal: pv_getCellValueByLabel(sheet, '目的'),
+    usage: pv_getCellValueByLabel(sheet, '用途'),
     target: pv_getCellValueByLabel(sheet, 'ターゲット'),
     tone: pv_getCellValueByLabel(sheet, 'トンマナ')
   };
@@ -285,7 +294,8 @@ function pv_getCharacterDataFromSheet(sheet, charNum) {
   const prefix = `キャラクター${charNum}_`;
   return {
     name: pv_getCellValueByLabel(sheet, prefix + '名前'),
-    genderAge: pv_getCellValueByLabel(sheet, prefix + '性別年齢'),
+    gender: pv_getCellValueByLabel(sheet, prefix + '性別'),
+    currentAge: pv_getCellValueByLabel(sheet, prefix + '現在編年齢'),
     pastAge: pv_getCellValueByLabel(sheet, prefix + '過去編年齢'),
     hair: pv_getCellValueByLabel(sheet, prefix + '髪型髪色'),
     eyes: pv_getCellValueByLabel(sheet, prefix + '目の特徴'),
@@ -308,7 +318,8 @@ function pv_getSceneDataFromSheet(sheet, sceneNum) {
     action: pv_getCellValueByLabel(sheet, prefix + '演出動き'),
     mood: pv_getCellValueByLabel(sheet, prefix + 'ムード'),
     narration: pv_getCellValueByLabel(sheet, prefix + 'ナレーション'),
-    videoPrompt: pv_getCellValueByLabel(sheet, prefix + '動画プロンプト')
+    videoPrompt: pv_getCellValueByLabel(sheet, prefix + '動画プロンプト'),
+    startFramePrompt: pv_getCellValueByLabel(sheet, prefix + '開始フレームプロンプト')
   };
 }
 

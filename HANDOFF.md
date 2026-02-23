@@ -2,7 +2,198 @@
 
 ## 🎯 次にやること
 
-### 🔥 HP制作: ギャップ修正・プレースホルダー更新のテスト検証（最優先）
+### アニメPV GAS: 動作確認（頭からやる）
+
+**作業内容:** GASにコードを反映して、フェーズごとに動作確認・スクショ撮影・マニュアル作成
+
+---
+
+#### GASメニュー構成（全体フロー）
+
+```
+📹 アニメPV制作
+├── 1️⃣ ヒアリング
+│   ├── 新規ヒアリングシート作成
+│   ├── 企業フォルダ作成
+│   ├── 文字起こしを整理（プロンプト生成）
+│   └── AI出力を転記
+├── 2️⃣ 台本生成
+│   ├── 台本生成プロンプト
+│   └── 台本パース・保存
+├── 3️⃣ キャラクター・シーン編集
+│   ├── キャラクター設定を編集
+│   ├── シーン構成を編集
+│   └── エンディングを編集
+├── 4️⃣ プロンプト生成
+│   ├── キャラクターシートプロンプト
+│   ├── 開始フレームプロンプト
+│   ├── 歌詞生成プロンプト
+│   ├── 歌詞を貼り付け・保存
+│   ├── SUNO冒頭BGMプロンプト
+│   ├── SUNO歌詞付き楽曲プロンプト
+│   └── ナレーション編集 ★今回改修
+└── ⚙️ 設定
+    ├── テンプレート初期設定
+    ├── 親フォルダを設定
+    └── 進捗一覧
+```
+
+---
+
+#### 対象ファイル（`docs/gas/anime-pv/`）12ファイル
+
+| # | ファイル | 内容 | 今回変更 |
+|---|---------|------|----------|
+| 1 | `animePvMain.js` | メニュー・ユーティリティ | |
+| 2 | `animePvSettings.js` | 定数・設定 | |
+| 3 | `animePvCommonStyles.js` | 共通スタイル | |
+| 4 | `animePvFolderManager.js` | フォルダ作成 | |
+| 5 | `animePvSheetManager.js` | シート作成 | ★ 列幅、Fish Audio設定 |
+| 6 | `animePvTranscript.js` | 文字起こし | |
+| 7 | `animePvScriptPrompt.js` | 台本生成 | |
+| 8 | `animePvImagePrompt.js` | 画像プロンプト | |
+| 9 | `animePvCharacterScene.js` | キャラクター・シーン編集 | |
+| 10 | `animePvSunoPrompt.js` | SUNO音楽生成（BGM・ボーカル） | ★ 分割 |
+| 11 | `animePvLyricsPrompt.js` | 歌詞生成 + 共通保存関数 | ★ 分割 |
+| 12 | `animePvNarration.js` | ナレーション（Fish Audio） | ★ 分割 |
+| 13 | `animePvEffectSettings.js` | エフェクト設定（アクション・エフェクト定義） | ★ 新規 |
+| 14 | `animePvEffectScene.js` | エフェクトシーンUI・プロンプト生成 | ★ 新規 |
+
+> **アーカイブ:** `_archive/animePvAudioPrompt.js`（旧：音声プロンプト統合ファイル）
+
+---
+
+#### フェーズ分け（進捗トラッキング）
+
+| Phase | 内容 | 状態 | スクショ |
+|-------|------|------|----------|
+| **0** | GASにコード反映（12ファイル） | ✅ 完了 | - |
+| **1** | ⚙️ 設定（テンプレート初期設定、親フォルダ設定） | ✅ 完了 | |
+| **2** | 1️⃣ ヒアリング（シート作成、フォルダ作成） | ✅ 完了 | 7枚 |
+| **3** | 1️⃣ ヒアリング（文字起こし→AI転記） | ✅ 完了 | 6枚 |
+| **4** | 2️⃣ 台本生成（プロンプト→パース） | ✅ 完了 | 7枚 |
+| **5** | 3️⃣ キャラクター・シーン編集 | ⬜ 未着手 | |
+| **6** | 4️⃣ プロンプト生成（画像系） | ⬜ 未着手 | |
+| **7** | 4️⃣ プロンプト生成（音声系）★今回改修 | ✅ 完了 | 8枚 |
+| **8** | 5️⃣ エフェクトシーン生成 ★新規 | ✅ 完了 | - |
+
+**状態:** ⬜ 未着手 / 🔄 進行中 / ✅ 完了 / ❌ 問題あり
+
+---
+
+#### エフェクトシーン機能（Phase 8）
+
+**完成した機能:**
+- アクション選択（目を開く / 顔を上げる）+ サムネイル画像
+- エフェクト選択（光の粒子 / 桜の花びら / 4色チョーク / エネルギー波）+ GIFサムネイル
+- 背景選択（場所 × 時間帯）
+- プロンプト生成（開始フレーム / 終了フレーム / 動画）
+- シートへの保存機能（演出1-5）
+
+**サムネイルURL:** `https://assets.yumesuta.com/thumbnail/`
+- アクション: `eye_open.jpeg`, `face_raise.jpeg`
+- エフェクト: `face_raise_particles.gif`, `eye_open_cherry_blossom.gif`, `eye_open_chalk.gif`, `face_raise_energy_wave.gif`
+
+**次フェーズ（拡張計画）:**
+- 新アクション追加: 「扉を開く」「後ろ向きで歩く」（構築中として表示済み）
+- 新エフェクト追加: 「服装変化」「世界回転トランジション」
+- プロンプト設計が必要
+
+**重要ドキュメント:**
+- `docs/gas/anime-pv/演出プロンプト_背後エフェクト_I2V対応_v2.md`
+
+**このドキュメントの教訓（306-350行目「検証で得た重要な学び」）:**
+
+| 分類 | 内容 |
+|------|------|
+| ✅ 成功 | `from behind character` が決め手。中央からではなく背後から出現に |
+| ✅ 成功 | 動画プロンプトは**動きのみに集中**。デザイン・色・質感は終了フレームに任せる |
+| ✅ 成功 | シンプルな構造（時間軸 + 動きの指示のみ） |
+| ✅ 成功 | 桜の花びらには `no branches, no trees, no stems` をネガティブに |
+| ❌ 失敗 | `from center` → 画面中央から新しいオブジェクトが出現してしまう |
+| ❌ 失敗 | `THE SAME petals` → 接続を明示しても新しい花びらが生成される |
+| ❌ 失敗 | `upward and OUTWARD` → 方向が矛盾して混乱 |
+| ❌ 失敗 | デザイン詳細指定 → 終了フレームと競合して不安定に |
+| ⚠️ 注意 | I2Vでカメラワーク（ズームアウト）は安定しない → 動画編集ソフトで後処理 |
+
+**プロンプト設計の原則（1223-1307行目「重要な技術ポイント」）:**
+- **奥行き分離**: 前景（人物）と後景（エフェクト）を明確に分離。エフェクトは常に背後
+- **完全同期**: 目を開く=2.0秒、顔を上げる=1.3秒で爆発
+- **3フレーム構造**: 開始フレーム（エフェクトなし）→ 動画プロンプト（動きのみ）→ 終了フレーム（エフェクト完了状態）
+- **キーフレーム3段階**: 静・溜め → 爆発の瞬間 → 展開・余韻
+
+**GAS実装時の教訓:**
+- GASのHtmlServiceでは外部mp4動画は表示不可 → GIFに変換して対応
+- サムネイルは16:9比率が見やすい
+
+---
+
+#### 共有済みスクリーンショット
+
+| パス | 内容 | Phase |
+|------|------|-------|
+| `/images/anime-pv/01-menu-hearing.png` | メニュー展開（ヒアリング） | 2 |
+| `/images/anime-pv/02-new-sheet-empty.png` | 新規シート作成（初期） | 2 |
+| `/images/anime-pv/03-new-sheet-filled.png` | 新規シート作成（入力済み） | 2 |
+| `/images/anime-pv/04-folder-confirm.png` | フォルダ作成確認 | 2 |
+| `/images/anime-pv/05-folder-complete.png` | フォルダ作成完了 | 2 |
+| `/images/anime-pv/06-drive-folders.png` | Driveフォルダ | 2 |
+| `/images/anime-pv/07-sheet-folder-url.png` | シートにURL保存 | 2 |
+| `/images/anime-pv/08-transcript-empty.png` | 文字起こし整理（初期） | 3 |
+| `/images/anime-pv/09-transcript-saved.png` | 文字起こし整理（保存） | 3 |
+| `/images/anime-pv/10-claude-output.png` | Claude AI出力 | 3 |
+| `/images/anime-pv/11-transfer-json.png` | AI出力転記（JSON） | 3 |
+| `/images/anime-pv/12-transfer-confirm.png` | AI出力転記（確認） | 3 |
+| `/images/anime-pv/13-sheet-ai-data.png` | Part②AI抽出データ | 3 |
+| `/images/anime-pv/14-menu-script.png` | メニュー展開（台本生成） | 4 |
+| `/images/anime-pv/15-script-dialog.png` | 台本生成プロンプトダイアログ（全体） | 4 |
+| `/images/anime-pv/16-script-selected.png` | 台本生成プロンプトダイアログ（選択済み） | 4 |
+| `/images/anime-pv/17-claude-script-output.png` | Claude AI出力（台本JSON） | 4 |
+| `/images/anime-pv/18-parse-input.png` | 台本パース・保存（JSON貼り付け） | 4 |
+| `/images/anime-pv/19-parse-confirm.png` | 台本パース・保存（確認画面） | 4 |
+| `/images/anime-pv/20-sheet-part6-data.png` | Part⑥処理データ | 4 |
+| `/images/anime-pv/21-sheet-character-scene.png` | Part③④キャラクター・シーン | 4 |
+| `/images/anime-pv/22-menu-prompt.png` | メニュー展開（プロンプト生成） | 6 |
+| `/images/anime-pv/23-character-sheet-dialog.png` | キャラクターシートプロンプトダイアログ | 6 |
+| `/images/anime-pv/24-lyrics-prompt.png` | 歌詞生成プロンプトダイアログ | 7 |
+| `/images/anime-pv/25-lyrics-preview.png` | 歌詞プレビュー（Claude出力） | 7 |
+| `/images/anime-pv/26-lyrics-save.png` | 歌詞を貼り付け・保存 | 7 |
+| `/images/anime-pv/27-suno-bgm-prompt.png` | SUNO冒頭BGMプロンプト | 7 |
+| `/images/anime-pv/28-suno-bgm-create.png` | SUNO画面（BGM生成） | 7 |
+| `/images/anime-pv/29-suno-vocal-prompt.png` | SUNO歌詞付き楽曲プロンプト | 7 |
+| `/images/anime-pv/30-suno-vocal-create.png` | SUNO画面（歌詞付き楽曲生成） | 7 |
+| `/images/anime-pv/31-narration-edit.png` | ナレーション編集（Fish Audio設定） | 7 |
+
+**マニュアル:** `docs/manuals/anirec/00-overall-manual.md`
+
+---
+
+#### 止まった箇所・解決方法
+
+| Phase | 箇所 | 問題 | 解決方法 |
+|-------|------|------|----------|
+| 4 | 台本生成 | startFrameがJSON出力に含まれていなかった | JSONスキーマにstartFrame追加、ガイドライン追加 |
+| 4 | 台本生成 | 企業名がstartFrameに混入 | テキスト禁止ルール追加（no text, no logos, no signs） |
+| 6 | 開始フレーム | onclickエラー（シーン名がクオートされない） | hasDataをbooleanに変換（!!演算子） |
+| 6 | 開始フレーム | 保存ボタンが機能しない | ラベル名不一致修正（`シーン${n}_開始フレームプロンプト`） |
+| 6 | 開始フレーム | スタイルが含まれない | パース時にbasePromptを自動追加 |
+
+---
+
+### ✅ アニメPV制作（サイト追加完了）
+
+**サイト追加完了:** `/products/anime-pv` でアクセス可能
+
+**マニュアル:**
+- `docs/manuals/anime-pv/00-overall-manual.md` - AI活用アニメPV制作講座
+- `docs/manuals/anime-pv/01-鋳物製造業サンプル.md` - 男性主人公、成長物語、熱い演出
+- `docs/manuals/anime-pv/02-自動車部品製造サンプル.md` - 女性主人公、チームワーク、クリーンな演出
+
+**元ファイル:** `docs/guides/pv/`（計9ファイル）→ 統合済み
+
+---
+
+### HP制作: ギャップ修正・プレースホルダー更新のテスト検証
 
 **対象機能（updatePrompt.js）:**
 1. **カンプ差分確認・修正** - 実装とカンプの差分を検出・修正
@@ -133,10 +324,11 @@
 | LP制作 | 5 | 基本情報のみ |
 | SNS広告 | 5 | 基本情報のみ |
 | PV制作 | 5 | 基本情報のみ |
+| **アニメPV制作** | 3 | ✅ **サイト追加完了**（講座+サンプル2件） |
 | パンフ | 3 | 基本情報のみ |
 | ロゴ | 3 | 基本情報のみ |
 | 月刊Sing | 4 | 基本情報のみ |
-| **合計** | **52** | - |
+| **合計** | **55** | - |
 
 ---
 
@@ -325,6 +517,13 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-02-23 | **アニメPV GAS: エフェクトシーン機能完成**。(1) `animePvEffectSettings.js`新規作成 - アクション定義（目を開く/顔を上げる）、エフェクト定義（光の粒子/桜の花びら/4色チョーク/エネルギー波）、各組み合わせのI2Vプロンプト、(2) `animePvEffectScene.js`新規作成 - エフェクトシーンプロンプト生成ダイアログ（アクション選択→エフェクト選択→背景選択→プロンプト生成→シート保存）、(3) サムネイル画像/GIF対応 - 外部ホスティング（assets.yumesuta.com）、16:9表示、onerrorで絵文字フォールバック、(4) 新アクション「扉を開く」「後ろ向きで歩く」を構築中として追加、(5) **教訓: GASではmp4表示不可→GIF変換で対応** |
+| 2026-02-21 | **アニメPV GAS: 台本生成・開始フレーム機能改善**。(1) JSONスキーマにstartFrame追加、(2) startFrameにテキスト禁止ルール追加（企業名・看板等を含めない）、(3) パース時にstartFrameにbasePrompt+no textを自動追加、(4) 開始フレームダイアログを編集モーダルに再設計（既存データ表示→編集→保存）、(5) onclickエラー修正（boolean変換）、(6) 保存ボタンのラベル名不一致修正、(7) キャラクターシートプロンプト（テキスト詳細モード）にwhite background, no text追加。修正ファイル: `animePvScriptPrompt.js`, `animePvSheetManager.js`, `animePvMain.js`, `animePvImagePrompt.js` |
+| 2026-02-21 | **アニメPV GAS: Phase 7（音声系）マニュアル完成**。スクショ8枚保存（24-31番）、マニュアルにPhase 4「プロンプト生成」セクション追加（歌詞生成、歌詞保存、SUNO BGM、SUNO歌詞付き楽曲、ナレーション編集）。アーティスト風プリセット11種類を記載 |
+| 2026-02-20 | **アニメPV制作を新商材として追加**。(1) `src/lib/data/anime-pv.ts`作成、(2) `index.ts`にanimePv追加、(3) マニュアル3件作成: `docs/manuals/anime-pv/00-overall-manual.md`（講座）、`01-鋳物製造業サンプル.md`（4ファイル統合）、`02-自動車部品製造サンプル.md`（4ファイル統合）。サイトで `/products/anime-pv` からアクセス可能。各サンプルへのリンク修正済み |
+| 2026-02-20 | **アニメPV制作講座完成**。`docs/guides/pv/00-anime-pv-course.md`。STEP 1-9の完全ガイド（企画→キャラ設計→シーン構成→画像生成→動画生成→音楽生成→編集→完成）。トラブルシューティング・チェックリスト付き |
+| 2026-02-20 | **自動車部品製造PV完成**。女性主人公（20歳→28歳）、チームワーク重視、幾田りら風ボーカル。追加シーン（決意・飛び出す）含む全11シーン。ファイル: `auto-parts-*.md` |
+| 2026-02-18 | **アニメPV制作サービス開始**。鋳物製造業向け新卒採用PV（45秒）。ガイド作成: `docs/guides/pv/anime-pv-guide.md`。画風: 新海誠風、8シーン構成、BGM/ナレーション/歌詞付き音楽/動画をAI生成 |
 | 2026-02-16 | **FB資料スライドレイアウト統一GAS作成**。1ページ目を基準に2〜20ページ目の位置・サイズを統一。GAS: `docs/gas/tsunageru/slideLayoutManager.js`、マニュアル: `docs/manuals/tsunageru/14-FB資料スライド統一.md` |
 | 2026-02-15 | HP制作: **更新・修正・校正機能完成**。(1) `updatePrompt.js`新規作成 - カンプ差分確認・修正（セクション単位、修正対象選択式）、プレースホルダー更新+SEO/LLMO（JSON自動取得・シート保存）、(2) カンプ版フロー統一 - `compositionPromptKanpu.js`を通常版と同じフローに修正（「8.実装開始」削除）、(3) マニュアル更新 - `05-HP作成-カンプ版.md`、`07-更新修正校正.md`、(4) SSHキー設定 - elfyakiraアカウント用（`~/.ssh/config`にgithub-elfyakira追加） |
 | 2026-02-15 | HP制作: **デザインカンプ版フロー追加**。(1) カンプ版GAS作成（`compositionPromptKanpu.js`）- カンプ分析プロンプト生成、カンプ版Claude Code指示文の2機能、(2) カンプ版マニュアル作成（`05-HP作成-カンプ版.md`）- 厳守事項（文言捏造禁止、プレースホルダー維持、デザイン忠実再現）、バッチ処理対応、(3) 既存GASメニューにカンプ版を統合、(4) 全体マニュアルに2つのフロー（通常版/カンプ版）の導線を追加 |
