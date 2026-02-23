@@ -187,6 +187,8 @@ import { pv } from "./pv";
 import { pamph } from "./pamph";
 import { logo } from "./logo";
 import { sing } from "./sing";
+import { animePv } from "./anime-pv";
+import { anirec } from "./anirec";
 
 // 全商材の配列
 export const products: Product[] = [
@@ -196,6 +198,8 @@ export const products: Product[] = [
   lp,
   sns,
   pv,
+  animePv,
+  anirec,
   pamph,
   logo,
   sing,

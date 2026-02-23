@@ -43,6 +43,8 @@ function pv_showEffectSceneDialog() {
   const locations = pv_getBackgroundLocations();
   const times = pv_getBackgroundTimes();
   const effectCount = pv_getEffectCount();
+  // Part⑥の選択スタイルを取得
+  const selectedStyleName = pv_getCellValueByLabel(sheet, '選択スタイル') || '';
 
   // 既存の演出データを取得
   const existingEffects = [];
@@ -58,7 +60,8 @@ function pv_showEffectSceneDialog() {
     locations,
     times,
     effectCount,
-    existingEffects
+    existingEffects,
+    selectedStyleName
   );
   const htmlOutput = HtmlService.createHtmlOutput(htmlContent)
     .setWidth(950)
@@ -77,7 +80,8 @@ function pv_createEffectSceneDialogHtml(
   locations,
   times,
   effectCount,
-  existingEffects
+  existingEffects,
+  selectedStyleName
 ) {
   // JSONデータをエスケープして埋め込み
   const stylesJson = JSON.stringify(stylePatterns);
@@ -86,6 +90,15 @@ function pv_createEffectSceneDialogHtml(
   const locationsJson = JSON.stringify(locations);
   const timesJson = JSON.stringify(times);
   const existingJson = JSON.stringify(existingEffects);
+
+  // 選択スタイルのIDを特定
+  let defaultStyleId = '';
+  for (const style of stylePatterns) {
+    if (style.name === selectedStyleName) {
+      defaultStyleId = style.id;
+      break;
+    }
+  }
 
   // 保存先ボタンを生成
   let saveDestButtons = '';
@@ -135,8 +148,9 @@ function pv_createEffectSceneDialogHtml(
   // スタイル選択肢を生成
   let styleOptions = '';
   for (const style of stylePatterns) {
+    const isSelected = style.id === defaultStyleId;
     styleOptions += `
-      <div class="style-option" data-style-id="${style.id}" onclick="selectStyle('${style.id}')">
+      <div class="style-option ${isSelected ? 'selected' : ''}" data-style-id="${style.id}" onclick="selectStyle('${style.id}')">
         <div class="style-name">${pv_escapeHtml(style.name)}</div>
       </div>
     `;
@@ -585,7 +599,7 @@ function pv_createEffectSceneDialogHtml(
         let selectedDestination = 1;
         let selectedActionId = null;
         let selectedEffectId = null;
-        let selectedStyleId = null;
+        let selectedStyleId = '${defaultStyleId}';
         let generatedPrompts = {
           startFrame: '',
           startFrameNeg: '',

@@ -26,7 +26,7 @@
 │   └── エンディングを編集
 ├── 4️⃣ プロンプト生成
 │   ├── キャラクターシートプロンプト
-│   ├── 開始フレームプロンプト
+│   ├── シーン生成プロンプト
 │   ├── 歌詞生成プロンプト
 │   ├── 歌詞を貼り付け・保存
 │   ├── SUNO冒頭BGMプロンプト
@@ -47,17 +47,17 @@
 | 1 | `animePvMain.js` | メニュー・ユーティリティ | |
 | 2 | `animePvSettings.js` | 定数・設定 | |
 | 3 | `animePvCommonStyles.js` | 共通スタイル | |
-| 4 | `animePvFolderManager.js` | フォルダ作成 | |
+| 4 | `animePvFolderManager.js` | フォルダ作成 | ★ フォルダ構造拡張 |
 | 5 | `animePvSheetManager.js` | シート作成 | ★ 列幅、Fish Audio設定 |
 | 6 | `animePvTranscript.js` | 文字起こし | |
 | 7 | `animePvScriptPrompt.js` | 台本生成 | |
-| 8 | `animePvImagePrompt.js` | 画像プロンプト | |
+| 8 | `animePvImagePrompt.js` | 画像プロンプト | ★ シーン生成プロンプト、選択スタイル自動選択 |
 | 9 | `animePvCharacterScene.js` | キャラクター・シーン編集 | |
 | 10 | `animePvSunoPrompt.js` | SUNO音楽生成（BGM・ボーカル） | ★ 分割 |
 | 11 | `animePvLyricsPrompt.js` | 歌詞生成 + 共通保存関数 | ★ 分割 |
 | 12 | `animePvNarration.js` | ナレーション（Fish Audio） | ★ 分割 |
 | 13 | `animePvEffectSettings.js` | エフェクト設定（アクション・エフェクト定義） | ★ 新規 |
-| 14 | `animePvEffectScene.js` | エフェクトシーンUI・プロンプト生成 | ★ 新規 |
+| 14 | `animePvEffectScene.js` | エフェクトシーンUI・プロンプト生成 | ★ 新規、選択スタイル自動選択 |
 
 > **アーカイブ:** `_archive/animePvAudioPrompt.js`（旧：音声プロンプト統合ファイル）
 
@@ -72,10 +72,11 @@
 | **2** | 1️⃣ ヒアリング（シート作成、フォルダ作成） | ✅ 完了 | 7枚 |
 | **3** | 1️⃣ ヒアリング（文字起こし→AI転記） | ✅ 完了 | 6枚 |
 | **4** | 2️⃣ 台本生成（プロンプト→パース） | ✅ 完了 | 7枚 |
-| **5** | 3️⃣ キャラクター・シーン編集 | ⬜ 未着手 | |
-| **6** | 4️⃣ プロンプト生成（画像系） | ⬜ 未着手 | |
-| **7** | 4️⃣ プロンプト生成（音声系）★今回改修 | ✅ 完了 | 8枚 |
-| **8** | 5️⃣ エフェクトシーン生成 ★新規 | ✅ 完了 | - |
+| **5** | 3️⃣ キャラクター・シーン編集 | ✅ 完了 | 5枚（32-36番） |
+| **6** | 4️⃣ プロンプト生成（画像系） | ✅ 完了 | 14枚（37-50番） |
+| **7** | 4️⃣ プロンプト生成（音声系） | ✅ 完了 | 10枚（24-31, 60-61番） |
+| **8** | 5️⃣ エフェクトシーン生成 | ✅ 完了 | 4枚（56-59番） |
+| **9** | 6️⃣ 編集・書き出し | ✅ 完了 | 1枚（62番） |
 
 **状態:** ⬜ 未着手 / 🔄 進行中 / ✅ 完了 / ❌ 問題あり
 
@@ -98,6 +99,15 @@
 - 新アクション追加: 「扉を開く」「後ろ向きで歩く」（構築中として表示済み）
 - 新エフェクト追加: 「服装変化」「世界回転トランジション」
 - プロンプト設計が必要
+
+**関連マニュアル（動画編集ソフト）:**
+| ソフト | マニュアル | サイトURL |
+|--------|-----------|-----------|
+| PowerDirector | `docs/manuals/anime-pv/05-PowerDirectorキーフレーム操作.md` | `/products/anime-pv/tasks/5/manual` |
+| Premiere Pro | `docs/manuals/anime-pv/06-Premiere Proキーフレーム操作.md` | `/products/anime-pv/tasks/6/manual` |
+
+> ※ I2Vでカメラワーク（ズームアウト）は安定しない → 動画編集ソフトで後処理が必要
+> キーフレーム操作ガイドを上記マニュアルで参照
 
 **重要ドキュメント:**
 - `docs/gas/anime-pv/演出プロンプト_背後エフェクト_I2V対応_v2.md`
@@ -163,6 +173,37 @@
 | `/images/anime-pv/29-suno-vocal-prompt.png` | SUNO歌詞付き楽曲プロンプト | 7 |
 | `/images/anime-pv/30-suno-vocal-create.png` | SUNO画面（歌詞付き楽曲生成） | 7 |
 | `/images/anime-pv/31-narration-edit.png` | ナレーション編集（Fish Audio設定） | 7 |
+| `/images/anime-pv/32-menu-character-scene.png` | メニュー展開（キャラクター・シーン編集） | 5 |
+| `/images/anime-pv/33-character-edit.png` | キャラクター設定を編集 | 5 |
+| `/images/anime-pv/34-scene-grid.png` | シーン構成を編集（グリッド） | 5 |
+| `/images/anime-pv/35-scene-edit.png` | シーン構成を編集（詳細） | 5 |
+| `/images/anime-pv/36-ending-edit.png` | エンディングを編集 | 5 |
+| `/images/anime-pv/37-menu-prompt.png` | メニュー展開（プロンプト生成） | 6 |
+| `/images/anime-pv/38-character-sheet-dialog-top.png` | キャラクターシートダイアログ（上部） | 6 |
+| `/images/anime-pv/39-character-sheet-dialog-bottom.png` | キャラクターシートダイアログ（下部） | 6 |
+| `/images/anime-pv/40-ai-studio-model.png` | Google AI Studio モデル選択 | 6 |
+| `/images/anime-pv/41-ai-studio-settings.png` | Google AI Studio 設定 | 6 |
+| `/images/anime-pv/42-ai-studio-prompt.png` | Google AI Studio プロンプト入力 | 6 |
+| `/images/anime-pv/43-character-sheet-past.jpeg` | キャラクターシート生成結果（過去編） | 6 |
+| `/images/anime-pv/44-character-sheet-char2.jpeg` | キャラクターシート生成結果（キャラ2） | 6 |
+| `/images/anime-pv/45-character-sheet-current.jpeg` | キャラクターシート生成結果（現在編） | 6 |
+| `/images/anime-pv/46-menu-prompt-updated.png` | メニュー（シーン生成プロンプト） | 6 |
+| `/images/anime-pv/47-scene-prompt-dialog.png` | シーン生成プロンプトダイアログ（全体） | 6 |
+| `/images/anime-pv/48-scene-prompt-style.png` | シーン生成プロンプト（スタイル選択） | 6 |
+| `/images/anime-pv/49-ai-studio-start-frame.png` | AI Studio 開始フレーム生成 | 6 |
+| `/images/anime-pv/50-kling-video-generate.png` | I2V動画生成（Kling/VIDU） | 6 |
+| `/images/anime-pv/51-folder-character-sheet.png` | フォルダ：キャラクターシート | 2 |
+| `/images/anime-pv/52-folder-start-frame-scene.png` | フォルダ：開始フレーム_シーン | 2 |
+| `/images/anime-pv/53-folder-start-frame-effect.png` | フォルダ：開始フレーム_エフェクト | 8 |
+| `/images/anime-pv/54-folder-video-effect.png` | フォルダ：動画_エフェクト | 8 |
+| `/images/anime-pv/55-folder-audio.png` | フォルダ：音声 | 7 |
+| `/images/anime-pv/56-effect-scene-dialog.png` | エフェクトシーンダイアログ | 8 |
+| `/images/anime-pv/57-effect-start-frame.png` | エフェクト開始フレーム生成 | 8 |
+| `/images/anime-pv/58-effect-end-frame.png` | エフェクト終了フレーム生成 | 8 |
+| `/images/anime-pv/59-effect-video-generate.png` | エフェクト動画生成（Kling） | 8 |
+| `/images/anime-pv/60-sheet-audio-settings.png` | Part⑤ 音声プロンプト - Fish Audio設定 | 7 |
+| `/images/anime-pv/61-fish-audio-generate.png` | Fish Audio 音声合成画面 | 7 |
+| `/images/anime-pv/62-premiere-timeline.png` | Premiere Pro タイムライン | 9 |
 
 **マニュアル:** `docs/manuals/anirec/00-overall-manual.md`
 
@@ -324,11 +365,12 @@
 | LP制作 | 5 | 基本情報のみ |
 | SNS広告 | 5 | 基本情報のみ |
 | PV制作 | 5 | 基本情報のみ |
-| **アニメPV制作** | 3 | ✅ **サイト追加完了**（講座+サンプル2件） |
+| **アニメPV制作** | 7 | ✅ **サイト追加完了**（講座1+サンプル2+リファレンス3+自動化1） |
+| **アニリク** | 1 | ✅ **新規追加**（GAS操作マニュアル） |
 | パンフ | 3 | 基本情報のみ |
 | ロゴ | 3 | 基本情報のみ |
 | 月刊Sing | 4 | 基本情報のみ |
-| **合計** | **55** | - |
+| **合計** | **56** | - |
 
 ---
 
@@ -354,6 +396,15 @@
 |---------|------|
 | GASファイル | `docs/gas/tsunageru/` |
 | マニュアル | `docs/manuals/tsunageru/` |
+
+### アニリク（anirec）
+
+| リソース | パス |
+|---------|------|
+| サイトURL | `/products/anirec` |
+| 全体マニュアル | `docs/manuals/anirec/00-overall-manual.md` |
+| GASファイル | `docs/gas/anime-pv/`（アニメPVと共通） |
+| 関連マニュアル | `docs/manuals/anime-pv/03,05,06`（スタイルプロンプト集、キーフレーム操作） |
 
 ---
 
@@ -517,6 +568,11 @@ npx tsc --noEmit    # TypeScriptエラーチェック（コード変更後は必
 
 | 日付 | 内容 |
 |------|------|
+| 2026-02-23 | **シーン生成プロンプト・フォルダ構造・エフェクトシーン完成**。(1) シーン生成プロンプト - 開始フレーム/動画プロンプトのタブ切替、選択スタイル自動選択、UI改善、(2) フォルダ構造拡張 - とりあえず/、開始フレーム_シーン/エフェクト、動画_シーン/エフェクト、完パケ/、(3) エフェクトシーン作成マニュアル（Phase 5）追加 - ダイアログ説明、開始・終了フレーム生成、I2V動画生成、(4) スクショ14枚追加（46-59番）: 06差し替え、51-55フォルダ構造詳細、56-59エフェクトシーン作成 |
+| 2026-02-23 | **アニリク（anirec）新商材として登録**。(1) `src/lib/data/anirec.ts`新規作成（全体マニュアル1タスク）、(2) `index.ts`にanirec追加、(3) `docs/manuals/anirec/00-overall-manual.md`の未追記セクションを補完（Phase 3: キャラクター・シーン編集、4-1: キャラクターシートプロンプト、4-2: 開始フレームプロンプト）、(4) `docs/manuals/anime-pv/00-overall-manual.md`からGAS操作ガイドを削除（講座内容のみに）、(5) PowerDirector/Premiere Pro/スタイルプロンプト集の「メインマニュアルに戻る」リンクをanirecに修正。サイトURL: `/products/anirec`, `/products/anirec/tasks/0/manual` |
+| 2026-02-23 | **キーフレームマニュアルをサイト統合**。(1) `docs/guides/`から`docs/manuals/anime-pv/`に移動（05-PowerDirectorキーフレーム操作.md、06-Premiere Proキーフレーム操作.md）、(2) anime-pv.tsにタスク5,6追加（taskCount: 5→7）、(3) 各マニュアルにメインマニュアルへ戻るリンク追加（03, 05, 06）。サイトURL: `/products/anime-pv/tasks/5/manual`, `/products/anime-pv/tasks/6/manual` |
+| 2026-02-23 | **Premiere Proキーフレームマニュアル作成**。`docs/guides/premiere-keyframe.md`新規作成。スクショ9枚（`public/images/guides/premiere/`）。内容: スケール変更、ズーム操作、タイムリマップ、イージング（時間補間法）。GIF含む |
+| 2026-02-23 | **PowerDirectorキーフレームマニュアル作成**。`docs/guides/powerdirector-keyframe.md`新規作成。スクショ17枚（`public/images/guides/powerdirector/`）。内容: キーフレームとは、スケール変更、ズーム操作、スピード変更、イージング変更。Phase 8エフェクトシーンの関連タスクとして追加（I2Vカメラワーク後処理用） |
 | 2026-02-23 | **アニメPV GAS: エフェクトシーン機能完成**。(1) `animePvEffectSettings.js`新規作成 - アクション定義（目を開く/顔を上げる）、エフェクト定義（光の粒子/桜の花びら/4色チョーク/エネルギー波）、各組み合わせのI2Vプロンプト、(2) `animePvEffectScene.js`新規作成 - エフェクトシーンプロンプト生成ダイアログ（アクション選択→エフェクト選択→背景選択→プロンプト生成→シート保存）、(3) サムネイル画像/GIF対応 - 外部ホスティング（assets.yumesuta.com）、16:9表示、onerrorで絵文字フォールバック、(4) 新アクション「扉を開く」「後ろ向きで歩く」を構築中として追加、(5) **教訓: GASではmp4表示不可→GIF変換で対応** |
 | 2026-02-21 | **アニメPV GAS: 台本生成・開始フレーム機能改善**。(1) JSONスキーマにstartFrame追加、(2) startFrameにテキスト禁止ルール追加（企業名・看板等を含めない）、(3) パース時にstartFrameにbasePrompt+no textを自動追加、(4) 開始フレームダイアログを編集モーダルに再設計（既存データ表示→編集→保存）、(5) onclickエラー修正（boolean変換）、(6) 保存ボタンのラベル名不一致修正、(7) キャラクターシートプロンプト（テキスト詳細モード）にwhite background, no text追加。修正ファイル: `animePvScriptPrompt.js`, `animePvSheetManager.js`, `animePvMain.js`, `animePvImagePrompt.js` |
 | 2026-02-21 | **アニメPV GAS: Phase 7（音声系）マニュアル完成**。スクショ8枚保存（24-31番）、マニュアルにPhase 4「プロンプト生成」セクション追加（歌詞生成、歌詞保存、SUNO BGM、SUNO歌詞付き楽曲、ナレーション編集）。アーティスト風プリセット11種類を記載 |

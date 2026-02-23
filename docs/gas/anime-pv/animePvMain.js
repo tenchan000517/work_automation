@@ -50,7 +50,7 @@ function onOpen() {
     // 4️⃣ プロンプト生成
     .addSubMenu(ui.createMenu('4️⃣ プロンプト生成')
       .addItem('🎨 キャラクターシートプロンプト', 'pv_showCharacterSheetPromptDialog')
-      .addItem('🖼️ 開始フレームプロンプト', 'pv_showStartFramePromptDialog')
+      .addItem('🎬 シーン生成プロンプト', 'pv_showScenePromptDialog')
       .addSeparator()
       .addItem('✏️ 歌詞生成プロンプト', 'pv_showLyricsPromptDialog')
       .addItem('📥 歌詞を貼り付け・保存', 'pv_showLyricsParseDialog')

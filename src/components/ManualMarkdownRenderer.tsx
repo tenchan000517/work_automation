@@ -9,6 +9,35 @@ interface ManualMarkdownRendererProps {
   content: string;
 }
 
+interface TabData {
+  name: string;
+  content: string;
+}
+
+// タブグループを前処理してカスタムHTMLに変換
+function preprocessTabs(content: string): string {
+  const tabGroupRegex = /<!-- tabs -->([\s\S]*?)<!-- \/tabs -->/g;
+
+  return content.replace(tabGroupRegex, (match, groupContent) => {
+    const tabs: TabData[] = [];
+    const tabRegex = /<!-- tab:([^>]+) -->\s*```([^`]*?)```/g;
+    let tabMatch;
+
+    while ((tabMatch = tabRegex.exec(groupContent)) !== null) {
+      tabs.push({
+        name: tabMatch[1].trim(),
+        content: tabMatch[2].trim()
+      });
+    }
+
+    if (tabs.length === 0) return match;
+
+    // エスケープしてdata属性に埋め込む
+    const tabsJson = JSON.stringify(tabs).replace(/"/g, '&quot;');
+    return `<div class="tabs-container" data-tabs="${tabsJson}"></div>`;
+  });
+}
+
 // 見出しテキストからslug（id）を生成する関数
 function generateSlug(children: ReactNode): string {
   const text = extractText(children);
@@ -31,12 +60,30 @@ function extractText(node: ReactNode): string {
 }
 
 export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps) {
+  // タブグループを前処理
+  const processedContent = preprocessTabs(content);
+
   return (
     <div className="prose max-w-none break-words overflow-x-hidden w-full min-w-0">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
+          // タブコンテナ
+          div: ({ className, ...props }) => {
+            if (className === "tabs-container") {
+              const dataTabs = (props as Record<string, unknown>)["data-tabs"] as string | undefined;
+              if (dataTabs) {
+                try {
+                  const tabs: TabData[] = JSON.parse(dataTabs.replace(/&quot;/g, '"'));
+                  return <TabGroup tabs={tabs} />;
+                } catch {
+                  return <div className={className} {...props} />;
+                }
+              }
+            }
+            return <div className={className} {...props} />;
+          },
           // 見出し（idを自動生成してアンカーリンクを有効化）
           h1: ({ children, ...props }) => {
             const id = generateSlug(children);
@@ -133,11 +180,17 @@ export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps)
                 {children}
               </code>
             ),
-          pre: ({ children, ...props }) => (
-            <pre className="my-4 rounded-lg overflow-hidden overflow-x-auto max-w-full bg-zinc-900 p-4" {...props}>
-              {children}
-            </pre>
-          ),
+          pre: ({ children, ...props }) => {
+            const codeText = extractText(children);
+            return (
+              <div className="relative my-4 group">
+                <CodeBlockCopyButton content={codeText} />
+                <pre className="rounded-lg overflow-hidden overflow-x-auto max-w-full bg-zinc-900 p-4 pr-12" {...props}>
+                  {children}
+                </pre>
+              </div>
+            );
+          },
           // カスタムボタン対応
           button: ({ className, children, ...props }) => {
             const dataContent = (props as Record<string, unknown>)["data-content"] as string | undefined;
@@ -203,9 +256,77 @@ export function ManualMarkdownRenderer({ content }: ManualMarkdownRendererProps)
           ),
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
+  );
+}
+
+// タブグループコンポーネント
+function TabGroup({ tabs }: { tabs: TabData[] }) {
+  const [activeTab, setActiveTab] = useState(0);
+
+  return (
+    <div className="my-4">
+      {/* タブヘッダー */}
+      <div className="flex border-b border-zinc-300 dark:border-zinc-600">
+        {tabs.map((tab, index) => (
+          <button
+            key={index}
+            onClick={() => setActiveTab(index)}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === index
+                ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {tab.name}
+          </button>
+        ))}
+      </div>
+      {/* タブコンテンツ */}
+      <div className="relative">
+        <CodeBlockCopyButton content={tabs[activeTab].content} />
+        <pre className="rounded-b-lg rounded-tr-lg overflow-x-auto bg-zinc-900 p-4 pr-12">
+          <code className="block text-zinc-100 text-sm whitespace-pre-wrap">
+            {tabs[activeTab].content}
+          </code>
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+// コードブロック用コピーボタン
+function CodeBlockCopyButton({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`absolute top-2 right-2 p-1.5 rounded transition-colors z-10 ${
+        copied
+          ? "bg-green-600 text-white"
+          : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600 hover:text-white"
+      }`}
+      title={copied ? "Copied!" : "Copy"}
+    >
+      {copied ? (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
   );
 }
 
