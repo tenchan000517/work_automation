@@ -337,6 +337,28 @@ const TASK_DIALOG_STYLES = `
     width: 100%;
   }
 
+  /* ===== タスク規模バッジ ===== */
+  .badge-size {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .badge-size-large-pending { background: #ffcdd2; color: #c62828; }
+  .badge-size-medium-pending { background: #fff9c4; color: #f57f17; }
+  .badge-size-large-done { background: #c8e6c9; color: #2e7d32; }
+  .badge-size-medium-done { background: #c8e6c9; color: #2e7d32; }
+
+  /* ===== 要件定義ダイアログ ===== */
+  .req-def-section { margin-bottom: 16px; }
+  .req-def-section label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }
+  .req-def-questions { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .req-def-questions label { font-weight: 600; color: #e65100; margin-bottom: 8px; }
+  .req-def-check-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+  .req-def-check-item input[type="checkbox"] { margin-top: 3px; }
+
   /* ===== ステップインジケータ ===== */
   .step-indicator {
     display: flex;

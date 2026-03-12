@@ -28,8 +28,12 @@ const TASK_COLUMNS = {
   INPUT_MODE: 8,    // H
   COMPLETION_COMMENT: 9,  // I
   APPROVAL_NOTE: 10,      // J
-  NOTES: 11     // K
+  NOTES: 11,    // K
+  SIZE: 12,     // L: タスク規模（大/中/小）
+  REQUIREMENT_DEF: 13  // M: 要件定義（JSON文字列）
 };
+
+const TASK_SIZES = ['大', '中', '小'];
 
 const TASK_STATUSES = ['未着手', '進行中', '完了報告済み', '完了', '差し戻し', '保留'];
 
@@ -106,7 +110,12 @@ function task_getSystemSetting(key) {
   var data = sheet.getRange(2, TASK_SETTING_KEY_COL, lastRow - 1, 2).getValues();
   for (var i = 0; i < data.length; i++) {
     if (String(data[i][0]).trim() === key) {
-      return String(data[i][1] || '').trim();
+      var val = data[i][1];
+      // Sheetsが「10:00」等を時刻Dateに自動変換するため、HH:mm形式に戻す
+      if (val instanceof Date) {
+        return Utilities.formatDate(val, Session.getScriptTimeZone(), 'HH:mm');
+      }
+      return String(val || '').trim();
     }
   }
   return '';
@@ -201,7 +210,9 @@ function task_registerTask(taskData) {
       taskData.inputMode || '',                  // H: 入力モード
       '',                                        // I: 完了報告コメント
       '',                                        // J: 承認者/差し戻し理由
-      taskData.notes || ''                       // K: 備考
+      taskData.notes || '',                      // K: 備考
+      taskData.size || '',                       // L: タスク規模
+      ''                                         // M: 要件定義
     ];
 
     sheet.appendRow(row);
@@ -256,13 +267,15 @@ function task_registerMultipleTasks(tasksArray) {
         taskData.inputMode || '',
         '',
         '',
-        taskData.notes || ''
+        taskData.notes || '',
+        taskData.size || '',
+        ''
       ]);
     }
 
     if (rows.length > 0) {
       var lastRow = sheet.getLastRow();
-      sheet.getRange(lastRow + 1, 1, rows.length, 11).setValues(rows);
+      sheet.getRange(lastRow + 1, 1, rows.length, 13).setValues(rows);
     }
 
     return { success: true, taskIds: taskIds };
@@ -286,7 +299,7 @@ function task_getAllTasks(filterOptions) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
 
-  var data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  var data = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
   var filter = filterOptions || {};
   var today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -318,6 +331,13 @@ function task_getAllTasks(filterOptions) {
     }
     if (status === '完了報告済み') urgency = 'reported';
 
+    var size = String(data[i][11] || '').trim();
+    var requirementDefStr = String(data[i][12] || '').trim();
+    var requirementDef = null;
+    if (requirementDefStr) {
+      try { requirementDef = JSON.parse(requirementDefStr); } catch (e) { /* ignore */ }
+    }
+
     tasks.push({
       id: id,
       status: status,
@@ -330,6 +350,8 @@ function task_getAllTasks(filterOptions) {
       completionComment: String(data[i][8] || '').trim(),
       approvalNote: String(data[i][9] || '').trim(),
       notes: String(data[i][10] || '').trim(),
+      size: size,
+      requirementDef: requirementDef,
       urgency: urgency,
       rowIndex: i + 2
     });
@@ -483,6 +505,70 @@ function task_saveSystemSettings(settingsObj) {
 }
 
 // ================================================================================
+// ===== 要件定義 =====
+// ================================================================================
+
+/**
+ * タスクの要件定義ステータスを取得
+ * @param {Object} task - タスクオブジェクト
+ * @returns {string} 'not_applicable' | 'pending' | 'done'
+ */
+function task_getRequirementStatus(task) {
+  if (!task.size || task.size === '小') return 'not_applicable';
+  if (task.requirementDef) return 'done';
+  return 'pending';
+}
+
+/**
+ * 要件定義データを保存
+ * @param {string} taskId
+ * @param {Object} requirementData - 要件定義オブジェクト
+ * @returns {{success: boolean, error?: string}}
+ */
+function task_saveRequirementData(taskId, requirementData) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+  } catch (e) {
+    return { success: false, error: '他の処理が実行中です。' };
+  }
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TASK_SHEET_NAMES.TASK_LIST);
+    if (!sheet) return { success: false, error: 'タスク一覧シートが見つかりません' };
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: false, error: 'タスクが見つかりません' };
+
+    var ids = sheet.getRange(2, TASK_COLUMNS.ID, lastRow - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      if (String(ids[i][0]).trim() === taskId) {
+        requirementData.defined_at = new Date().toISOString();
+        sheet.getRange(i + 2, TASK_COLUMNS.REQUIREMENT_DEF).setValue(JSON.stringify(requirementData));
+        return { success: true };
+      }
+    }
+    return { success: false, error: 'タスクID ' + taskId + ' が見つかりません' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 要件定義データを取得
+ * @param {string} taskId
+ * @returns {Object|null}
+ */
+function task_getRequirementData(taskId) {
+  var task = task_getTaskById(taskId);
+  if (!task) return null;
+  return task.requirementDef || null;
+}
+
+// ================================================================================
 // ===== テンプレート初期設定 =====
 // ================================================================================
 
@@ -501,7 +587,7 @@ function task_initializeTemplate() {
     }
 
     // ヘッダー
-    var headers = ['ID', '状態', '担当者', 'タスク名', '期限', '完了条件', '登録日', '入力モード', '完了報告コメント', '承認者/差し戻し理由', '備考'];
+    var headers = ['ID', '状態', '担当者', 'タスク名', '期限', '完了条件', '登録日', '入力モード', '完了報告コメント', '承認者/差し戻し理由', '備考', 'タスク規模', '要件定義'];
     taskSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     taskSheet.getRange(1, 1, 1, headers.length)
       .setBackground('#1a73e8')
@@ -520,6 +606,8 @@ function task_initializeTemplate() {
     taskSheet.setColumnWidth(9, 200);  // 完了報告コメント
     taskSheet.setColumnWidth(10, 200); // 承認者/差し戻し理由
     taskSheet.setColumnWidth(11, 200); // 備考
+    taskSheet.setColumnWidth(12, 80);  // タスク規模
+    taskSheet.setColumnWidth(13, 300); // 要件定義
 
     // 行固定
     taskSheet.setFrozenRows(1);
@@ -531,6 +619,13 @@ function task_initializeTemplate() {
       .build();
     taskSheet.getRange(2, TASK_COLUMNS.STATUS, 500, 1).setDataValidation(statusRule);
 
+    // ドロップダウン: タスク規模（L列）
+    var sizeRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(TASK_SIZES, true)
+      .setAllowInvalid(true)
+      .build();
+    taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1).setDataValidation(sizeRule);
+
     // 条件付き書式
     var rules = [];
 
@@ -539,7 +634,28 @@ function task_initializeTemplate() {
       .whenFormulaSatisfied('=$B2="完了"')
       .setBackground('#f5f5f5')
       .setFontColor('#9e9e9e')
-      .setRanges([taskSheet.getRange(2, 1, 500, 11)])
+      .setRanges([taskSheet.getRange(2, 1, 500, 13)])
+      .build());
+
+    // タスク規模「大」+ 要件定義未完了 → L列を赤背景
+    rules.push(SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=AND($L2="大", $M2="")')
+      .setBackground('#ffcdd2')
+      .setRanges([taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1)])
+      .build());
+
+    // タスク規模「中」+ 要件定義未完了 → L列を黄背景
+    rules.push(SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=AND($L2="中", $M2="")')
+      .setBackground('#fff9c4')
+      .setRanges([taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1)])
+      .build());
+
+    // タスク規模「大」or「中」+ 要件定義完了 → L列を緑背景
+    rules.push(SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=AND(OR($L2="大", $L2="中"), $M2<>"")')
+      .setBackground('#c8e6c9')
+      .setRanges([taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1)])
       .build());
 
     // 状態「完了報告済み」→ B列を青背景

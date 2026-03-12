@@ -60,6 +60,12 @@ const TASK_EXTRACTION_PROMPT = `あなたはタスク管理アシスタントで
 - 必要な素材・情報が不足していないか
 - 他のタスクへの依存関係がないか
 
+【タスク規模の判定】
+各タスクについて規模（大/中/小）を判定してください。
+- 大：成果物が複数 / 複数人関与 / 1週間以上 / クライアント納品 / 暗黙のゴールがありそう（例：HP制作、提案資料作成、撮影全体）
+- 中：成果物1つだが確認・調整が必要 / 2日以上 / 曖昧表現が多い（例：バナー制作、議事録まとめ、見積書作成）
+- 小：単純作業 / 1時間以内 / 1人で完結 / 成果物が明確（例：ファイルアップロード、メール返信、日程調整）
+
 【出力形式】
 必ず以下のJSON形式のみで出力してください。説明文は不要です。
 
@@ -77,6 +83,7 @@ const TASK_EXTRACTION_PROMPT = `あなたはタスク管理アシスタントで
       "scope_out": "やらないこと（推測含む）",
       "required_info": ["必要な情報・素材"],
       "status": "未着手",
+      "size": "大 or 中 or 小",
       "warnings": ["不明点や懸念事項"],
       "ambiguous_expressions": [
         {
@@ -384,6 +391,66 @@ function task_defineRequirements(originalText, selectedTasks, userAnswers) {
 }
 
 // ================================================================================
+// ===== 要件定義ドラフト生成 =====
+// ================================================================================
+
+const TASK_REQUIREMENT_DRAFT_PROMPT = `あなたは要件定義アシスタントです。
+
+タスク情報を受け取り、要件定義の叩き台を生成してください。
+
+【生成する項目】
+1. KGI（本当のゴール）：このタスクの最終的な成功状態。依頼者が本当に望んでいることを推測して記述。
+2. 手離れの定義：「何がどうなっていれば、このタスクから手を離せるか」を具体的に。
+   - 成果物の完成だけでなく「誰に渡すか」「どこに格納するか」「報告は必要か」まで含める。
+3. スコープ：
+   - やること（scope_in）：明確に含まれる作業
+   - やらないこと（scope_out）：含まれない・やるべきでない作業（暗黙の期待を先回りして明示）
+4. 依頼者に確認すべきこと：曖昧な点、暗黙の前提、確認なしでは進められないこと
+5. リスク・注意点：期限・リソース・品質に関するリスク
+
+【出力形式】
+必ず以下のJSON形式のみで出力してください。
+
+{
+  "kgi": "KGI（本当のゴール）",
+  "handoff_definition": "手離れの定義",
+  "scope_in": "やること",
+  "scope_out": "やらないこと",
+  "questions_for_requester": ["依頼者に確認すべきこと1", "確認すべきこと2"],
+  "risk_notes": ["リスク・注意点1", "注意点2"]
+}`;
+
+/**
+ * タスク情報から要件定義の叩き台を生成
+ * @param {Object} taskData - タスクオブジェクト
+ * @returns {{success: boolean, draft?: Object, error?: string}}
+ */
+function task_generateRequirementDraft(taskData) {
+  var userPrompt = '【タスク情報】\n';
+  userPrompt += 'タスクID: ' + (taskData.id || '') + '\n';
+  userPrompt += 'タスク名: ' + (taskData.title || '') + '\n';
+  userPrompt += '担当者: ' + (taskData.assignee || '未定') + '\n';
+  userPrompt += '期限: ' + (taskData.deadline || '未設定') + '\n';
+  userPrompt += '完了条件: ' + (taskData.doneCriteria || '未設定') + '\n';
+  userPrompt += 'タスク規模: ' + (taskData.size || '不明') + '\n';
+  if (taskData.notes) {
+    userPrompt += '備考: ' + taskData.notes + '\n';
+  }
+
+  var result = task_callGeminiApi(userPrompt, TASK_REQUIREMENT_DRAFT_PROMPT, { jsonMode: true });
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  var parsed = task_parseJsonFromAiOutput(result.text);
+  if (!parsed) {
+    return { success: false, error: 'AIの出力を解析できませんでした。' };
+  }
+
+  return { success: true, draft: parsed };
+}
+
+// ================================================================================
 // ===== AIサマリー =====
 // ================================================================================
 
@@ -398,7 +465,10 @@ function task_generateAiSummary(tasksData) {
   }
 
   var taskSummary = tasksData.map(function(t) {
-    return t.id + ' ' + t.title + '（担当:' + t.assignee + ', 期限:' + (t.deadline || '未設定') + ', 状態:' + t.status + ', 緊急度:' + t.urgency + '）';
+    var sizeInfo = t.size ? ', 規模:' + t.size : '';
+    var reqStatus = task_getRequirementStatus(t);
+    var reqInfo = reqStatus === 'pending' ? ', 要件定義:未完了' : (reqStatus === 'done' ? ', 要件定義:完了' : '');
+    return t.id + ' ' + t.title + '（担当:' + t.assignee + ', 期限:' + (t.deadline || '未設定') + ', 状態:' + t.status + ', 緊急度:' + t.urgency + sizeInfo + reqInfo + '）';
   }).join('\n');
 
   var userPrompt = '【タスク一覧】\n' + taskSummary;

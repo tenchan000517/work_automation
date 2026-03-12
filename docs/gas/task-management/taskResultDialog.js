@@ -46,7 +46,8 @@ function task_registerTasksFromDialog(tasksJson) {
         deadline: t.deadline,
         doneCriteria: t.doneCriteria,
         inputMode: t.inputMode || '',
-        notes: t.notes || ''
+        notes: t.notes || '',
+        size: t.size || ''
       });
 
       var calResult = { success: false };
@@ -68,6 +69,7 @@ function task_registerTasksFromDialog(tasksJson) {
         title: t.title,
         assignee: t.assignee,
         deadline: t.deadline,
+        size: t.size || '',
         success: regResult.success,
         calendarCreated: calResult.success,
         error: regResult.error || ''
@@ -110,6 +112,21 @@ function task_formatForClaudeCode(taskData) {
       var outItem = outItems[j].trim();
       if (outItem) lines.push('- ' + outItem);
     }
+  }
+
+  // 要件定義情報を含める
+  var reqStatus = task_getRequirementStatus(taskData);
+  if (reqStatus === 'done' && taskData.requirementDef) {
+    var rd = taskData.requirementDef;
+    lines.push('');
+    lines.push('--- 要件定義 ---');
+    if (rd.kgi) lines.push('【KGI（本当のゴール）】' + rd.kgi);
+    if (rd.handoff_definition) lines.push('【手離れの定義】' + rd.handoff_definition);
+    if (rd.scope_in) lines.push('【スコープ: やること】' + rd.scope_in);
+    if (rd.scope_out) lines.push('【スコープ: やらないこと】' + rd.scope_out);
+  } else if (reqStatus === 'pending') {
+    lines.push('');
+    lines.push('⚠️ まず /define-task ' + (taskData.id || '') + ' で要件定義を行ってください');
   }
 
   return lines.join('\n');
@@ -256,12 +273,19 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
           }
         }
 
+        var sizeLabel = '';
+        if (t.size) {
+          var sizeIcon = t.size === '大' ? '\uD83D\uDD34' : (t.size === '中' ? '\uD83D\uDFE1' : '');
+          if (sizeIcon) sizeLabel = '<span class="badge-size badge-size-' + (t.size === '大' ? 'large' : 'medium') + '-pending">' + sizeIcon + escapeHtml(t.size) + '</span>';
+        }
+
         container.innerHTML += '<div class="task-card confidence-' + confClass + '">' +
           '<div class="task-check">' +
           '<input type="checkbox" id="task-check-' + i + '" data-index="' + i + '" ' + checked + '>' +
           '<div style="flex:1;">' +
           '<div class="task-header">' +
           '<span class="badge-confidence badge-' + confClass + '">確信度：' + escapeHtml(conf) + '</span>' +
+          sizeLabel +
           '<span class="task-title">' + escapeHtml(t.title) + '</span>' +
           '</div>' +
           '<div class="task-meta">担当：' + escapeHtml(t.assignee || '未特定') +
@@ -403,7 +427,8 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
           inputMode: modeLabel,
           notes: t._notes || '',
           scopeIn: t.scope_in || '',
-          scopeOut: t.scope_out || ''
+          scopeOut: t.scope_out || '',
+          size: t.size || ''
         };
       });
 
@@ -434,16 +459,27 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
         var icon = r.success ? '\u2705' : '\u274C';
         var calIcon = r.calendarCreated ? '\uD83D\uDCC5 カレンダーに登録済み' : '';
 
+        var reqDefBtn = '';
+        if (r.success && (r.size === '大' || r.size === '中')) {
+          reqDefBtn = '<button class="btn btn-orange" style="font-size:12px; padding:6px 10px; margin-right:4px;" onclick="openRequirementDef(\\'' + escapeHtml(r.taskId) + '\\')">\uD83D\uDCDD 要件定義する</button>';
+        }
+
+        var sizeBadge = '';
+        if (r.size === '大') sizeBadge = '<span class="badge-size badge-size-large-pending">\uD83D\uDD34大</span>';
+        else if (r.size === '中') sizeBadge = '<span class="badge-size badge-size-medium-pending">\uD83D\uDFE1中</span>';
+
         html += '<div class="result-item">' +
           '<span class="result-icon">' + icon + '</span>' +
           '<div style="flex:1;">' +
-          '<strong>' + escapeHtml(r.taskId) + '</strong> ' + escapeHtml(r.title) +
+          '<strong>' + escapeHtml(r.taskId) + '</strong> ' + escapeHtml(r.title) + sizeBadge +
           '（' + escapeHtml(r.assignee || '未定') + '・' + escapeHtml(r.deadline || '期限なし') + '）' +
           (calIcon ? '<br><span style="font-size:12px; color:#1a73e8;">' + calIcon + '</span>' : '') +
           (r.error ? '<br><span style="font-size:12px; color:#c62828;">' + escapeHtml(r.error) + '</span>' : '') +
           '</div>' +
+          '<div style="display:flex; gap:4px;">' +
+          reqDefBtn +
           '<button class="btn btn-copy" style="font-size:12px; padding:6px 10px;" onclick="copyForClaudeCode(' + i + ')">\uD83E\uDD16 Claude Code</button>' +
-          '</div>';
+          '</div></div>';
       }
 
       // 結果データをグローバルに保持
@@ -473,7 +509,17 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
         });
       }
 
+      // 大/中タスクで要件定義未完了の場合、警告を追加
+      if (r.size === '大' || r.size === '中') {
+        text += '\\n⚠️ まず /define-task ' + r.taskId + ' で要件定義を行ってください\\n';
+      }
+
       copyToClipboard(text);
+    }
+
+    function openRequirementDef(taskId) {
+      google.script.host.close();
+      google.script.run.task_showRequirementDialog(taskId);
     }
   <\/script>
 </body>

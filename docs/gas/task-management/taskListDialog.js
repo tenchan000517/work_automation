@@ -127,19 +127,21 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
       container.innerHTML = '';
 
       // サマリー
-      var overdue = 0, today = 0, normal = 0, reported = 0;
+      var overdue = 0, today = 0, normal = 0, reported = 0, reqPending = 0;
       filteredTasks.forEach(function(t) {
         if (t.urgency === 'overdue') overdue++;
         else if (t.urgency === 'today') today++;
         else if (t.urgency === 'reported') reported++;
         else normal++;
+        if ((t.size === '大' || t.size === '中') && !t.requirementDef) reqPending++;
       });
       document.getElementById('summaryBar').innerHTML =
         '合計：<span class="summary-count">' + filteredTasks.length + '件</span>' +
         (overdue ? ' \uD83D\uDD34超過' + overdue : '') +
         (today ? ' \uD83D\uDFE1本日' + today : '') +
         (reported ? ' \uD83D\uDD35報告済' + reported : '') +
-        ' \u2B1C通常' + normal;
+        ' \u2B1C通常' + normal +
+        (reqPending ? ' \uD83D\uDCDD要件定義待ち' + reqPending : '');
 
       // 担当者別グルーピング
       var groups = {};
@@ -168,12 +170,43 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
           if (t.urgency === 'overdue') deadlineText += ' 超過';
           else if (t.urgency === 'today') deadlineText += ' 本日';
 
+          // タスク規模バッジ
+          var sizeBadge = '';
+          if (t.size === '大' || t.size === '中') {
+            var hasDef = !!t.requirementDef;
+            if (hasDef) {
+              sizeBadge = '<span class="badge-size badge-size-' + (t.size === '大' ? 'large' : 'medium') + '-done">\u2705' + escapeHtml(t.size) + '</span>';
+            } else {
+              var sIcon = t.size === '大' ? '\uD83D\uDD34' : '\uD83D\uDFE1';
+              sizeBadge = '<span class="badge-size badge-size-' + (t.size === '大' ? 'large' : 'medium') + '-pending">' + sIcon + escapeHtml(t.size) + '</span>';
+            }
+          }
+
           var taskHtml = '<div class="task-row" onclick="toggleTaskDetail(\\'' + t.id + '\\')">' +
             '<span class="status-icon-' + t.urgency + '">' + icon + '</span>' +
             '<strong>' + escapeHtml(t.id) + '</strong> ' +
-            escapeHtml(t.title) +
+            escapeHtml(t.title) + sizeBadge +
             '<span style="margin-left:auto; font-size:12px; color:#666;">（期限：' + escapeHtml(deadlineText) + '）</span>' +
             '</div>';
+
+          // 要件定義情報
+          var reqDefHtml = '';
+          if (t.requirementDef) {
+            var rd = t.requirementDef;
+            reqDefHtml = '<div style="background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:10px; margin-top:8px; font-size:12px;">' +
+              '<strong>\uD83D\uDCDD 要件定義</strong>' +
+              (rd.kgi ? '<div style="margin-top:6px;"><span class="detail-label">KGI：</span> ' + escapeHtml(rd.kgi) + '</div>' : '') +
+              (rd.handoff_definition ? '<div><span class="detail-label">手離れ：</span> ' + escapeHtml(rd.handoff_definition) + '</div>' : '') +
+              (rd.scope_in ? '<div><span class="detail-label">やること：</span> ' + escapeHtml(rd.scope_in) + '</div>' : '') +
+              (rd.scope_out ? '<div><span class="detail-label">やらないこと：</span> ' + escapeHtml(rd.scope_out) + '</div>' : '') +
+              '</div>';
+          }
+
+          // 要件定義ボタン（大/中で未完了の場合のみ）
+          var reqDefBtn = '';
+          if ((t.size === '大' || t.size === '中') && !t.requirementDef) {
+            reqDefBtn = '<button class="btn btn-orange" style="font-size:12px; padding:6px 12px;" onclick="event.stopPropagation(); openRequirementDialog(\\'' + t.id + '\\')">\uD83D\uDCDD 要件定義する</button>';
+          }
 
           taskHtml += '<div class="task-detail" id="detail-' + t.id + '">' +
             '<div class="detail-section"><span class="detail-label">状態：</span> ' + escapeHtml(t.status) + '</div>' +
@@ -182,7 +215,9 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
             (t.notes ? '<div class="detail-section"><span class="detail-label">備考：</span> ' + escapeHtml(t.notes) + '</div>' : '') +
             (t.completionComment ? '<div class="detail-section"><span class="detail-label">完了報告：</span> ' + escapeHtml(t.completionComment) + '</div>' : '') +
             (t.approvalNote ? '<div class="detail-section"><span class="detail-label">承認/差し戻し：</span> ' + escapeHtml(t.approvalNote) + '</div>' : '') +
+            reqDefHtml +
             '<div class="action-btns">' +
+            reqDefBtn +
             // 全員用: 完了報告 + Claude Code
             (viewMode === 'member' && (t.status === '未着手' || t.status === '進行中' || t.status === '差し戻し')
               ? '<button class="btn btn-primary" style="font-size:12px; padding:6px 12px;" onclick="submitCompletion(\\'' + t.id + '\\')">\uD83D\uDCDD 完了報告</button>' : '') +
@@ -269,7 +304,25 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
         '【担当】' + task.assignee + '\\n' +
         '【期限】' + (task.deadline || '未設定') + '\\n' +
         '【完了条件】' + (task.doneCriteria || '');
+
+      // 要件定義情報
+      if (task.requirementDef) {
+        var rd = task.requirementDef;
+        text += '\\n\\n--- 要件定義 ---';
+        if (rd.kgi) text += '\\n【KGI（本当のゴール）】' + rd.kgi;
+        if (rd.handoff_definition) text += '\\n【手離れの定義】' + rd.handoff_definition;
+        if (rd.scope_in) text += '\\n【スコープ: やること】' + rd.scope_in;
+        if (rd.scope_out) text += '\\n【スコープ: やらないこと】' + rd.scope_out;
+      } else if (task.size === '大' || task.size === '中') {
+        text += '\\n\\n⚠️ まず /define-task ' + taskId + ' で要件定義を行ってください';
+      }
+
       copyToClipboard(text);
+    }
+
+    function openRequirementDialog(taskId) {
+      google.script.host.close();
+      google.script.run.task_showRequirementDialog(taskId);
     }
 
     // ===== AIサマリー =====
@@ -393,6 +446,237 @@ function task_remandTask(taskId, reason, approverName) {
 function task_requestAiSummary() {
   var tasks = task_getAllTasks({ status: '未完了' });
   return task_generateAiSummary(tasks);
+}
+
+// ================================================================================
+// ===== 要件定義ダイアログ =====
+// ================================================================================
+
+/**
+ * 要件定義ダイアログを表示
+ * @param {string} taskId
+ */
+function task_showRequirementDialog(taskId) {
+  var task = task_getTaskById(taskId);
+  if (!task) {
+    SpreadsheetApp.getUi().alert('タスクが見つかりません: ' + taskId);
+    return;
+  }
+
+  var taskJson = JSON.stringify(task);
+
+  var html = HtmlService.createHtmlOutput(task_createRequirementDialogHtml(task))
+    .setWidth(850)
+    .setHeight(700);
+  SpreadsheetApp.getUi().showModalDialog(html, '\uD83D\uDCDD 要件定義: ' + taskId + ' ' + task.title);
+}
+
+/**
+ * 要件定義ダイアログのHTMLを生成
+ * @param {Object} task
+ * @returns {string}
+ */
+function task_createRequirementDialogHtml(task) {
+  var taskJson = JSON.stringify(task);
+  var existingDef = task.requirementDef ? JSON.stringify(task.requirementDef) : 'null';
+  var sizeIcon = task.size === '大' ? '\uD83D\uDD34' : '\uD83D\uDFE1';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  ${TASK_DIALOG_STYLES}
+  <style>
+    .req-def-section { margin-bottom: 16px; }
+    .req-def-section label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }
+    .scope-group { display: flex; gap: 16px; }
+    .scope-group > div { flex: 1; }
+    .questions-section { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 6px; padding: 12px; margin-top: 16px; }
+    .questions-section h4 { margin: 0 0 10px 0; color: #e65100; font-size: 14px; }
+    .question-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+    .question-item input[type="checkbox"] { margin-top: 3px; }
+  </style>
+</head>
+<body>
+  <h3>\uD83D\uDCDD 要件定義: ${task.id} ${task.title.replace(/'/g, "\\'")}（${task.size}タスク${sizeIcon}）</h3>
+
+  <div id="aiDraftBox" class="info-box" style="display:none;">
+    <strong>\uD83E\uDD16 AIが整理した内容</strong>
+    <div id="aiDraftContent" style="margin-top:6px; font-size:13px;"></div>
+  </div>
+
+  <div id="loadingArea" class="loading" style="display:none;">
+    <div class="spinner dark"></div>
+    <div>AIが叩き台を生成中...</div>
+  </div>
+
+  <div id="formArea">
+    <div class="req-def-section">
+      <label>1. KGI（本当のゴール）</label>
+      <textarea id="kgi" rows="2" placeholder="このタスクが成功した状態を記述"></textarea>
+    </div>
+
+    <div class="req-def-section">
+      <label>2. 手離れの定義</label>
+      <textarea id="handoff" rows="2" placeholder="何がどうなっていれば、このタスクから手を離せるか"></textarea>
+    </div>
+
+    <div class="req-def-section">
+      <label>3. スコープ</label>
+      <div class="scope-group">
+        <div>
+          <label style="font-size:13px;">やること</label>
+          <textarea id="scopeIn" rows="3" placeholder="明確に含まれる作業"></textarea>
+        </div>
+        <div>
+          <label style="font-size:13px;">やらないこと</label>
+          <textarea id="scopeOut" rows="3" placeholder="含まれない・やらない作業"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="req-def-section">
+      <label>4. 期限</label>
+      <input type="date" id="deadline" value="${task.deadline || ''}">
+    </div>
+
+    <div id="questionsSection" class="questions-section" style="display:none;">
+      <h4>\u2501\u2501 依頼者に確認すべきこと \u2501\u2501</h4>
+      <div id="questionsList"></div>
+    </div>
+  </div>
+
+  <div class="actions" style="margin-top:20px;">
+    <button class="btn btn-secondary" onclick="copyForDefineTask()" id="claudeBtn">\uD83E\uDD16 Claude Codeで深掘り</button>
+    <button class="btn btn-primary" onclick="saveRequirement()" id="saveBtn">\uD83D\uDCBE 保存</button>
+    <button class="btn btn-secondary" onclick="google.script.host.close()">閉じる</button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  ${TASK_UI_COMPONENTS}
+
+  <script>
+    var taskData = ${taskJson};
+    var existingDef = ${existingDef};
+
+    (function init() {
+      if (existingDef) {
+        // 既存データがある場合: 編集モード
+        document.getElementById('kgi').value = existingDef.kgi || '';
+        document.getElementById('handoff').value = existingDef.handoff_definition || '';
+        document.getElementById('scopeIn').value = existingDef.scope_in || '';
+        document.getElementById('scopeOut').value = existingDef.scope_out || '';
+        if (existingDef.questions_for_requester && existingDef.questions_for_requester.length > 0) {
+          renderQuestions(existingDef.questions_for_requester);
+        }
+      } else {
+        // 新規: AIで叩き台を生成
+        generateDraft();
+      }
+    })();
+
+    function generateDraft() {
+      document.getElementById('loadingArea').style.display = 'block';
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          document.getElementById('loadingArea').style.display = 'none';
+          if (result.success && result.draft) {
+            var d = result.draft;
+            document.getElementById('kgi').value = d.kgi || '';
+            document.getElementById('handoff').value = d.handoff_definition || '';
+            document.getElementById('scopeIn').value = d.scope_in || '';
+            document.getElementById('scopeOut').value = d.scope_out || '';
+
+            // AI生成の注釈表示
+            document.getElementById('aiDraftBox').style.display = 'block';
+            document.getElementById('aiDraftContent').textContent = 'AIが生成した叩き台です。内容を確認・修正してから保存してください。';
+
+            if (d.questions_for_requester && d.questions_for_requester.length > 0) {
+              renderQuestions(d.questions_for_requester);
+            }
+          } else {
+            showStatus('AI生成に失敗しました: ' + (result.error || ''), 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('loadingArea').style.display = 'none';
+          showStatus('エラー: ' + err.message, 'error');
+        })
+        .task_generateRequirementDraft(taskData);
+    }
+
+    function renderQuestions(questions) {
+      var section = document.getElementById('questionsSection');
+      var list = document.getElementById('questionsList');
+      section.style.display = 'block';
+      list.innerHTML = '';
+      for (var i = 0; i < questions.length; i++) {
+        list.innerHTML += '<div class="question-item">' +
+          '<input type="checkbox" id="q-' + i + '">' +
+          '<label for="q-' + i + '">' + escapeHtml(questions[i]) + '</label>' +
+          '</div>';
+      }
+    }
+
+    function saveRequirement() {
+      var btn = document.getElementById('saveBtn');
+      setButtonLoading(btn, true);
+
+      var reqData = {
+        kgi: document.getElementById('kgi').value,
+        handoff_definition: document.getElementById('handoff').value,
+        scope_in: document.getElementById('scopeIn').value,
+        scope_out: document.getElementById('scopeOut').value,
+        questions_for_requester: [],
+        risk_notes: []
+      };
+
+      // 質問リストを収集
+      var qItems = document.querySelectorAll('#questionsList label');
+      qItems.forEach(function(el) {
+        reqData.questions_for_requester.push(el.textContent);
+      });
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          setButtonLoading(btn, false, '\uD83D\uDCBE 保存');
+          if (result.success) {
+            showStatus('要件定義を保存しました', 'success');
+          } else {
+            showStatus('保存エラー: ' + result.error, 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading(btn, false, '\uD83D\uDCBE 保存');
+          showStatus('エラー: ' + err.message, 'error');
+        })
+        .task_saveRequirementData(taskData.id, reqData);
+    }
+
+    function copyForDefineTask() {
+      var text = '/define-task ' + taskData.id + '\\n\\n' +
+        '【タスク】' + taskData.title + '\\n' +
+        '【担当】' + (taskData.assignee || '') + '\\n' +
+        '【期限】' + (taskData.deadline || '未設定') + '\\n' +
+        '【完了条件】' + (taskData.doneCriteria || '') + '\\n' +
+        '【タスク規模】' + (taskData.size || '') + '\\n';
+
+      var kgi = document.getElementById('kgi').value;
+      var handoff = document.getElementById('handoff').value;
+      var scopeIn = document.getElementById('scopeIn').value;
+      var scopeOut = document.getElementById('scopeOut').value;
+
+      if (kgi) text += '【KGI】' + kgi + '\\n';
+      if (handoff) text += '【手離れ定義】' + handoff + '\\n';
+      if (scopeIn) text += '【やること】' + scopeIn + '\\n';
+      if (scopeOut) text += '【やらないこと】' + scopeOut + '\\n';
+
+      copyToClipboard(text);
+    }
+  <\/script>
+</body>
+</html>`;
 }
 
 // ================================================================================

@@ -110,6 +110,7 @@ function sim_addMenu() {
     .addItem('L. ディスカッションパターン', 'sim_runL_DiscussionPattern')
     .addItem('M. ログ記録', 'sim_runM_LogWrite')
     .addItem('N. エラーケース', 'sim_runN_ErrorCases')
+    .addItem('O. 要件定義機能', 'sim_runO_RequirementDef')
     .addSeparator()
     .addItem('\uD83E\uDDF9 テストデータ削除', 'sim_cleanup')
     .addItem('\uD83D\uDCCA 前回の結果を表示', 'sim_showLastResult')
@@ -160,7 +161,9 @@ function sim_insertTask(simId, data) {
     data.inputMode || 'simulator',
     data.completionComment || '',
     data.approvalNote || '',
-    data.notes || ''
+    data.notes || '',
+    data.size || '',
+    data.requirementDef || ''
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
@@ -1084,6 +1087,140 @@ function sim_testN_ErrorCases() {
 }
 
 // ================================================================================
+// ===== O. 要件定義機能テスト =====
+// ================================================================================
+
+function sim_testO_RequirementDef() {
+  var category = 'O. 要件定義機能';
+
+  try {
+    sim_ensureSheets();
+    sim_setupMembers();
+
+    // 1. TASK_COLUMNS に SIZE と REQUIREMENT_DEF が存在する
+    sim_assertEqual(category + ' - 1. SIZE列番号', TASK_COLUMNS.SIZE, 12);
+    sim_assertEqual(category + ' - 1b. REQUIREMENT_DEF列番号', TASK_COLUMNS.REQUIREMENT_DEF, 13);
+
+    // 2. TASK_SIZES 定数が存在する
+    sim_assert(category + ' - 2. TASK_SIZES定数', TASK_SIZES && TASK_SIZES.length === 3);
+    sim_assertEqual(category + ' - 2b. TASK_SIZES内容', TASK_SIZES, ['大', '中', '小']);
+
+    // 3. タスク登録時にsizeが保存される
+    var r3 = task_registerTask({
+      title: 'SIMテスト - 要件定義大タスク',
+      assignee: '田中太郎',
+      deadline: '2026-04-01',
+      doneCriteria: 'HP公開',
+      inputMode: 'simulator',
+      size: '大'
+    });
+    sim_assert(category + ' - 3. 大タスク登録成功', r3.success);
+
+    // 取得してsizeを確認
+    if (r3.success) {
+      var t3 = task_getTaskById(r3.taskId);
+      sim_assertEqual(category + ' - 3b. 登録タスクのsize', t3.size, '大');
+      sim_assertNull(category + ' - 3c. 要件定義は未設定', t3.requirementDef);
+    }
+
+    // 4. task_getRequirementStatus のテスト
+    var taskLargePending = { size: '大', requirementDef: null };
+    var taskLargeDone = { size: '大', requirementDef: { kgi: 'test' } };
+    var taskSmall = { size: '小', requirementDef: null };
+    var taskNoSize = { size: '', requirementDef: null };
+
+    sim_assertEqual(category + ' - 4a. 大タスク要件定義未完了', task_getRequirementStatus(taskLargePending), 'pending');
+    sim_assertEqual(category + ' - 4b. 大タスク要件定義完了', task_getRequirementStatus(taskLargeDone), 'done');
+    sim_assertEqual(category + ' - 4c. 小タスクは対象外', task_getRequirementStatus(taskSmall), 'not_applicable');
+    sim_assertEqual(category + ' - 4d. sizeなしは対象外', task_getRequirementStatus(taskNoSize), 'not_applicable');
+
+    // 5. 要件定義データの保存と取得
+    if (r3.success) {
+      var reqData = {
+        kgi: 'HP公開して集客を増やす',
+        handoff_definition: 'クライアント確認完了 + サーバーにデプロイ',
+        scope_in: 'トップページ、会社概要、お問い合わせ',
+        scope_out: 'ブログ機能、EC機能',
+        questions_for_requester: ['デザインの方向性は？', '写真素材は支給？'],
+        risk_notes: ['期限がタイト']
+      };
+      var saveResult = task_saveRequirementData(r3.taskId, reqData);
+      sim_assert(category + ' - 5a. 要件定義保存成功', saveResult.success);
+
+      // 取得して確認
+      var loadedReq = task_getRequirementData(r3.taskId);
+      sim_assertNotNull(category + ' - 5b. 要件定義取得成功', loadedReq);
+      if (loadedReq) {
+        sim_assertEqual(category + ' - 5c. KGIの内容', loadedReq.kgi, 'HP公開して集客を増やす');
+        sim_assertEqual(category + ' - 5d. 手離れ定義', loadedReq.handoff_definition, 'クライアント確認完了 + サーバーにデプロイ');
+        sim_assertNotNull(category + ' - 5e. defined_atが設定されている', loadedReq.defined_at);
+      }
+
+      // ステータスがdoneになることを確認
+      var t5 = task_getTaskById(r3.taskId);
+      sim_assertEqual(category + ' - 5f. 保存後のステータス', task_getRequirementStatus(t5), 'done');
+    }
+
+    // 6. 存在しないタスクIDへの保存
+    var r6 = task_saveRequirementData(SIM_ID_PREFIX + 'O_NONEXIST', { kgi: 'test' });
+    sim_assert(category + ' - 6. 存在しないIDへの保存は失敗', !r6.success);
+
+    // 7. Claude Code出力に要件定義が含まれる
+    if (r3.success) {
+      var t7 = task_getTaskById(r3.taskId);
+      var ccOutput = task_formatForClaudeCode(t7);
+      sim_assert(category + ' - 7a. Claude Code出力にKGI含む', ccOutput.indexOf('KGI') !== -1);
+      sim_assert(category + ' - 7b. Claude Code出力に手離れ含む', ccOutput.indexOf('手離れ') !== -1);
+    }
+
+    // 8. 中タスクのテスト
+    var r8 = task_registerTask({
+      title: 'SIMテスト - 要件定義中タスク',
+      assignee: '鈴木花子',
+      inputMode: 'simulator',
+      size: '中'
+    });
+    sim_assert(category + ' - 8a. 中タスク登録成功', r8.success);
+    if (r8.success) {
+      var t8 = task_getTaskById(r8.taskId);
+      sim_assertEqual(category + ' - 8b. 中タスクのステータス', task_getRequirementStatus(t8), 'pending');
+    }
+
+    // 9. 小タスクは要件定義不要
+    var r9 = task_registerTask({
+      title: 'SIMテスト - 小タスク',
+      assignee: '田中太郎',
+      inputMode: 'simulator',
+      size: '小'
+    });
+    sim_assert(category + ' - 9a. 小タスク登録成功', r9.success);
+    if (r9.success) {
+      var t9 = task_getTaskById(r9.taskId);
+      sim_assertEqual(category + ' - 9b. 小タスクのステータス', task_getRequirementStatus(t9), 'not_applicable');
+    }
+
+    // クリーンアップ: 登録したテストタスクを削除
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TASK_SHEET_NAMES.TASK_LIST);
+    if (sheet) {
+      var lastRow = sheet.getLastRow();
+      if (lastRow >= 2) {
+        var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+        var testIds = [r3.taskId, r8 && r8.taskId, r9 && r9.taskId].filter(Boolean);
+        for (var i = ids.length - 1; i >= 0; i--) {
+          if (testIds.indexOf(String(ids[i][0])) !== -1) {
+            sheet.deleteRow(i + 2);
+          }
+        }
+      }
+    }
+
+  } catch (e) {
+    sim_assert(category + ' - 例外発生', false, e.message);
+  }
+}
+
+// ================================================================================
 // ===== 実行関数 =====
 // ================================================================================
 
@@ -1107,6 +1244,7 @@ function sim_runAll() {
   sim_testL_DiscussionPattern();
   sim_testM_LogWrite();
   sim_testN_ErrorCases();
+  sim_testO_RequirementDef();
 
   // 結果を保存して表示
   sim_saveResults_();
@@ -1221,6 +1359,14 @@ function sim_runM_LogWrite() {
 function sim_runN_ErrorCases() {
   SIM_RESULTS = [];
   sim_testN_ErrorCases();
+  sim_saveResults_();
+  sim_showResultDialog_();
+}
+
+/** O. 要件定義機能テスト */
+function sim_runO_RequirementDef() {
+  SIM_RESULTS = [];
+  sim_testO_RequirementDef();
   sim_saveResults_();
   sim_showResultDialog_();
 }

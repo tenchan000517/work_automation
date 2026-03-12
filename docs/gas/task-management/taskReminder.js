@@ -153,6 +153,18 @@ function task_sendDailyReminder() {
       }
     }
 
+    // 要件定義待ちの大タスクを追加
+    var reqPendingTasks = tasks.filter(function(t) {
+      return t.assignee === assigneeName && t.size === '大' && !t.requirementDef;
+    });
+    if (reqPendingTasks.length > 0) {
+      body += '\uD83D\uDCDD 要件定義待ち（' + reqPendingTasks.length + '件）\n';
+      for (var p = 0; p < reqPendingTasks.length; p++) {
+        body += '  ' + reqPendingTasks[p].id + ' ' + reqPendingTasks[p].title + '（大・要件定義してから着手）\n';
+      }
+      body += '\n';
+    }
+
     task_notifyAssignee(assigneeName, '\uD83D\uDCCB タスクリマインド（' + today + '）', body);
   }
 }
@@ -201,7 +213,24 @@ function task_sendWeeklyReview() {
     body += '  ' + assigneeKeys[j] + '：' + byAssignee[assigneeKeys[j]] + '件\n';
   }
 
-  body += '\n【期限超過タスク】\n';
+  // 要件定義待ち集計
+  var reqPendingLarge = 0, reqPendingMedium = 0;
+  for (var r = 0; r < tasks.length; r++) {
+    if (!tasks[r].requirementDef) {
+      if (tasks[r].size === '大') reqPendingLarge++;
+      else if (tasks[r].size === '中') reqPendingMedium++;
+    }
+  }
+  var reqTotal = reqPendingLarge + reqPendingMedium;
+  if (reqTotal > 0) {
+    var reqDetail = [];
+    if (reqPendingLarge > 0) reqDetail.push('大' + reqPendingLarge + '件');
+    if (reqPendingMedium > 0) reqDetail.push('中' + reqPendingMedium + '件');
+    body += '\uD83D\uDCDD 要件定義待ち：' + reqTotal + '件（' + reqDetail.join('・') + '）\n';
+  }
+  body += '\n';
+
+  body += '【期限超過タスク】\n';
   for (var k = 0; k < tasks.length; k++) {
     if (tasks[k].urgency === 'overdue') {
       body += '  ' + tasks[k].id + ' ' + tasks[k].title + '（' + tasks[k].assignee + '・期限：' + tasks[k].deadline + '）\n';
