@@ -45,13 +45,26 @@ function task_createInputDialogHtml(preselectedMode, members) {
   <style>
     .discussion-fields { display: none; margin-top: 16px; }
     .discussion-fields.show { display: block; }
+    .mode-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px 12px; background: #e8f0fe; border-radius: 8px; font-size: 14px; }
+    .mode-header .mode-icon { font-size: 18px; }
+    .mode-header .mode-name { font-weight: bold; }
+    .mode-header .mode-change { font-size: 12px; color: #1a73e8; cursor: pointer; margin-left: auto; text-decoration: underline; }
   </style>
 </head>
 <body>
   <h3>\uD83D\uDCCB タスク登録</h3>
-  <p class="description">入力モードを選択してください</p>
 
-  <div class="mode-grid">
+  <!-- モード事前選択時: 選択済みヘッダー表示 -->
+  <div id="modeHeader" class="mode-header" style="display: ${preselectedMode ? 'flex' : 'none'};">
+    <span class="mode-icon" id="modeHeaderIcon"></span>
+    <span class="mode-name" id="modeHeaderName"></span>
+    <span class="mode-change" onclick="showModeGrid()">変更</span>
+  </div>
+
+  <!-- モード選択グリッド（事前選択時は非表示） -->
+  <p id="modePrompt" class="description" style="display: ${preselectedMode ? 'none' : 'block'};">入力モードを選択してください</p>
+
+  <div class="mode-grid" id="modeGrid" style="display: ${preselectedMode ? 'none' : 'grid'};">
     <div class="mode-btn ${preselectedMode === 'works_bulk' ? 'selected' : ''}" data-mode="works_bulk" onclick="selectMode(this)">
       <span class="mode-icon">\uD83D\uDCAC</span>
       <span class="mode-label">ワークス一括</span>
@@ -116,12 +129,50 @@ function task_createInputDialogHtml(preselectedMode, members) {
   <script>
     var selectedMode = '${preselectedMode || ''}';
 
+    var MODE_LABELS = {
+      works_bulk: { icon: '\uD83D\uDCAC', name: 'ワークス一括' },
+      works_pin: { icon: '\uD83D\uDCCC', name: 'ピンポイント' },
+      notta: { icon: '\uD83D\uDCDD', name: 'NOTTA' },
+      free_text: { icon: '\u270D\uFE0F', name: '自由記述' },
+      discussion: { icon: '\uD83E\uDD1D', name: 'ディスカッション' }
+    };
+
+    // 事前選択時のヘッダー初期化
+    if (selectedMode && MODE_LABELS[selectedMode]) {
+      document.getElementById('modeHeaderIcon').textContent = MODE_LABELS[selectedMode].icon;
+      document.getElementById('modeHeaderName').textContent = MODE_LABELS[selectedMode].name;
+      // ディスカッションモードの表示切替
+      if (selectedMode === 'discussion') {
+        document.getElementById('normalFields').style.display = 'none';
+        document.getElementById('discussionFields').className = 'discussion-fields show';
+      }
+    }
+
+    function showModeGrid() {
+      document.getElementById('modeHeader').style.display = 'none';
+      document.getElementById('modePrompt').style.display = 'block';
+      document.getElementById('modeGrid').style.display = 'grid';
+    }
+
+    function updateModeHeader(mode) {
+      if (MODE_LABELS[mode]) {
+        document.getElementById('modeHeaderIcon').textContent = MODE_LABELS[mode].icon;
+        document.getElementById('modeHeaderName').textContent = MODE_LABELS[mode].name;
+        document.getElementById('modeHeader').style.display = 'flex';
+        document.getElementById('modePrompt').style.display = 'none';
+        document.getElementById('modeGrid').style.display = 'none';
+      }
+    }
+
     function selectMode(el) {
       document.querySelectorAll('.mode-btn').forEach(function(btn) {
         btn.classList.remove('selected');
       });
       el.classList.add('selected');
       selectedMode = el.dataset.mode;
+
+      // モードヘッダーに切替
+      updateModeHeader(selectedMode);
 
       // ディスカッションモードの表示切替
       var isDiscussion = selectedMode === 'discussion';

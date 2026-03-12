@@ -47,6 +47,9 @@ function onOpen() {
     .addSeparator()
     .addItem('\uD83D\uDD27 テンプレート初期設定', 'initializeTemplate')
     .addToUi();
+
+  // メニュー3：シミュレーション（taskSimulator.js）
+  sim_addMenu();
 }
 
 // ================================================================================

@@ -12,7 +12,7 @@
  *
  * 【ヒアリングシート構造】
  * 1行目: 企業名（タイトル）
- * 2行目: ステータスヘッダー（B〜G列）
+ * 2行目: ステータスヘッダー（A列:納期、B〜G列:タスク等）
  * 3行目: ステータス入力欄
  * H列: 公開URL
  * I〜N列: 更新ログ
@@ -149,11 +149,15 @@ const HP_FORM_TO_SHEET_MAPPING = {
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
 
-  // 設定メニュー（settingsSheet.jsから）
-  hp_addSettingsMenu(ui);
+  // プロンプトシートからメニュー項目を動的に生成（カテゴリでフィルタリング）
+  const prompts = hp_getPromptList();
+  const filteredPrompts = prompts.filter(p => p.category === HP_PROMPT_MENU_CATEGORY);
 
-  // メインメニュー
-  ui.createMenu('1.📋 HP制作')
+  // メインメニュー（サブメニュー形式）
+  const menu = ui.createMenu('🌐 HP制作');
+
+  // 1️⃣ ヒアリング
+  menu.addSubMenu(ui.createMenu('1️⃣ ヒアリング')
     .addItem('🆕 新規ヒアリングシート作成（フォーム回答から）', 'hp_createFromFormResponse')
     .addItem('🆕 新規ヒアリングシート作成（手動）', 'hp_createNewHearingSheet')
     .addSeparator()
@@ -161,23 +165,70 @@ function onOpen() {
     .addSeparator()
     .addItem('📥 フォーム回答を既存シートに転記', 'hp_transferToExistingSheet')
     .addSeparator()
-    .addItem('🎨 テンプレート初期設定', 'hp_setupTemplate')
+    .addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog')
+  );
+
+  // 2️⃣ ヒアリング反映
+  const promptMenu = ui.createMenu('2️⃣ ヒアリング反映');
+  if (filteredPrompts.length === 0) {
+    promptMenu.addItem('（プロンプトシートを作成してください）', 'hp_showPromptSetupInstructions');
+  } else {
+    filteredPrompts.forEach((prompt) => {
+      promptMenu.addItem(prompt.name, `hp_openPromptDialog_${prompt.index}`);
+    });
+    promptMenu.addSeparator();
+  }
+  promptMenu.addItem('📋 文字起こしを整理（プロンプト生成）', 'hp_showTranscriptPromptDialog');
+  promptMenu.addItem('📥 AI出力を転記', 'hp_showTransferFromAIDialog');
+  promptMenu.addSeparator();
+  promptMenu.addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog');
+  menu.addSubMenu(promptMenu);
+
+  // 3️⃣ 素材フォルダ
+  menu.addSubMenu(ui.createMenu('3️⃣ 素材フォルダ')
+    .addItem('📂 素材フォルダ作成（JSON入力）', 'hp_showAssetFolderDialog')
+    .addSeparator()
+    .addItem('📂 ページフォルダ追加', 'hp_showCreateFolderDialog')
+    .addItem('📋 最近追加したフォルダ一覧', 'hp_showRecentFolders')
     .addSeparator()
     .addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog')
-    .addToUi();
+  );
 
-  // 2.ヒアリング反映メニュー（promptDialog.jsから）
-  // ※ 文字起こし転記機能も統合済み
-  hp_addPromptMenu(ui);
+  // 4️⃣ 構成案作成
+  menu.addSubMenu(ui.createMenu('4️⃣ 構成案作成')
+    .addItem('📤 HP制作用JSON出力', 'hp_showJsonOutputDialog')
+    .addSeparator()
+    .addItem('📋 構成案プロンプト生成', 'hp_showCompositionPromptDialog')
+    .addItem('🤖 Claude Code指示文生成', 'hp_showClaudeCodePromptDialog')
+    .addSeparator()
+    .addItem('🎨 カンプ分析プロンプト生成', 'hp_showKanpuAnalysisDialog')
+    .addItem('🖼️ カンプ版 Claude Code指示文', 'hp_showKanpuClaudeCodeDialog')
+    .addSeparator()
+    .addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog')
+  );
 
-  // 3.素材フォルダメニュー（createFolder.jsから）
-  hp_addFolderMenu(ui);
+  // 5️⃣ 進捗管理
+  menu.addSubMenu(ui.createMenu('5️⃣ 進捗管理')
+    .addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog')
+    .addSeparator()
+    .addItem('📋 進捗一覧シートを作成', 'hp_createProgressSheet')
+    .addItem('🔄 進捗一覧を更新', 'hp_updateProgressSheet')
+    .addSeparator()
+    .addItem('📝 現在のシートにステータス欄を追加', 'hp_addStatusSectionToCurrentSheet')
+    .addItem('📝 全シートにステータス欄を追加', 'hp_addStatusSectionToAllSheets')
+  );
 
-  // 4.構成案作成メニュー（JSON出力と統合）（compositionPrompt.jsから）
-  hp_addCompositionMenu(ui);
+  // ⚙️ 設定
+  menu.addSubMenu(ui.createMenu('⚙️ 設定')
+    .addItem('🎨 テンプレート初期設定', 'hp_setupTemplate')
+    .addSeparator()
+    .addItem('📋 設定シートを作成', 'hp_initializeSettingsSheet')
+    .addItem('📝 プロンプトシートを作成', 'hp_initializePromptSheet')
+    .addSeparator()
+    .addItem('📄 設定を表示', 'hp_showSettings')
+  );
 
-  // 進捗管理メニュー（progressManager.jsから）
-  hp_addProgressMenu(ui);
+  menu.addToUi();
 }
 
 // ===== ヘルパー関数 =====
@@ -1573,7 +1624,14 @@ function hp_createStatusSection(sheet, startRow) {
   const headerRow = startRow;
   const valueRow = startRow + 1;
 
-  // 2行目: ヘッダー
+  // 2行目: ヘッダー（A列: 納期）
+  sheet.getRange(headerRow, 1)
+    .setValue('納期（あと○日）')
+    .setBackground('#FFECB3')
+    .setFontWeight('bold')
+    .setFontColor('#000000');
+
+  // 2行目: ヘッダー（B〜G列）
   const headers = ['現在タスク', 'タスク保持者', '状態', '期限', '最終更新日', '全体ステータス'];
   headers.forEach((header, i) => {
     sheet.getRange(headerRow, 2 + i)
@@ -1585,6 +1643,12 @@ function hp_createStatusSection(sheet, startRow) {
 
   // 3行目: 入力欄
   const inputBg = '#FFFDE7';
+
+  // A列: 納期（日付入力）
+  sheet.getRange(valueRow, 1)
+    .setBackground('#FFF8E1')
+    .setFontColor('#000000')
+    .setNumberFormat('yyyy年M月d日');
 
   // B列: 現在タスク
   sheet.getRange(valueRow, 2).setValue(taskList[0]).setBackground(inputBg).setFontColor('#000000');

@@ -69,7 +69,7 @@ cd /mnt/c/client_hp/{{companyNameEn}}
    | 企業名 | {{companyName}} |
    | ディレクトリ | client_hp/{{companyNameEn}}/ |
    | 作成日 | {{date}} |
-   | テンプレート | sing-hp-template |
+   | テンプレート | {{templateType}} |
 
    ## 企業基本情報
 
@@ -186,7 +186,7 @@ cd /mnt/c/client_hp/{{companyNameEn}}
    rm -rf {{companyNameEn}}
 
    # 3. テンプレートをクローン
-   gh repo clone tenchan000517/template-standard {{companyNameEn}}
+   gh repo clone {{templateRepo}} {{companyNameEn}}
 
    # 4. docフォルダとHANDOFFを戻す
    mv {{companyNameEn}}_doc_backup {{companyNameEn}}/doc
@@ -1095,6 +1095,10 @@ function hp_showCompositionPromptDialog() {
  */
 function hp_createCompositionPromptDialogHTML(sheetData) {
   const sheetDataJson = JSON.stringify(sheetData);
+  // テンプレート一覧をJSON化
+  const templateTypesJson = JSON.stringify(HP_TEMPLATE_TYPES)
+    .replace(/<\/script>/gi, '<\\/script>')
+    .replace(/`/g, '\\`');
   // プロンプトシートから取得（なければデフォルト）
   const template = hp_getCompositionPromptTemplate();
   const templateEscaped = template
@@ -1167,6 +1171,13 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
       background: #4CAF50;
       color: white;
     }
+    .template-section {
+      display: none;
+      margin-top: 12px;
+    }
+    .template-section.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -1213,6 +1224,19 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     <div class="note" style="margin-top: 4px; margin-left: 26px;">チェックすると、出力先ディレクトリとファイル分割の指示がプロンプト末尾に追加されます</div>
   </div>
 
+  <!-- テンプレート選択（Claude Code用チェック時のみ表示） -->
+  <div class="template-section" id="templateSection">
+    <div class="input-section">
+      <span class="input-label">テンプレートを選択</span>
+      <div class="company-select-wrapper">
+        <div class="company-select-display" id="templateSelectDisplay" onclick="toggleTemplateDropdown()">
+          <span class="placeholder">テンプレートを選択してください</span>
+        </div>
+        <div class="company-select-dropdown" id="templateSelectDropdown"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- プロンプト出力 -->
   <div class="output-header">
     <span class="input-label" style="margin-bottom:0;">生成されたプロンプト</span>
@@ -1240,8 +1264,10 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     const sheetData = ${sheetDataJson};
     const template = \`${templateEscaped}\`;
     const outputInstruction = ${outputInstructionJson};
+    const templateTypes = ${templateTypesJson};
     let selectedSheetName = '';
     let selectedCompanyName = '';
+    let selectedTemplateType = '';
     let currentPrompt = '';
 
     window.onload = function() {
@@ -1258,6 +1284,7 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
           updateStep(1);
         }
       });
+      initTemplateSelect();
     };
 
     function updateStep(step) {
@@ -1272,11 +1299,71 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
     function toggleClaudeCodeInfo() {
       const isChecked = document.getElementById('claudeCodeCheck').checked;
       document.getElementById('claudeCodeInfo').style.display = isChecked ? 'block' : 'none';
+      const section = document.getElementById('templateSection');
+      if (isChecked) {
+        section.classList.add('show');
+      } else {
+        section.classList.remove('show');
+      }
+    }
+
+    function initTemplateSelect() {
+      const dropdown = document.getElementById('templateSelectDropdown');
+      dropdown.innerHTML = templateTypes.map(function(t) {
+        var pagesText = t.pages > 0 ? t.pages + 'ページ' : 'カスタム';
+        return '<div class="company-select-item" data-id="' + t.id + '" onclick="selectTemplate(\\'' + t.id + '\\')">' +
+          '<span class="check-icon"></span>' +
+          '<span class="company-name">' + t.nameJa + '</span>' +
+          '<span style="color:#888;font-size:12px;margin-left:8px;">' + pagesText + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    function toggleTemplateDropdown() {
+      var display = document.getElementById('templateSelectDisplay');
+      var dropdown = document.getElementById('templateSelectDropdown');
+      var isOpen = dropdown.classList.contains('show');
+      if (isOpen) {
+        dropdown.classList.remove('show');
+        display.classList.remove('active');
+      } else {
+        dropdown.classList.add('show');
+        display.classList.add('active');
+      }
+    }
+
+    function selectTemplate(id) {
+      selectedTemplateType = id;
+      var selected = templateTypes.find(function(t) { return t.id === id; });
+      var display = document.getElementById('templateSelectDisplay');
+      var pagesText = selected.pages > 0 ? selected.pages + 'ページ' : 'カスタム';
+      display.innerHTML = '<span class="selected-check">✓</span>' +
+        '<span class="selected-name">' + selected.nameJa + '</span>' +
+        '<span style="color:#888;font-size:12px;margin-left:8px;">' + pagesText + '</span>';
+
+      document.querySelectorAll('#templateSelectDropdown .company-select-item').forEach(function(el) {
+        el.classList.remove('selected');
+        el.querySelector('.check-icon').textContent = '';
+      });
+      document.querySelectorAll('#templateSelectDropdown .company-select-item').forEach(function(el) {
+        if (el.dataset.id === id) {
+          el.classList.add('selected');
+          el.querySelector('.check-icon').textContent = '✓';
+        }
+      });
+
+      toggleTemplateDropdown();
     }
 
     function generatePrompt() {
       if (!selectedSheetName) {
         showStatus('企業シートを選択してください', 'error');
+        return;
+      }
+
+      const isClaudeCode = document.getElementById('claudeCodeCheck').checked;
+      if (isClaudeCode && !selectedTemplateType) {
+        showStatus('テンプレートを選択してください', 'error');
         return;
       }
 
@@ -1325,7 +1412,12 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
       const pageInfo = selectedPages.length > 0
         ? '（' + selectedPages.length + 'ページ）'
         : '（ページ未設定）';
-      const claudeCodeInfo = isClaudeCode ? ' + Claude Code出力指示' : '';
+      let claudeCodeInfo = '';
+      if (isClaudeCode) {
+        const selectedTemplate = templateTypes.find(function(t) { return t.id === selectedTemplateType; });
+        const templateName = selectedTemplate ? selectedTemplate.nameJa : '';
+        claudeCodeInfo = ' + Claude Code出力指示（' + templateName + '）';
+      }
       showStatus('✅ プロンプト生成完了（' + result.companyName + pageInfo + claudeCodeInfo + '）', 'success');
     }
 
@@ -1387,6 +1479,11 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
         String(today.getMonth() + 1).padStart(2, '0') + '-' +
         String(today.getDate()).padStart(2, '0');
 
+      // テンプレート情報を取得
+      const selectedTemplate = templateTypes.find(function(t) { return t.id === selectedTemplateType; });
+      const templateName = selectedTemplate ? selectedTemplate.nameJa : selectedTemplateType;
+      const templateRepo = selectedTemplate ? selectedTemplate.repo : 'tenchan000517/template-standard';
+
       return outputInstruction
         .replace(/{{companyName}}/g, companyName)
         .replace(/{{companyNameEn}}/g, companyNameEn)
@@ -1394,6 +1491,8 @@ function hp_createCompositionPromptDialogHTML(sheetData) {
         .replace('{{pageStatusTable}}', pageStatusTable)
         .replace('{{commonPartsNum}}', commonPartsNum)
         .replace('{{photoGuideNum}}', photoGuideNum)
+        .replace(/{{templateType}}/g, templateName)
+        .replace(/{{templateRepo}}/g, templateRepo)
         .replace(/{{date}}/g, dateStr);
     }
 

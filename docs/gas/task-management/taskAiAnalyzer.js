@@ -29,6 +29,8 @@ const TASK_EXTRACTION_PROMPT = `あなたはタスク管理アシスタントで
 以下はタスク候補として抽出しない：
 - 雑談・感想・お祝い・リアクション
 - 純粋な情報共有で次のアクションが一切示唆されないもの
+- 完了報告（「〜しました」「〜済みです」「〜完了」）で、次のアクションが示唆されていないもの
+  例: 「写真整理しました。Driveにアップ済みです」→ 完了報告であり新規タスクではない
 
 【確信度の基準】
 - 高：明確な依頼・指示がある（「〜お願い」「〜してください」）
@@ -321,7 +323,10 @@ function task_extractTasks(inputText, mode) {
   };
 
   var modeDesc = modeLabel[mode] || modeLabel['free_text'];
-  var userPrompt = '【入力モード】' + modeDesc + memberInfo + '\n\n【入力テキスト】\n' + inputText;
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][new Date().getDay()];
+  var dateInfo = '\n\n【今日の日付】' + today + '（' + dayOfWeek + '曜日）\n※「水曜まで」「来週月曜」等の相対的な期限は、この日付を基準にYYYY-MM-DD形式に変換してください。';
+  var userPrompt = '【入力モード】' + modeDesc + memberInfo + dateInfo + '\n\n【入力テキスト】\n' + inputText;
 
   var result = task_callGeminiApi(userPrompt, TASK_EXTRACTION_PROMPT, { jsonMode: true });
   if (!result.success) {

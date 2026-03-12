@@ -19,8 +19,9 @@ function pv_showScriptPromptDialog() {
   const sheetData = pv_getCompanySheetListWithData('台本JSON');
   const storyPatterns = pv_getStoryPatterns();
   const stylePatterns = pv_getStylePatterns();
+  const actions = pv_getActions();
 
-  const html = HtmlService.createHtmlOutput(pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns))
+  const html = HtmlService.createHtmlOutput(pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns, actions))
     .setWidth(950)
     .setHeight(850);
   ui.showModalDialog(html, '📝 台本生成プロンプト');
@@ -29,7 +30,7 @@ function pv_showScriptPromptDialog() {
 /**
  * 台本生成プロンプトダイアログのHTML
  */
-function pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns) {
+function pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns, actions) {
   const sheetDataJson = JSON.stringify(sheetData);
   // sceneGuidelinesを除外してJSON化（クライアント側に渡すデータを軽量化）
   const storyPatternsForClient = storyPatterns.map(p => {
@@ -63,6 +64,24 @@ function pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns) {
   storyPatterns.forEach(pattern => {
     // 新プロパティ対応：essenceからdescription相当を生成
     const essenceDesc = pattern.essence ? `「${pattern.essence.split(' → ')[0]}」から「${pattern.essence.split(' → ').pop()}」への物語` : (pattern.description || '');
+    // 推奨スタイル表示を生成
+    let recommendedStylesHtml = '';
+    if (pattern.recommendedStyles && pattern.recommendedStyles.length > 0) {
+      const styleNames = pattern.recommendedStyles.map(sid => {
+        const s = stylePatterns.find(sp => sp.id === sid);
+        return s ? s.name.replace('風', '') : sid;
+      }).slice(0, 3);
+      recommendedStylesHtml = `<div class="recommended-styles"><span class="rec-label">推奨:</span>${styleNames.map(n => `<span class="rec-style">${pv_escapeHtml(n)}</span>`).join('')}</div>`;
+    }
+    // 推奨演出表示を生成
+    let recommendedActionsHtml = '';
+    if (pattern.recommendedActions && pattern.recommendedActions.length > 0) {
+      const actionNames = pattern.recommendedActions.map(aid => {
+        const a = actions.find(ac => ac.id === aid);
+        return a ? a.name : aid;
+      }).slice(0, 3);
+      recommendedActionsHtml = `<div class="recommended-actions"><span class="rec-label">演出:</span>${actionNames.map(n => `<span class="rec-action">${pv_escapeHtml(n)}</span>`).join('')}</div>`;
+    }
     storyOptions += `
       <div class="pattern-option" data-pattern-id="${pattern.id}" onclick="selectStoryPattern('${pattern.id}')">
         <div class="pattern-name">${pv_escapeHtml(pattern.name)}</div>
@@ -73,6 +92,8 @@ function pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns) {
           <span class="structure-tag">${pv_escapeHtml(pattern.peakDisplay || '')}</span>
         </div>
         <div class="pattern-suitable">${pv_escapeHtml(pattern.suitable)}</div>
+        ${recommendedStylesHtml}
+        ${recommendedActionsHtml}
       </div>
     `;
   });
@@ -95,21 +116,31 @@ function pv_createScriptPromptHTML(sheetData, storyPatterns, stylePatterns) {
   <base target="_top">
   ${PV_DIALOG_STYLES}
   <style>
-    .pattern-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; max-height: 400px; overflow-y: auto; padding-right: 4px; }
+    .pattern-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 175px; gap: 10px; margin-bottom: 16px; max-height: 550px; overflow-y: auto; padding-right: 4px; }
     .pattern-option {
-      padding: 10px;
+      padding: 8px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     .pattern-option:hover { border-color: #7c3aed; background: #faf5ff; }
     .pattern-option.selected { border-color: #7c3aed; background: #ede9fe; }
-    .pattern-name { font-weight: bold; color: #333; font-size: 13px; margin-bottom: 4px; }
-    .pattern-desc { font-size: 11px; color: #666; margin-bottom: 4px; }
-    .pattern-structure { display: flex; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
-    .structure-tag { background: #f3f4f6; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
-    .pattern-suitable { font-size: 10px; color: #7c3aed; }
+    .pattern-name { font-weight: bold; color: #333; font-size: 12px; margin-bottom: 3px; }
+    .pattern-desc { font-size: 10px; color: #666; margin-bottom: 3px; }
+    .pattern-structure { display: flex; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
+    .structure-tag { background: #f3f4f6; color: #4b5563; padding: 2px 6px; border-radius: 4px; font-size: 9px; }
+    .pattern-suitable { font-size: 9px; color: #7c3aed; margin-bottom: 3px; }
+    .recommended-styles { font-size: 9px; color: #059669; margin-top: 3px; }
+    .recommended-styles .rec-label { color: #666; }
+    .recommended-styles .rec-style { background: #d1fae5; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
+    .recommended-actions { font-size: 9px; color: #2563eb; margin-top: 2px; }
+    .recommended-actions .rec-label { color: #666; }
+    .recommended-actions .rec-action { background: #dbeafe; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
     .style-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
     .style-option {
       padding: 8px;

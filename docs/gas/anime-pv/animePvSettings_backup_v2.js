@@ -13,40 +13,6 @@
 const SETTINGS_SHEET_NAME = '設定';
 const TEMPLATE_SHEET_NAME = 'ヒアリングシート';
 
-// ===== IDマッピング（互換性維持用） =====
-/**
- * ストーリーパターンIDマッピング
- * 旧ID → 新ID（統合されたパターン用）
- */
-const PV_STORY_ID_MAPPING = {
-  'find_self': 'transform',
-  'rebirth': 'transform',
-  'achieve_goal': 'challenge',
-  'overcome_wall': 'challenge',
-  'find_answer': 'discover',
-  'face_self': 'discover',
-  'find_place': 'connect',
-  'unite': 'connect'
-};
-
-/**
- * スタイルパターンIDマッピング
- * 旧ID → 新ID
- */
-const PV_STYLE_ID_MAPPING = {
-  'cyberpunk': 'minimal_modern',
-  'realistic': 'hybrid'
-};
-
-/**
- * スタイルパターン名マッピング
- * 旧名 → 新名（既存シートの互換性用）
- */
-const PV_STYLE_NAME_MAPPING = {
-  'サイバーパンク風': 'ミニマルモダン風',
-  '実写風': 'ハイブリッド風'
-};
-
 // ================================================================================
 // ===== スタイルパターン（10種類） =====
 // ================================================================================
@@ -146,9 +112,9 @@ No text, no watermark, no signature, no letters, no UI elements.`
     id: 'evangelion',
     name: 'エヴァンゲリオン風',
     description: 'シャープ、緊張感、インパクト',
-    suitable: '技術系、挑戦、革新、緊張感のある演出',
-    videoBasePrompt: 'Neon Genesis Evangelion anime style, Gainax/Khara studio aesthetic, sharp angular character design, high contrast harsh lighting, dramatic stark shadows, bold black linework, classic 90s cel animation, red and orange color accents, unconventional camera angles, psychological intensity',
-    characterSheetPrompt: `Create an anime character reference sheet in the style of Neon Genesis Evangelion (Gainax/Khara studio).
+    suitable: '技術系、挑戦、革新',
+    videoBasePrompt: 'Neon Genesis Evangelion anime style, sharp angular features, high contrast lighting, dramatic shadows, bold linework, cel-shaded, 90s anime aesthetic',
+    characterSheetPrompt: `Create an anime character reference sheet in the style of Neon Genesis Evangelion.
 
 The character is a 【年齢】-year-old Japanese 【male/female】 【職業/学生】.
 【髪型・髪色】
@@ -159,42 +125,32 @@ Wearing 【服装】.
 
 Show the character from multiple angles: front view, side profile, and three-quarter view.
 Include both full body poses and upper body close-ups.
-Facial expression variations on the right: serious, determined, intense, guarded.
+Facial expression variations on the right: serious, determined, intense, neutral.
 
-Evangelion art style characteristics (distinct from Shinkai style):
-- Sharp angular features with defined jawline and cheekbones
-- Intense eyes with SMALL pupils, minimal sparkle (NOT large sparkling eyes)
-- High contrast harsh lighting with dramatic BLACK shadows
-- Bold black linework with sharp edges
-- Slightly elongated proportions, tense posture
-- 90s cel animation aesthetic with visible texture
-- Color palette: muted base with RED and ORANGE accents
-- Serious, psychologically intense expression
-- NO soft lighting, NO lens flare, NO atmospheric glow
+Evangelion art style characteristics:
+- Sharp angular features and defined jawline
+- Intense, detailed eyes with small pupils
+- High contrast lighting with dramatic shadows
+- Bold linework, slightly elongated proportions
+- Serious, intense expression
+- Cel-shaded coloring with stark highlights
 
-Clean white background, classic 90s Gainax anime aesthetic.
+Clean white background, 90s anime aesthetic, Gainax/Khara studio style.
 
 No text, no watermark, no signature, no letters.`,
-    startFramePrompt: `Create an anime scene in the style of Neon Genesis Evangelion (Gainax/Khara studio).
+    startFramePrompt: `Create an anime scene in the style of Neon Genesis Evangelion.
 
 【キャラクター説明】
 
 【シーンの説明 - どこで、何をしているか】
 
-【照明・雰囲気 例: harsh overhead lighting / stark industrial setting】
+【照明・雰囲気 例: dramatic harsh lighting / industrial setting】
 
-【感情・ムード 例: psychological tension / intense focus / quiet determination】
+【感情・ムード 例: intense determination / quiet tension】
 
-Evangelion art style (NOT Shinkai style):
-- Sharp angular character design with bold black outlines
-- High contrast HARSH lighting with dramatic stark shadows
-- Classic 90s cel animation aesthetic
-- Color palette: muted tones with red/orange accents
-- Unconventional camera angles (dutch angles, extreme close-ups)
-- Psychological intensity in composition
-- NO soft lighting, NO lens flare, NO atmospheric glow
-
-16:9 aspect ratio, Gainax cinematography style.
+Evangelion art style: sharp angular features, high contrast lighting, dramatic shadows, bold composition.
+Cel-shaded coloring, 90s anime aesthetic, Gainax cinematography.
+16:9 aspect ratio, cinematic framing with unconventional angles.
 
 No text, no watermark, no signature, no letters, no UI elements.`
   },
@@ -294,50 +250,50 @@ Miyazaki aesthetic, attention to nature and everyday details, gentle atmosphere.
 No text, no watermark, no signature, no letters, no UI elements.`
   },
   {
-    id: 'minimal_modern',
-    name: 'ミニマルモダン風',
-    description: '洗練、シンプル、都会的',
-    suitable: 'IT、コンサルティング、デザイン、モダン企業',
-    videoBasePrompt: 'Minimal modern anime style, clean lines, sophisticated color palette, white space, geometric composition, contemporary urban aesthetic, subtle lighting, professional animation quality',
-    characterSheetPrompt: `Create an anime character reference sheet in minimal modern style.
+    id: 'cyberpunk',
+    name: 'サイバーパンク風',
+    description: 'ネオン、近未来、テック感',
+    suitable: 'IT、ゲーム、先端技術',
+    videoBasePrompt: 'Cyberpunk anime style, neon lighting, high contrast, cel-shaded, futuristic aesthetic, Ghost in the Shell/Akira feel',
+    characterSheetPrompt: `Create an anime character reference sheet in cyberpunk anime style.
 
 The character is a 【年齢】-year-old Japanese 【male/female】 【職業/学生】.
-【髪型・髪色】
-【目の特徴】
+【髪型・髪色 - ネオンカラーのハイライトも可】
+【目の特徴 - サイバネティック要素も可】
 【体格】
 
-Wearing 【服装】.
+Wearing 【服装 - テックウェア、LED、未来的要素も可】.
 
 Show the character from multiple angles: front view, side profile, and three-quarter view.
 Include both full body poses and upper body close-ups.
-Facial expression variations on the right: confident, thoughtful, subtle smile, neutral.
+Facial expression variations on the right: confident, focused, smirk, neutral.
 
-Minimal modern style characteristics:
-- Clean, simple lines with minimal detail
-- Sophisticated, muted color palette (grays, whites, accent colors)
-- Geometric simplicity in design
-- Contemporary, urban professional look
-- Elegant restraint in expression
-- White space emphasis
-- Modern, refined aesthetic
-- Intelligent, composed expression
+Cyberpunk anime style characteristics:
+- Anime art style with cel shading
+- Neon color accents (cyan, magenta, purple)
+- High contrast lighting
+- Futuristic clothing and accessories
+- Possible cybernetic implants or tech accessories
+- Sharp, modern aesthetic
+- Urban, edgy vibe
+- Confident, cool expression
 
-Clean white background with subtle shadows, minimalist design aesthetic.
+Dark background with neon glow effects, Ghost in the Shell / Akira anime aesthetic.
 
 No text, no watermark, no signature, no letters.`,
-    startFramePrompt: `Create an anime scene in minimal modern style.
+    startFramePrompt: `Create a cyberpunk anime scene.
 
 【キャラクター説明】
 
 【シーンの説明 - どこで、何をしているか】
 
-【環境 例: modern office / minimalist interior / contemporary workspace】
+【環境 例: neon-lit street / high-tech office / futuristic factory】
 
-【感情・ムード 例: composed and confident / thoughtful focus】
+【感情・ムード 例: cool and confident / intense focus】
 
-Minimal modern anime style: clean lines, sophisticated muted colors, white space emphasis, geometric composition.
-Contemporary urban aesthetic, subtle lighting, professional atmosphere.
-16:9 aspect ratio, balanced minimalist composition.
+Cyberpunk anime style: anime art with cel shading, neon lighting (cyan, magenta, purple), high contrast, futuristic urban environment.
+Ghost in the Shell / Akira anime aesthetic, rain-slicked surfaces, holographic elements.
+16:9 aspect ratio, dramatic noir-inspired composition.
 
 No text, no watermark, no signature, no letters, no UI elements.`
   },
@@ -485,12 +441,12 @@ Detailed textures, subsurface scattering, cinematic lighting.
 No text, no watermark, no signature, no letters, no UI elements.`
   },
   {
-    id: 'hybrid',
-    name: 'ハイブリッド風',
-    description: 'アニメと実写の融合、高品質、独特',
-    suitable: '企業PR、ブランディング、プロモーション、クリエイティブ企業',
-    videoBasePrompt: 'Hybrid anime-realistic style, anime character design with photorealistic backgrounds, detailed textures, cinematic lighting, professional animation quality, semi-realistic proportions',
-    characterSheetPrompt: `Create a character reference sheet in hybrid anime-realistic style.
+    id: 'realistic',
+    name: '実写風',
+    description: '高品質、リアル、プロフェッショナル',
+    suitable: '企業PR、採用動画、プロモーション',
+    videoBasePrompt: 'Photorealistic style, highly detailed, natural skin texture, realistic materials, professional cinematography, cinematic color grading',
+    characterSheetPrompt: `Create a photorealistic character reference sheet.
 
 The character is a 【年齢】-year-old Japanese 【male/female】 【職業/学生】.
 【髪型・髪色】
@@ -501,44 +457,44 @@ Wearing 【服装】.
 
 Show the character from multiple angles: front view, side profile, and three-quarter view.
 Include both full body poses and upper body close-ups.
-Facial expression variations on the right: natural smile, confident, focused, neutral.
+Facial expression variations on the right: professional smile, confident, focused, neutral.
 
-Hybrid anime-realistic style:
-- Anime-inspired character design with realistic proportions
-- Detailed skin textures and realistic shading
-- Anime eyes with realistic reflections
-- Accurate fabric textures and materials
-- Cinematic lighting and shadows
-- High production value aesthetic
-- Natural, relatable expression
+Photorealistic style:
+- Highly detailed, realistic rendering
+- Natural skin texture and pores
+- Realistic hair strands and texture
+- Accurate fabric folds and materials
+- Natural lighting and shadows
+- Professional photography quality
+- Neutral, natural expression
 
-Clean studio background with professional lighting, high-quality render aesthetic.
+Clean studio background with professional lighting, fashion photography aesthetic.
 
 No text, no watermark, no signature, no letters.`,
-    startFramePrompt: `Create a scene in hybrid anime-realistic style.
+    startFramePrompt: `Create a photorealistic cinematic scene.
 
 【キャラクター説明】
 
 【シーンの説明 - どこで、何をしているか】
 
-【照明・環境 例: natural daylight / golden hour / studio lighting】
+【照明・環境 例: natural daylight / dramatic golden hour】
 
-【感情・ムード 例: professional / authentic / inspiring】
+【感情・ムード 例: professional / inspiring / authentic】
 
-Hybrid anime-realistic style: anime character design with photorealistic environments, detailed textures, cinematic lighting.
-Semi-realistic proportions, professional cinematography, shallow depth of field where appropriate.
-16:9 aspect ratio, cinematic composition.
+Photorealistic style: highly detailed, natural skin texture, realistic materials.
+Professional cinematography, shallow depth of field, cinematic color grading.
+16:9 aspect ratio, film-quality composition.
 
 No text, no watermark, no signature, no letters, no UI elements.`
   }
 ];
 
 // ================================================================================
-// ===== ストーリーパターン（15種類） =====
+// ===== ストーリーパターン（12種類） =====
 // ================================================================================
 
 /**
- * ストーリーパターン定義 v3.0
+ * ストーリーパターン定義 v2.0
  *
  * 4人の専門家（CMディレクター、広告クリエイティブディレクター、
  * 採用マーケティング、映像脚本家）の知見を元に設計
@@ -552,284 +508,393 @@ No text, no watermark, no signature, no letters, no UI elements.`
  * - emotionValues: 感情カーブ数値（12シーン分）
  * - suitable: 推奨される用途
  * - guidance: AIへのガイダンス
- * - recommendedStyles: 推奨スタイルID配列（新規追加）
  */
 const PV_STORY_PATTERNS = [
-  // ===== 1. 新しい自分になる（統合: 自分を見つける + 生まれ変わる） =====
+  // ===== 1. 自分を見つける =====
   {
-    id: 'transform',
-    name: '新しい自分になる',
-    essence: '迷い・限界 → 変容',
+    id: 'find_self',
+    name: '自分を見つける',
+    essence: 'わからない → 見つかる',
     emotionCurve: 'v_recovery',
     emotionCurveDisplay: '落ちて上がる',
     opening: 'empathy',
     openingDisplay: '困っている状態',
     peak: 'reversal',
     peakDisplay: '逆転',
-    visualTechniques: ['光の演出', '色彩変化', '環境の変化', 'メタファー具現化'],
+    visualTechniques: ['光の演出', '色彩変化', '環境の変化'],
     emotionValues: [-3, -4, -5, -3, 0, +2, +5, +4, +3, +4, +5, +5],
     suitable: '新卒採用◎、中途採用◎、ブランディング○',
-    recommendedStyles: ['shinkai', 'pixar', 'ghibli'],
-    recommendedActions: ['door_open', 'eye_open', 'face_raise'],
-    guidance: `【物語の本質】迷い・限界 → 決断・きっかけ → 変容・再生
+    guidance: `【物語の本質】わからない → きっかけ → 見つかる
 
 【特徴・強み】
 - 最も普遍的で強力な感情喚起力を持つ
 - どん底からの復活という人類共通のテーマ
-- 暗→光への視覚的コントラストが最大
-- 人生の転換点を描くのに最適
+- 暗闘→光への視覚的コントラストが最大
 
 【生み出す感情】感動、希望、カタルシス、勇気、共感、解放感
 
 【演出の核心】
 冒頭の暗い色調（グレー・青）から、転換点で暖色系へのグラデーション移行。
 主人公の表情が影→光に照らされる瞬間を0.5秒のスローモーションで強調。
-破壊→再構築のメタファー（崩れる壁が花に変わるなど）も効果的。
 
 【シーン構成】
-S1-3:[-3→-5] 苦悩・迷い・限界の提示
-S4-6:[-3→+2] きっかけ・決断・転換点
-S7★:[+5] ピーク（変容の瞬間）
-S8-12:[+4→+5] 新しい自分・希望・再生`,
+S1-3:[-3→-5] 苦悩・迷いの提示
+S4-6:[-3→+2] きっかけ・転換点
+S7★:[+5] ピーク（逆転の瞬間）
+S8-12:[+4→+5] 新しい自分・希望`,
     sceneGuidelines: [
       {
         scenes: [1, 2, 3],
-        emotionRange: '苦悩・限界（-3→-5）',
+        emotionRange: '苦悩・迷い（-3→-5）',
         cameraWork: 'Pull out / Wide shot',
-        narrativeIntent: '孤独感、迷い、閉塞感を表現。視聴者との距離を作り、主人公の孤立を強調',
+        narrativeIntent: '孤独感、迷いを表現。視聴者との距離を作り、主人公の孤立を強調',
         shotType: 'Wide shot → Medium shot'
       },
       {
         scenes: [4, 5, 6],
         emotionRange: '転換点（-3→+2）',
         cameraWork: 'Static → Slow push in',
-        narrativeIntent: 'きっかけ、決断の瞬間。視聴者を引き込み、変化への期待を高める',
+        narrativeIntent: 'きっかけ、気づきの瞬間。視聴者を引き込み、変化への期待を高める',
         shotType: 'Medium close-up → Close-up'
       },
       {
         scenes: [7],
         emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Dynamic movement / Boom up',
-        narrativeIntent: '変容の瞬間。最も印象的なヒーローショットを創出。解放感と新生を劇的に演出',
+        cameraWork: 'Arc shot / Dynamic movement',
+        narrativeIntent: 'アイコニックな瞬間、逆転。最も印象的なヒーローショットを創出',
         shotType: 'Dynamic hero shot'
       },
       {
         scenes: [8, 9, 10, 11, 12],
-        emotionRange: '希望・再生（+4→+5）',
+        emotionRange: '成長・希望（+4→+5）',
         cameraWork: 'Tracking / Push in / Boom up',
-        narrativeIntent: '没入感、希望の共有。視聴者と主人公の一体化を演出。光に満ちた未来へ',
+        narrativeIntent: '没入感、希望の共有。視聴者と主人公の一体化を演出',
         shotType: 'Various (Medium → Wide)'
       }
     ]
   },
 
-  // ===== 2. 挑戦する（統合: 目標を達成する + 壁を乗り越える） =====
+  // ===== 2. 目標を達成する =====
   {
-    id: 'challenge',
-    name: '挑戦する',
-    essence: '壁・目標 → 突破・達成',
-    emotionCurve: 'wave_rise',
-    emotionCurveDisplay: '上下しながら上がる',
+    id: 'achieve_goal',
+    name: '目標を達成する',
+    essence: '問い → 達成',
+    emotionCurve: 'gradual_rise',
+    emotionCurveDisplay: '少しずつ上がる',
     opening: 'question',
     openingDisplay: '問いかけ',
     peak: 'achievement',
     peakDisplay: '達成',
-    visualTechniques: ['時間の圧縮', '表情クローズアップ', 'トランジション演出', '環境の変化'],
-    emotionValues: [0, -2, -1, +1, -1, +2, +5, +3, +3, +4, +5, +5],
-    suitable: '新卒採用◎、高卒採用◎、中途採用○、成長志向企業向け',
-    recommendedStyles: ['toriyama', 'evangelion', 'shinkai'],
-    recommendedActions: ['eye_open', 'face_raise'],
-    guidance: `【物語の本質】壁・目標 → 失敗・再挑戦の繰り返し → 突破・達成
+    visualTechniques: ['時間の圧縮', '表情クローズアップ', 'トランジション演出'],
+    emotionValues: [-2, -2, -1, 0, +1, +2, +5, +4, +4, +4, +5, +5],
+    suitable: '高卒採用◎、サービス紹介○、成長志向企業向け',
+    guidance: `【物語の本質】問い → 一歩ずつ積み重ね → 達成
 
 【特徴・強み】
 - 成長物語として最も説得力がある
-- リアルな成長曲線を描く
-- 挫折と再起の繰り返しが共感を生む
+- 各ステップが可視化されることで信頼性が高い
 - プロセスへの敬意が表現される
 
-【生み出す感情】達成感、誇り、成長実感、共感、粘り強さ、勇気
+【生み出す感情】達成感、誇り、成長実感、尊敬、信頼、勇気
 
 【演出の核心】
 同じ動作（例：手を伸ばす）を異なる時間軸で繰り返し、その都度環境が進化していく。
-波のメタファー（実際の波、または波状の光・色彩）を視覚化。
 最後に全ての断片が重なり合う瞬間を創出。
 
 【シーン構成】
-S1-3:[0→-1] 目標・壁の提示、最初の挫折
-S4-6:[+1→+2] 再挑戦・積み重ね・一進一退
-S7★:[+5] ピーク（突破・達成の瞬間）
-S8-12:[+3→+5] 達成後の誇り・成長・次の目標`,
+S1-3:[-2→-1] 目標の提示・最初の挑戦
+S4-6:[0→+2] 積み重ね・小さな進歩
+S7★:[+5] ピーク（達成の瞬間）
+S8-12:[+4→+5] 達成後の誇り・次の目標`,
     sceneGuidelines: [
       {
         scenes: [1, 2, 3],
-        emotionRange: '目標・壁（0→-1）',
-        cameraWork: 'Tracking / Push in / Pull out 交互',
-        narrativeIntent: '目標への問いかけ、壁との遭遇。前進と後退を繰り返すカメラで葛藤を表現',
+        emotionRange: '目標の提示（-2→-1）',
+        cameraWork: 'Tracking / Static',
+        narrativeIntent: '目標への問いかけ、最初の挑戦。被写体を追いながら挑戦の始まりを示す',
         shotType: 'Medium shot → Medium close-up'
       },
       {
         scenes: [4, 5, 6],
-        emotionRange: '再挑戦・積み重ね（+1→+2）',
+        emotionRange: '積み重ね（0→+2）',
         cameraWork: 'Push in / Tracking',
-        narrativeIntent: '小さな進歩と再挑戦の繰り返し。波のような動きで粘り強さを視覚化',
+        narrativeIntent: '小さな進歩の積み重ね。各ステップでカメラが近づき、成長を可視化',
         shotType: 'Medium shot (繰り返し構図)'
       },
       {
         scenes: [7],
         emotionRange: 'ピーク（+5）★',
         cameraWork: 'Arc shot / Push in',
-        narrativeIntent: '突破・達成の瞬間。360度回転または力強いプッシュインで達成感を最大化',
-        shotType: 'Dynamic breakthrough shot'
+        narrativeIntent: '達成の瞬間。360度回転または力強いプッシュインで達成感を最大化',
+        shotType: 'Dynamic achievement shot'
       },
       {
         scenes: [8, 9, 10, 11, 12],
-        emotionRange: '達成後・成長（+3→+5）',
-        cameraWork: 'Push in / Boom up / Tracking',
-        narrativeIntent: '誇りと次への展望。上昇するカメラで未来への期待と継続的成長を表現',
+        emotionRange: '達成後（+4→+5）',
+        cameraWork: 'Push in / Boom up',
+        narrativeIntent: '誇りと次への展望。上昇するカメラで未来への期待を表現',
         shotType: 'Medium → Wide (展望)'
       }
     ]
   },
 
-  // ===== 3. 発見する（統合: 答えを見つける + 自分と向き合う） =====
+  // ===== 3. 答えを見つける =====
   {
-    id: 'discover',
-    name: '発見する',
-    essence: '謎・表面 → 真実・本質',
+    id: 'find_answer',
+    name: '答えを見つける',
+    essence: '謎 → 真実',
     emotionCurve: 'flat_to_rise',
     emotionCurveDisplay: '平らから急に上がる',
-    opening: 'beauty',
-    openingDisplay: '美しい映像',
+    opening: 'shock',
+    openingDisplay: '意外な映像',
     peak: 'discovery',
     peakDisplay: '発見',
-    visualTechniques: ['空間歪曲', 'メタファー具現化', '光の演出', '色彩変化'],
+    visualTechniques: ['空間歪曲', 'メタファー具現化', '光の演出'],
     emotionValues: [0, +1, 0, -1, 0, +1, +5, +4, +4, +5, +5, +5],
-    suitable: 'サービス紹介◎、技術紹介◎、ブランディング○、知的好奇心を刺激したい企業',
-    recommendedStyles: ['shinkai', 'watercolor', 'ghibli'],
-    recommendedActions: ['eye_open', 'face_raise', 'data_convergence'],
-    guidance: `【物語の本質】謎・表面 → 探求・内省 → 真実・本質の発見
+    suitable: 'サービス紹介◎、技術紹介◎、知的好奇心を刺激したい企業',
+    guidance: `【物語の本質】謎 → 探求 → 真実
 
 【特徴・強み】
 - 知的好奇心を最大限に刺激
 - 「気づき」の瞬間の演出が圧倒的
 - 複雑なメッセージを直感的に伝達可能
-- 哲学的・詩的な深みを持つ
-- 芸術性が高い
 
-【生み出す感情】驚き、知的興奮、納得感、啓示、爽快感、理解の喜び、美的満足
+【生み出す感情】驚き、知的興奮、納得感、啓示、爽快感、理解の喜び
 
 【演出の核心】
 断片化された映像（パズルのピース、分散する光の粒子）が徐々に集まり、
-一つの明確な像を結ぶ。抽象的な映像から具体的なメッセージへの結晶化。
-シンメトリーとアシンメトリーの対比も効果的。
+一つの明確な像を結ぶ。音響も分散→統合の設計。
 
 【シーン構成】
-S1-3:[0→0] 謎・美しい表面の提示
-S4-6:[-1→+1] 探求・内省・試行錯誤
-S7★:[+5] ピーク（発見・本質への到達）
-S8-12:[+4→+5] 深い理解・新たな視点`,
+S1-3:[0→0] 謎・疑問の提示
+S4-6:[-1→+1] 探求・試行錯誤
+S7★:[+5] ピーク（発見の瞬間）
+S8-12:[+4→+5] 理解・新たな視点`,
     sceneGuidelines: [
       {
         scenes: [1, 2, 3],
-        emotionRange: '謎・表面（0）',
+        emotionRange: '謎の提示（0）',
         cameraWork: 'Static / Slow pan',
-        narrativeIntent: '謎・美しい表面の提示。静的で瞑想的なカメラで観察的視点を確立',
+        narrativeIntent: '謎・疑問の提示。静的なカメラで観察的視点を確立し、好奇心を喚起',
         shotType: 'Medium shot → Detail shot'
       },
       {
         scenes: [4, 5, 6],
-        emotionRange: '探求・内省（-1→+1）',
-        cameraWork: 'Push in / Slow push in',
-        narrativeIntent: '探求と内省。徐々に近づくカメラで発見への期待と内面への旅を表現',
+        emotionRange: '探求（-1→+1）',
+        cameraWork: 'Push in / Tracking',
+        narrativeIntent: '探求・試行錯誤。徐々に近づくカメラで発見への期待を高める',
         shotType: 'Medium close-up → Close-up'
       },
       {
         scenes: [7],
         emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Boom up / Push in',
-        narrativeIntent: '発見・本質到達の瞬間。啓示的な動きで「分かった！」の爽快感を最大化',
+        cameraWork: 'Arc shot / Boom up',
+        narrativeIntent: '発見の瞬間。啓示的な動きで「分かった！」の爽快感を最大化',
         shotType: 'Dynamic revelation shot'
       },
       {
         scenes: [8, 9, 10, 11, 12],
-        emotionRange: '深い理解（+4→+5）',
+        emotionRange: '理解（+4→+5）',
         cameraWork: 'Push in / Boom up',
-        narrativeIntent: '新たな視点の獲得。広がる視野と深まる理解、調和を表現',
-        shotType: 'Medium → Wide (俯瞰/調和)'
+        narrativeIntent: '新たな視点の獲得。広がる視野と深まる理解を表現',
+        shotType: 'Medium → Wide (俯瞰)'
       }
     ]
   },
 
-  // ===== 4. 繋がる（統合: 居場所を見つける + 力を合わせる） =====
+  // ===== 4. 居場所を見つける =====
   {
-    id: 'connect',
-    name: '繋がる',
-    essence: '孤独・バラバラ → 繋がり・一つに',
+    id: 'find_place',
+    name: '居場所を見つける',
+    essence: '孤独 → 繋がり',
     emotionCurve: 'slight_dip_rise',
     emotionCurveDisplay: '少し下がってから上がる',
     opening: 'empathy',
     openingDisplay: '困っている状態',
-    peak: 'unity',
-    peakDisplay: '団結',
-    visualTechniques: ['表情クローズアップ', '色彩変化', '環境の変化', 'メタファー具現化'],
+    peak: 'encounter',
+    peakDisplay: '出会い',
+    visualTechniques: ['表情クローズアップ', '色彩変化', '環境の変化'],
     emotionValues: [+1, 0, -1, +1, +2, +3, +5, +4, +5, +5, +5, +5],
-    suitable: '新卒採用◎、インナーブランディング◎、チームワーク重視企業',
-    recommendedStyles: ['ghibli', 'pixar', 'shinkai'],
-    recommendedActions: ['eye_open', 'face_raise', 'group_look_up'],
-    guidance: `【物語の本質】孤独・バラバラ → 出会い・対話 → 繋がり・一つになる
+    suitable: '新卒採用◎、インナーブランディング◎、チーム重視企業',
+    guidance: `【物語の本質】孤独 → 出会い → 繋がり
 
 【特徴・強み】
 - 人間関係・絆を中心に据えた設計
 - 孤独→繋がりの感情曲線が美しい
 - ヒューマンドラマとして最高峰
-- チーム・組織の物語に最適
-- 多様性と統合を表現可能
 
-【生み出す感情】温かさ、安心感、帰属感、感謝、共感、団結、誇り
+【生み出す感情】温かさ、安心感、帰属感、感謝、共感、愛
 
 【演出の核心】
 一人の人物から始まり、徐々にフレーム内に他者が入ってくる構成。
-色温度を冷たい→温かいへ段階的に変化。
-最後は俯瞰視点で「全体の形」（円、星など）を描き、繋がりを視覚化。
+色温度を冷たい→温かいへ段階的に変化。最後は円環状の構図で「繋がり」を視覚化。
 
 【シーン構成】
-S1-3:[+1→-1] 孤独・バラバラ・居場所のなさ
-S4-6:[+1→+3] 出会い・協力の始まり・受け入れられる
-S7★:[+5] ピーク（団結・繋がりの瞬間）
-S8-12:[+4→+5] 一体感・繋がりの深化・共に進む未来`,
+S1-3:[+1→-1] 孤独・居場所のなさ
+S4-6:[+1→+3] 出会い・受け入れられる
+S7★:[+5] ピーク（居場所を見つける瞬間）
+S8-12:[+4→+5] 仲間・繋がりの深化`,
     sceneGuidelines: [
       {
         scenes: [1, 2, 3],
-        emotionRange: '孤独・バラバラ（+1→-1）',
+        emotionRange: '孤独（+1→-1）',
         cameraWork: 'Pull out / Wide shot',
-        narrativeIntent: '孤独・個々の状況。広い空間の中の一人、または別々のフレームで孤立感を表現',
-        shotType: 'Wide shot (一人) / Medium shot (個別)'
+        narrativeIntent: '孤独・居場所のなさ。広い空間の中の一人を強調し、孤立感を表現',
+        shotType: 'Wide shot (一人)'
       },
       {
         scenes: [4, 5, 6],
-        emotionRange: '出会い・協力（+1→+3）',
+        emotionRange: '出会い（+1→+3）',
         cameraWork: 'Push in / Tracking',
-        narrativeIntent: '出会い・協力の始まり。フレーム内に他者が入り、距離が縮まる過程を描写',
+        narrativeIntent: '出会い・受け入れ。フレーム内に他者が入り、距離が縮まる過程を描写',
         shotType: 'Two shot → Group shot'
       },
       {
         scenes: [7],
         emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Boom up (俯瞰)',
-        narrativeIntent: '団結・繋がりの瞬間。俯瞰や360度回転で全員の一体感を壮大に表現',
-        shotType: 'Dynamic group shot / Wide shot (俯瞰/円環)'
+        cameraWork: 'Tracking / Arc shot',
+        narrativeIntent: '居場所を見つけた瞬間。仲間との一体感を動的なカメラで強調',
+        shotType: 'Dynamic group shot'
       },
       {
         scenes: [8, 9, 10, 11, 12],
-        emotionRange: '一体感（+4→+5）',
+        emotionRange: '繋がり（+4→+5）',
         cameraWork: 'Tracking / Boom up',
-        narrativeIntent: '共に進む未来。全員を捉えるトラッキングで団結の継続と深化を表現',
-        shotType: 'Group shot → Wide (展望)'
+        narrativeIntent: '仲間との絆の深化。全員を捉える俯瞰や円環構図で一体感を視覚化',
+        shotType: 'Group shot → Wide (俯瞰)'
       }
     ]
   },
 
-  // ===== 5. 次のステージへ（維持） =====
+  // ===== 5. 生まれ変わる =====
+  {
+    id: 'rebirth',
+    name: '生まれ変わる',
+    essence: '限界 → 再生',
+    emotionCurve: 'deep_v_recovery',
+    emotionCurveDisplay: '深く落ちて上がる',
+    opening: 'empathy',
+    openingDisplay: '困っている状態',
+    peak: 'reversal',
+    peakDisplay: '逆転',
+    visualTechniques: ['光の演出', '色彩変化', '時間の圧縮', 'メタファー具現化'],
+    emotionValues: [-4, -5, -4, -2, -1, +1, +4, +3, +4, +5, +5, +5],
+    suitable: '中途採用◎、再出発をテーマにしたい企業',
+    guidance: `【物語の本質】限界 → 決断 → 再生
+
+【特徴・強み】
+- 最も振り幅が大きく、感動の強度が最高
+- 人生の転換点を描くのに最適
+- 社会的メッセージ性が高い
+
+【生み出す感情】深い感動、希望、生きる力、共感、勇気、解放感
+
+【演出の核心】
+破壊→再構築のメタファー（崩れる壁が花に変わる、割れた鏡が新しい窓になるなど）。
+音楽は無音→静かなピアノ→フルオーケストラへ。
+
+【シーン構成】
+S1-3:[-4→-4] 限界・行き詰まり
+S4-6:[-2→+1] 決断・覚悟
+S7★:[+4] ピーク（再生の瞬間）
+S8-12:[+3→+5] 新しい人生・希望`,
+    sceneGuidelines: [
+      {
+        scenes: [1, 2, 3],
+        emotionRange: '限界（-4→-4）',
+        cameraWork: 'Wide shot / Pull out',
+        narrativeIntent: '限界・行き詰まり。最も深い暗さを表現し、閉塞感を最大化',
+        shotType: 'Wide shot → Extreme wide'
+      },
+      {
+        scenes: [4, 5, 6],
+        emotionRange: '決断（-2→+1）',
+        cameraWork: 'Static → Push in',
+        narrativeIntent: '決断・覚悟の瞬間。静寂からの覚醒をゆっくりとしたプッシュインで表現',
+        shotType: 'Medium shot → Close-up'
+      },
+      {
+        scenes: [7],
+        emotionRange: 'ピーク（+4）★',
+        cameraWork: 'Boom up / Arc shot',
+        narrativeIntent: '再生の瞬間。上昇するカメラで解放感と新生を劇的に演出',
+        shotType: 'Dynamic rebirth shot'
+      },
+      {
+        scenes: [8, 9, 10, 11, 12],
+        emotionRange: '新しい人生（+3→+5）',
+        cameraWork: 'Push in / Boom up',
+        narrativeIntent: '希望に満ちた新しい人生。光あふれる未来への展望を表現',
+        shotType: 'Medium → Wide (光の中)'
+      }
+    ]
+  },
+
+  // ===== 6. 壁を乗り越える =====
+  {
+    id: 'overcome_wall',
+    name: '壁を乗り越える',
+    essence: '壁 → 突破',
+    emotionCurve: 'wave_rise',
+    emotionCurveDisplay: '上下しながら上がる',
+    opening: 'question',
+    openingDisplay: '問いかけ',
+    peak: 'achievement',
+    peakDisplay: '達成',
+    visualTechniques: ['時間の圧縮', 'トランジション演出', '環境の変化'],
+    emotionValues: [0, -2, -1, +1, -1, +2, +5, +3, +2, +3, +4, +5],
+    suitable: '新卒採用◎、中途採用◎、挑戦をテーマにしたい企業',
+    guidance: `【物語の本質】壁 → 失敗・再挑戦の繰り返し → 突破
+
+【特徴・強み】
+- リアルな成長曲線を描く
+- 挫折と再起の繰り返しが共感を生む
+- 長期的視点を表現可能
+
+【生み出す感情】共感、粘り強さ、成長実感、リアリティ、達成感、誇り
+
+【演出の核心】
+波のメタファーを視覚化（実際の波、または波状の光・色彩）。
+各谷から山への上昇を加速感あるトランジションで表現。最後の波が虹に変わる。
+
+【シーン構成】
+S1-3:[0→-1] 壁・最初の挫折
+S4-6:[+1→+2] 再挑戦・一進一退
+S7★:[+5] ピーク（突破の瞬間）
+S8-12:[+3→+5] 成長・次の壁へ`,
+    sceneGuidelines: [
+      {
+        scenes: [1, 2, 3],
+        emotionRange: '壁・挫折（0→-1）',
+        cameraWork: 'Push in / Pull out 交互',
+        narrativeIntent: '壁との遭遇と最初の挫折。前進と後退を繰り返すカメラで葛藤を表現',
+        shotType: 'Medium shot (変化)'
+      },
+      {
+        scenes: [4, 5, 6],
+        emotionRange: '一進一退（+1→+2）',
+        cameraWork: 'Push in / Pull out 交互',
+        narrativeIntent: '再挑戦の繰り返し。波のような動きで粘り強さを視覚化',
+        shotType: 'Medium → Medium close-up'
+      },
+      {
+        scenes: [7],
+        emotionRange: 'ピーク（+5）★',
+        cameraWork: 'Arc shot / Push in',
+        narrativeIntent: '突破の瞬間。壁を乗り越えた達成感を力強いカメラワークで表現',
+        shotType: 'Dynamic breakthrough shot'
+      },
+      {
+        scenes: [8, 9, 10, 11, 12],
+        emotionRange: '成長（+3→+5）',
+        cameraWork: 'Push in / Tracking',
+        narrativeIntent: '成長と次への展望。前進を続けるトラッキングで継続的成長を表現',
+        shotType: 'Medium → Wide (展望)'
+      }
+    ]
+  },
+
+  // ===== 7. 次のステージへ =====
   {
     id: 'next_stage',
     name: '次のステージへ',
@@ -843,8 +908,6 @@ S8-12:[+4→+5] 一体感・繋がりの深化・共に進む未来`,
     visualTechniques: ['色彩変化', '光の演出', 'メタファー具現化'],
     emotionValues: [+1, +2, +2, +3, +3, +4, +4, +5, +5, +5, +5, +5],
     suitable: '展示会◎、会社紹介◎、ポジティブブランディング',
-    recommendedStyles: ['shinkai', 'pixar', 'watercolor'],
-    recommendedActions: ['door_open', 'horizon_expand', 'eye_open'],
     guidance: `【物語の本質】良い → さらに良い → もっと良い
 
 【特徴・強み】
@@ -895,7 +958,7 @@ S9-12:[+5] 輝く未来・無限の可能性`,
     ]
   },
 
-  // ===== 6. 危機を乗り越える（維持） =====
+  // ===== 8. 危機を乗り越える =====
   {
     id: 'overcome_crisis',
     name: '危機を乗り越える',
@@ -909,8 +972,6 @@ S9-12:[+5] 輝く未来・無限の可能性`,
     visualTechniques: ['空間歪曲', '光の演出', '時間の圧縮'],
     emotionValues: [-3, -4, -5, -3, 0, +2, +5, +4, +3, +4, +5, +5],
     suitable: '会社紹介○、サービス紹介○、ドラマチックな展開向け',
-    recommendedStyles: ['evangelion', 'shinkai', '90s'],
-    recommendedActions: ['eye_open', 'face_raise'],
     guidance: `【物語の本質】突然の危機 → 葛藤 → 打開
 
 【特徴・強み】
@@ -961,7 +1022,135 @@ S8-12:[+4→+5] 解決・新たな強さ`,
     ]
   },
 
-  // ===== 7. 大切なものに気づく（維持） =====
+  // ===== 9. 自分と向き合う =====
+  {
+    id: 'face_self',
+    name: '自分と向き合う',
+    essence: '表面 → 本質',
+    emotionCurve: 'flat_to_rise',
+    emotionCurveDisplay: '平らから急に上がる',
+    opening: 'beauty',
+    openingDisplay: '美しい映像',
+    peak: 'discovery',
+    peakDisplay: '発見',
+    visualTechniques: ['メタファー具現化', '色彩変化', 'トランジション演出'],
+    emotionValues: [0, +1, 0, -1, 0, +1, +5, +4, +4, +5, +5, +5],
+    suitable: 'ブランディング◎、インナーブランディング◎、哲学的企業',
+    guidance: `【物語の本質】表面 → 内省 → 深層（本質）
+
+【特徴・強み】
+- 哲学的・詩的な深みを持つ
+- 知的ターゲットに強く響く
+- 芸術性が最も高い
+
+【生み出す感情】静かな感動、理解の喜び、美的満足、啓示、知的興奮
+
+【演出の核心】
+抽象的な映像（水面の波紋、光の屈折）から具体的なメッセージへの結晶化。
+シンメトリーとアシンメトリーの対比。
+
+【シーン構成】
+S1-3:[0→0] 美しい表面
+S4-6:[-1→+1] 内省・問いかけ
+S7★:[+5] ピーク（本質の発見）
+S8-12:[+4→+5] 深い理解・新たな視点`,
+    sceneGuidelines: [
+      {
+        scenes: [1, 2, 3],
+        emotionRange: '美しい表面（0）',
+        cameraWork: 'Static / Slow pan',
+        narrativeIntent: '美しい表面の提示。静的で瞑想的なカメラで観察的な視点を確立',
+        shotType: 'Medium shot (シンメトリー)'
+      },
+      {
+        scenes: [4, 5, 6],
+        emotionRange: '内省（-1→+1）',
+        cameraWork: 'Slow push in',
+        narrativeIntent: '内省・問いかけ。ゆっくりと近づくカメラで内面への旅を表現',
+        shotType: 'Medium close-up → Close-up'
+      },
+      {
+        scenes: [7],
+        emotionRange: 'ピーク（+5）★',
+        cameraWork: 'Push in / Arc shot',
+        narrativeIntent: '本質の発見。深い気づきの瞬間を静かながら力強いカメラワークで表現',
+        shotType: 'Close-up (啓示)'
+      },
+      {
+        scenes: [8, 9, 10, 11, 12],
+        emotionRange: '深い理解（+4→+5）',
+        cameraWork: 'Push in / Boom up',
+        narrativeIntent: '新たな視点の獲得。理解の広がりを開放的なカメラワークで表現',
+        shotType: 'Medium → Wide (調和)'
+      }
+    ]
+  },
+
+  // ===== 10. 力を合わせる =====
+  {
+    id: 'unite',
+    name: '力を合わせる',
+    essence: 'バラバラ → 一つに',
+    emotionCurve: 'slight_dip_rise',
+    emotionCurveDisplay: '少し下がってから上がる',
+    opening: 'question',
+    openingDisplay: '問いかけ',
+    peak: 'unity',
+    peakDisplay: '団結',
+    visualTechniques: ['環境の変化', '表情クローズアップ', 'メタファー具現化'],
+    emotionValues: [+1, 0, -1, +1, +2, +3, +5, +4, +5, +5, +5, +5],
+    suitable: '新卒採用◎、会社紹介◎、チームワーク重視企業',
+    guidance: `【物語の本質】バラバラ → 対話 → 一つになる
+
+【特徴・強み】
+- チーム・組織の物語に最適
+- 多様性と統合を表現可能
+- 社会性の高いメッセージを伝達
+
+【生み出す感情】帰属感、団結、温かさ、共感、安心感、誇り
+
+【演出の核心】
+個々の人物が別々のフレームに登場し、徐々に同じ空間に集まる。
+最後は俯瞰視点で「全体の形」（円、星など）を描く。
+
+【シーン構成】
+S1-3:[+1→-1] 個々の状況・課題
+S4-6:[+1→+3] 出会い・協力の始まり
+S7★:[+5] ピーク（団結の瞬間）
+S8-12:[+4→+5] 一体感・共に進む未来`,
+    sceneGuidelines: [
+      {
+        scenes: [1, 2, 3],
+        emotionRange: '個々の状況（+1→-1）',
+        cameraWork: 'Pull out / Wide shot',
+        narrativeIntent: '個々の状況・課題。別々のフレームで各人を紹介し、バラバラ感を強調',
+        shotType: 'Medium shot (個別)'
+      },
+      {
+        scenes: [4, 5, 6],
+        emotionRange: '協力の始まり（+1→+3）',
+        cameraWork: 'Tracking / Push in',
+        narrativeIntent: '出会いと協力の始まり。フレーム内に複数人が入り、距離が縮まる',
+        shotType: 'Two shot → Group shot'
+      },
+      {
+        scenes: [7],
+        emotionRange: 'ピーク（+5）★',
+        cameraWork: 'Arc shot / Boom up (俯瞰)',
+        narrativeIntent: '団結の瞬間。俯瞰や360度回転で全員の一体感を壮大に表現',
+        shotType: 'Wide shot (俯瞰/円環)'
+      },
+      {
+        scenes: [8, 9, 10, 11, 12],
+        emotionRange: '一体感（+4→+5）',
+        cameraWork: 'Tracking / Boom up',
+        narrativeIntent: '共に進む未来。全員で前進するトラッキングで団結の継続を表現',
+        shotType: 'Group shot → Wide (展望)'
+      }
+    ]
+  },
+
+  // ===== 11. 大切なものに気づく =====
   {
     id: 'realize_value',
     name: '大切なものに気づく',
@@ -975,8 +1164,6 @@ S8-12:[+4→+5] 解決・新たな強さ`,
     visualTechniques: ['時間の圧縮', '色彩変化', '光の演出'],
     emotionValues: [-2, -2, -1, 0, +1, +2, +5, +4, +4, +4, +5, +5],
     suitable: '新卒採用◎、教育的メッセージ、成長志向企業',
-    recommendedStyles: ['ghibli', 'shinkai', 'watercolor'],
-    recommendedActions: ['eye_open', 'face_raise'],
     guidance: `【物語の本質】わからない → 学び・経験 → 大切なものに気づく
 
 【特徴・強み】
@@ -1027,7 +1214,7 @@ S8-12:[+4→+5] 大切なものと共に歩む`,
     ]
   },
 
-  // ===== 8. 運命が変わる（維持） =====
+  // ===== 12. 運命が変わる =====
   {
     id: 'change_destiny',
     name: '運命が変わる',
@@ -1041,8 +1228,6 @@ S8-12:[+4→+5] 大切なものと共に歩む`,
     visualTechniques: ['空間歪曲', 'メタファー具現化', '光の演出', 'トランジション演出'],
     emotionValues: [0, -2, -1, +1, -1, +2, +5, +3, +2, +3, +4, +5],
     suitable: '中途採用○、会社紹介○、ドラマチックな転換を描きたい企業',
-    recommendedStyles: ['evangelion', 'shinkai', '90s'],
-    recommendedActions: ['walk_backward', 'eye_open'],
     guidance: `【物語の本質】衝撃・波乱 → 揺さぶられる → 劇的に変容
 
 【特徴・強み】
@@ -1089,468 +1274,6 @@ S8-12:[+3→+5] 新しい運命・壮大な未来`,
         cameraWork: 'Boom up / Tracking',
         narrativeIntent: '新しい運命と壮大な未来。スケールアップするカメラで可能性の広がりを表現',
         shotType: 'Medium → Wide (壮大)'
-      }
-    ]
-  },
-
-  // ===== 9. ビジョンを共有する（新規） =====
-  {
-    id: 'share_vision',
-    name: 'ビジョンを共有する',
-    essence: '個の想い → 共有されたビジョン',
-    emotionCurve: 'steady_rise',
-    emotionCurveDisplay: 'ずっと上がる',
-    opening: 'beauty',
-    openingDisplay: '美しい映像',
-    peak: 'unity',
-    peakDisplay: '団結',
-    visualTechniques: ['光の演出', '色彩変化', 'メタファー具現化'],
-    emotionValues: [+1, +1, +2, +2, +3, +3, +5, +4, +5, +5, +5, +5],
-    suitable: '展示会◎、会社紹介◎、ビジョン浸透、リーダーシップ',
-    recommendedStyles: ['shinkai', 'pixar', 'watercolor'],
-    recommendedActions: ['data_convergence', 'horizon_expand', 'eye_open', 'face_raise'],
-    guidance: `【物語の本質】個の想い → 伝える・語りかける → 共有されたビジョン
-
-【特徴・強み】
-- リーダーシップや経営理念の表現に最適
-- ポジティブな上昇感が一貫
-- 複数人の心がつながる瞬間を描写
-
-【生み出す感情】高揚感、使命感、希望、一体感、誇り
-
-【演出の核心】
-一人の語りから始まり、徐々に聴き手の表情が変化。
-光が広がるように共感の輪が拡大。最後は全員が同じ方向を見つめる構図。
-
-【シーン構成】
-S1-3:[+1→+2] ビジョンを持つ個人の提示
-S4-6:[+2→+3] 語りかけ・共感の芽生え
-S7★:[+5] ピーク（ビジョン共有の瞬間）
-S8-12:[+4→+5] 共に進む・未来への歩み`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '個の想い（+1→+2）',
-        cameraWork: 'Push in / Static',
-        narrativeIntent: 'ビジョンを持つ人物の提示。近づくカメラで内なる想いを表現',
-        shotType: 'Medium shot → Medium close-up'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '共感の芽生え（+2→+3）',
-        cameraWork: 'Tracking / Pan',
-        narrativeIntent: '語りかけと共感。聴き手の表情の変化を追いながら広がりを表現',
-        shotType: 'Two shot → Group reaction'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Boom up / Arc shot',
-        narrativeIntent: 'ビジョン共有の瞬間。全員の心がつながる瞬間を壮大に表現',
-        shotType: 'Wide shot (全員が同じ方向)'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '共に進む（+4→+5）',
-        cameraWork: 'Tracking / Boom up',
-        narrativeIntent: '未来への歩み。光に満ちた道を全員で進む姿を表現',
-        shotType: 'Group shot → Wide (展望)'
-      }
-    ]
-  },
-
-  // ===== 10. 誇りを再発見する（新規） =====
-  {
-    id: 'rediscover_pride',
-    name: '誇りを再発見する',
-    essence: '忘れていた → 思い出す',
-    emotionCurve: 'v_recovery',
-    emotionCurveDisplay: '落ちて上がる',
-    opening: 'empathy',
-    openingDisplay: '困っている状態',
-    peak: 'discovery',
-    peakDisplay: '発見',
-    visualTechniques: ['色彩変化', '時間の圧縮', '光の演出'],
-    emotionValues: [-1, -2, -2, -1, 0, +2, +5, +4, +4, +5, +5, +5],
-    suitable: 'インナーブランディング◎、中途採用○、老舗企業、伝統産業',
-    recommendedStyles: ['ghibli', '90s', 'shinkai'],
-    recommendedActions: ['sepia_to_color', 'group_look_up', 'face_raise', 'eye_open'],
-    guidance: `【物語の本質】忘れていた誇り → 過去との再会 → 誇りの再発見
-
-【特徴・強み】
-- 長い歴史を持つ企業に最適
-- ノスタルジーと新しい気づきの融合
-- 世代を超えた価値の継承を表現
-
-【生み出す感情】懐かしさ、気づき、感謝、誇り、使命感
-
-【演出の核心】
-現在の迷いから始まり、過去の映像（先輩たち、創業時）が挿入。
-色調がセピア→フルカラーへ移行し、過去と現在がつながる。
-
-【シーン構成】
-S1-3:[-1→-2] 現在の迷い・忘れていた状態
-S4-6:[-1→+2] 過去との再会・先人の姿
-S7★:[+5] ピーク（誇りの再発見）
-S8-12:[+4→+5] 新たな決意・継承`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '現在の迷い（-1→-2）',
-        cameraWork: 'Static / Slow pan',
-        narrativeIntent: '忘れていた状態の提示。静的なカメラで日常の中の空虚感を表現',
-        shotType: 'Medium shot (現代)'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '過去との再会（-1→+2）',
-        cameraWork: 'Dissolve / Push in',
-        narrativeIntent: '過去の映像との邂逅。ディゾルブで時間を超えた繋がりを表現',
-        shotType: 'Medium shot (過去) → Medium close-up'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Push in',
-        narrativeIntent: '誇りの再発見。過去と現在が重なる瞬間を力強く表現',
-        shotType: 'Dynamic realization shot'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '新たな決意（+4→+5）',
-        cameraWork: 'Push in / Boom up',
-        narrativeIntent: '継承と決意。先人の想いを受け継ぎ、未来へ進む姿を表現',
-        shotType: 'Medium → Wide (光の中)'
-      }
-    ]
-  },
-
-  // ===== 11. 共に乗り越える（新規） =====
-  {
-    id: 'overcome_together',
-    name: '共に乗り越える',
-    essence: '困難 → 協力 → 突破',
-    emotionCurve: 'v_recovery',
-    emotionCurveDisplay: '落ちて上がる',
-    opening: 'shock',
-    openingDisplay: '意外な映像',
-    peak: 'unity',
-    peakDisplay: '団結',
-    visualTechniques: ['環境の変化', '表情クローズアップ', '光の演出'],
-    emotionValues: [-2, -3, -3, -1, +1, +3, +5, +4, +4, +5, +5, +5],
-    suitable: '新卒採用◎、チームワーク重視企業、プロジェクト紹介',
-    recommendedStyles: ['toriyama', 'pixar', 'shinkai'],
-    recommendedActions: ['group_look_up', 'face_raise', 'eye_open'],
-    guidance: `【物語の本質】困難に直面 → 協力・助け合い → 共に突破
-
-【特徴・強み】
-- チームワークの価値を直接的に表現
-- 困難→協力→成功の分かりやすい構造
-- 一人では無理でも皆でならできるというメッセージ
-
-【生み出す感情】連帯感、信頼、達成感、感謝、誇り
-
-【演出の核心】
-一人で壁に直面する場面から、仲間が加わる度にカメラに人数が増え、
-最後は全員で突破する瞬間を大きなカメラムーブメントで表現。
-
-【シーン構成】
-S1-3:[-2→-3] 困難・一人では無理
-S4-6:[-1→+3] 仲間の登場・協力
-S7★:[+5] ピーク（共に突破）
-S8-12:[+4→+5] 達成・絆の深化`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '困難（-2→-3）',
-        cameraWork: 'Wide shot / Pull out',
-        narrativeIntent: '困難と孤立。一人で壁に向かう姿を広い空間で強調',
-        shotType: 'Wide shot (一人 vs 壁)'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '協力（-1→+3）',
-        cameraWork: 'Tracking / Push in',
-        narrativeIntent: '仲間の登場と協力。フレーム内に人が増えていく過程を追跡',
-        shotType: 'Two shot → Group shot'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Boom up',
-        narrativeIntent: '共に突破の瞬間。全員の力が一つになる瞬間を壮大に表現',
-        shotType: 'Dynamic group breakthrough'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '達成・絆（+4→+5）',
-        cameraWork: 'Tracking / Push in',
-        narrativeIntent: '達成後の絆。互いを称え合い、より強い繋がりを表現',
-        shotType: 'Group shot → Wide (勝利)'
-      }
-    ]
-  },
-
-  // ===== 12. 楽しく学ぶ（新規） =====
-  {
-    id: 'learn_with_joy',
-    name: '楽しく学ぶ',
-    essence: '知らない → 楽しく学ぶ → できる',
-    emotionCurve: 'steady_rise',
-    emotionCurveDisplay: 'ずっと上がる',
-    opening: 'question',
-    openingDisplay: '問いかけ',
-    peak: 'achievement',
-    peakDisplay: '達成',
-    visualTechniques: ['色彩変化', 'トランジション演出', '表情クローズアップ'],
-    emotionValues: [0, +1, +2, +2, +3, +3, +5, +4, +4, +5, +5, +5],
-    suitable: '新卒採用◎、高卒採用◎、教育・研修紹介、成長支援企業',
-    recommendedStyles: ['chibi', 'pixar', 'ghibli'],
-    recommendedActions: ['double_take', 'facepalm_to_smile', 'face_raise', 'eye_open'],
-    guidance: `【物語の本質】知らない・不安 → 楽しく学ぶ → できるようになる
-
-【特徴・強み】
-- 学びの楽しさを前面に押し出す
-- ネガティブ要素が少なく明るい印象
-- 教育・研修制度のアピールに最適
-
-【生み出す感情】好奇心、楽しさ、達成感、成長実感、ワクワク
-
-【演出の核心】
-最初は困惑した表情が、徐々に目が輝いていく変化を丁寧に追う。
-先輩・メンターとのやりとりを温かく描写。
-
-【シーン構成】
-S1-3:[0→+2] 知らない・でも興味
-S4-6:[+2→+3] 楽しく学ぶ・成長
-S7★:[+5] ピーク（できるようになった）
-S8-12:[+4→+5] 自信・次への挑戦`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '好奇心（0→+2）',
-        cameraWork: 'Push in / Static',
-        narrativeIntent: '知らないことへの興味。困惑から好奇心への変化を表情で追う',
-        shotType: 'Medium shot → Medium close-up'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '楽しく学ぶ（+2→+3）',
-        cameraWork: 'Tracking / Push in',
-        narrativeIntent: '学びの過程。先輩との温かいやりとりと成長を表現',
-        shotType: 'Two shot → Medium close-up'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Push in',
-        narrativeIntent: 'できるようになった瞬間。目の輝きと達成感を印象的に表現',
-        shotType: 'Close-up (喜び) → Medium shot'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '自信（+4→+5）',
-        cameraWork: 'Boom up / Tracking',
-        narrativeIntent: '自信と次への挑戦。成長した姿と新たな目標への意欲を表現',
-        shotType: 'Medium → Wide (展望)'
-      }
-    ]
-  },
-
-  // ===== 13. レベルアップ（新規） =====
-  {
-    id: 'level_up',
-    name: 'レベルアップ',
-    essence: '今のレベル → 次のレベル',
-    emotionCurve: 'gradual_rise',
-    emotionCurveDisplay: '少しずつ上がる',
-    opening: 'question',
-    openingDisplay: '問いかけ',
-    peak: 'achievement',
-    peakDisplay: '達成',
-    visualTechniques: ['時間の圧縮', 'トランジション演出', '光の演出'],
-    emotionValues: [0, +1, +1, +2, +2, +3, +5, +4, +4, +4, +5, +5],
-    suitable: '中途採用◎、スキルアップ支援、キャリア形成支援企業',
-    recommendedStyles: ['toriyama', 'evangelion', 'pixar'],
-    recommendedActions: ['gauge_fill_burst', 'skill_unlock_pose', 'eye_open', 'face_raise'],
-    guidance: `【物語の本質】現在の実力 → 鍛錬・努力 → 次のレベルへ
-
-【特徴・強み】
-- スキルアップ・キャリアアップの表現に最適
-- 段階的な成長が可視化される
-- ゲーム的な達成感を演出可能
-
-【生み出す感情】向上心、達成感、成長実感、誇り、意欲
-
-【演出の核心】
-同じ動作の繰り返しで精度が上がっていく様子を時間圧縮で表現。
-最後は明らかに「レベルが違う」動きを披露。
-
-【シーン構成】
-S1-3:[0→+1] 現在のレベル・課題認識
-S4-6:[+2→+3] 鍛錬・努力・積み重ね
-S7★:[+5] ピーク（レベルアップの瞬間）
-S8-12:[+4→+5] 新たな高み・次の目標`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '現在のレベル（0→+1）',
-        cameraWork: 'Static / Medium shot',
-        narrativeIntent: '現在の実力と課題の認識。できることとできないことを明確に提示',
-        shotType: 'Medium shot → Detail shot'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '鍛錬・努力（+2→+3）',
-        cameraWork: 'Time-lapse / Montage',
-        narrativeIntent: '努力の積み重ね。繰り返しの中で少しずつ上達する様子を圧縮表現',
-        shotType: 'Medium shot (繰り返し構図)'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Dynamic movement / Push in',
-        narrativeIntent: 'レベルアップの瞬間。明らかに違うレベルの動きを印象的に表現',
-        shotType: 'Dynamic achievement shot'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '新たな高み（+4→+5）',
-        cameraWork: 'Boom up / Wide',
-        narrativeIntent: '次の目標への意欲。さらなる高みを目指す姿を表現',
-        shotType: 'Medium → Wide (展望)'
-      }
-    ]
-  },
-
-  // ===== 14. 失敗から学ぶ（新規） =====
-  {
-    id: 'learn_from_failure',
-    name: '失敗から学ぶ',
-    essence: '失敗 → 学び → 成功',
-    emotionCurve: 'v_recovery',
-    emotionCurveDisplay: '落ちて上がる',
-    opening: 'empathy',
-    openingDisplay: '困っている状態',
-    peak: 'achievement',
-    peakDisplay: '達成',
-    visualTechniques: ['表情クローズアップ', '色彩変化', 'トランジション演出'],
-    emotionValues: [-2, -3, -2, -1, +1, +2, +5, +4, +3, +4, +5, +5],
-    suitable: '新卒採用◎、高卒採用◎、挑戦を推奨する企業',
-    recommendedStyles: ['shinkai', 'ghibli', 'pixar'],
-    recommendedActions: ['facepalm_to_smile', 'face_raise', 'eye_open'],
-    guidance: `【物語の本質】失敗 → 落ち込み → 学び → 成功へ
-
-【特徴・強み】
-- 失敗を恐れない企業文化のアピール
-- リアルな成長ストーリー
-- 心理的安全性の表現
-
-【生み出す感情】共感、安心感、希望、成長実感、信頼
-
-【演出の核心】
-失敗の瞬間を隠さず描写し、その後のサポートや学びの過程を丁寧に追う。
-先輩や仲間の支えを温かく表現。
-
-【シーン構成】
-S1-3:[-2→-2] 失敗・落ち込み
-S4-6:[-1→+2] 支え・学び・再挑戦
-S7★:[+5] ピーク（成功・成長）
-S8-12:[+4→+5] 次の挑戦・仲間への感謝`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '失敗・落ち込み（-2→-2）',
-        cameraWork: 'Pull out / Static',
-        narrativeIntent: '失敗とその影響。正直に失敗を描写し、落ち込みを表現',
-        shotType: 'Medium shot → Wide (孤立)'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '支え・学び（-1→+2）',
-        cameraWork: 'Push in / Two shot',
-        narrativeIntent: '仲間や先輩のサポート。寄り添いと学びの過程を温かく表現',
-        shotType: 'Two shot → Medium close-up'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Arc shot / Push in',
-        narrativeIntent: '成功の瞬間。学びを活かした成功を印象的に表現',
-        shotType: 'Dynamic success shot'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '感謝・次へ（+4→+5）',
-        cameraWork: 'Tracking / Boom up',
-        narrativeIntent: '仲間への感謝と次の挑戦。成長した自信と支えへの感謝を表現',
-        shotType: 'Group shot → Wide (展望)'
-      }
-    ]
-  },
-
-  // ===== 15. とにかく行動（新規） =====
-  {
-    id: 'just_act',
-    name: 'とにかく行動',
-    essence: '迷い → 行動 → 道が開ける',
-    emotionCurve: 'slight_dip_rise',
-    emotionCurveDisplay: '少し下がってから上がる',
-    opening: 'question',
-    openingDisplay: '問いかけ',
-    peak: 'achievement',
-    peakDisplay: '達成',
-    visualTechniques: ['動きの演出', '環境の変化', '光の演出'],
-    emotionValues: [0, -1, 0, +1, +2, +3, +5, +4, +4, +5, +5, +5],
-    suitable: 'ベンチャー◎、スタートアップ◎、行動重視企業',
-    recommendedStyles: ['toriyama', 'chibi', 'pixar'],
-    recommendedActions: ['explosive_start', 'finish_line_cross', 'face_raise', 'eye_open'],
-    guidance: `【物語の本質】考えすぎ・迷い → とにかく行動 → 道が開ける
-
-【特徴・強み】
-- 行動重視の企業文化をダイレクトに表現
-- スピード感と躍動感のある映像
-- 「まずやってみる」精神の可視化
-
-【生み出す感情】躍動感、解放感、ワクワク、達成感、自己効力感
-
-【演出の核心】
-考え込む静的なシーンから、動き出した瞬間に画面全体が活性化。
-動きのある映像をテンポよくつなぎ、スピード感を演出。
-
-【シーン構成】
-S1-3:[0→0] 迷い・考えすぎ
-S4-6:[+1→+3] 行動開始・動き出す
-S7★:[+5] ピーク（道が開ける瞬間）
-S8-12:[+4→+5] 加速・さらなる行動`,
-    sceneGuidelines: [
-      {
-        scenes: [1, 2, 3],
-        emotionRange: '迷い（0→0）',
-        cameraWork: 'Static / Slow',
-        narrativeIntent: '考えすぎ、動けない状態。静的なカメラで停滞感を表現',
-        shotType: 'Medium shot (静止)'
-      },
-      {
-        scenes: [4, 5, 6],
-        emotionRange: '行動開始（+1→+3）',
-        cameraWork: 'Tracking / Dynamic',
-        narrativeIntent: '動き出す瞬間。カメラも動き始め、画面全体が活性化',
-        shotType: 'Medium → Wide (動き)'
-      },
-      {
-        scenes: [7],
-        emotionRange: 'ピーク（+5）★',
-        cameraWork: 'Dynamic movement',
-        narrativeIntent: '道が開ける瞬間。スピード感のあるカメラワークで躍動感を最大化',
-        shotType: 'Dynamic action shot'
-      },
-      {
-        scenes: [8, 9, 10, 11, 12],
-        emotionRange: '加速（+4→+5）',
-        cameraWork: 'Tracking / Boom up',
-        narrativeIntent: 'さらなる行動。勢いを維持しながら未来への展望を表現',
-        shotType: 'Medium → Wide (前進)'
       }
     ]
   }
@@ -1667,43 +1390,19 @@ function pv_getStylePatterns() {
 }
 
 function pv_getStylePatternById(styleId) {
-  // 旧IDを新IDに解決
-  const resolvedId = pv_resolveStylePatternId(styleId);
-  return PV_STYLE_PATTERNS.find(s => s.id === resolvedId);
+  return PV_STYLE_PATTERNS.find(s => s.id === styleId);
 }
 
 function pv_getStylePatternByName(styleName) {
-  // 旧名を新名に解決
-  const resolvedName = PV_STYLE_NAME_MAPPING[styleName] || styleName;
-  return PV_STYLE_PATTERNS.find(s => s.name === resolvedName);
+  return PV_STYLE_PATTERNS.find(s => s.name === styleName);
 }
 
 function pv_getStoryPatterns() {
   return PV_STORY_PATTERNS;
 }
 
-/**
- * ストーリーパターンIDを解決（旧ID→新IDへ変換）
- * @param {string} storyId - ストーリーパターンID（旧IDまたは新ID）
- * @returns {string} 解決されたID（新ID）
- */
-function pv_resolveStoryPatternId(storyId) {
-  return PV_STORY_ID_MAPPING[storyId] || storyId;
-}
-
-/**
- * スタイルパターンIDを解決（旧ID→新IDへ変換）
- * @param {string} styleId - スタイルパターンID（旧IDまたは新ID）
- * @returns {string} 解決されたID（新ID）
- */
-function pv_resolveStylePatternId(styleId) {
-  return PV_STYLE_ID_MAPPING[styleId] || styleId;
-}
-
 function pv_getStoryPatternById(storyId) {
-  // 旧IDを新IDに解決
-  const resolvedId = pv_resolveStoryPatternId(storyId);
-  return PV_STORY_PATTERNS.find(s => s.id === resolvedId);
+  return PV_STORY_PATTERNS.find(s => s.id === storyId);
 }
 
 function pv_getTimeOptions() {

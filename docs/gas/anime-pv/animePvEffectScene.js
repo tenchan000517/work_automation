@@ -131,18 +131,32 @@ function pv_createEffectSceneDialogHtml(
     `;
   }
 
-  // 場所ドロップダウンを生成
-  let locationDropdown = '<option value="">場所を選択...</option>';
+  // 開始背景ドロップダウンを生成
+  let locationBeforeDropdown = '<option value="">背景を選択...</option>';
   for (const loc of locations) {
-    const selected = loc.id === 'urban' ? 'selected' : '';
-    locationDropdown += `<option value="${loc.id}" ${selected}>${pv_escapeHtml(loc.name)}</option>`;
+    const selected = loc.id === 'dark_enclosed' ? 'selected' : '';
+    locationBeforeDropdown += `<option value="${loc.id}" ${selected}>${pv_escapeHtml(loc.name)}</option>`;
   }
 
-  // 時間帯ドロップダウンを生成
-  let timeDropdown = '<option value="">時間帯を選択...</option>';
+  // 終了背景ドロップダウンを生成
+  let locationAfterDropdown = '<option value="">背景を選択...</option>';
+  for (const loc of locations) {
+    const selected = loc.id === 'urban' ? 'selected' : '';
+    locationAfterDropdown += `<option value="${loc.id}" ${selected}>${pv_escapeHtml(loc.name)}</option>`;
+  }
+
+  // 時間帯ドロップダウンを生成（開始用）
+  let timeBeforeDropdown = '<option value="">時間帯を選択...</option>';
   for (const time of times) {
     const selected = time.id === 'evening' ? 'selected' : '';
-    timeDropdown += `<option value="${time.id}" ${selected}>${pv_escapeHtml(time.name)}</option>`;
+    timeBeforeDropdown += `<option value="${time.id}" ${selected}>${pv_escapeHtml(time.name)}</option>`;
+  }
+
+  // 時間帯ドロップダウンを生成（終了用）
+  let timeAfterDropdown = '<option value="">時間帯を選択...</option>';
+  for (const time of times) {
+    const selected = time.id === 'morning' ? 'selected' : '';
+    timeAfterDropdown += `<option value="${time.id}" ${selected}>${pv_escapeHtml(time.name)}</option>`;
   }
 
   // スタイル選択肢を生成
@@ -330,7 +344,7 @@ function pv_createEffectSceneDialogHtml(
         .scene-row {
           display: flex;
           gap: 16px;
-          margin-bottom: 16px;
+          margin-bottom: 8px;
         }
         .scene-row .form-group { flex: 1; margin-bottom: 0; }
         .form-group label {
@@ -345,6 +359,17 @@ function pv_createEffectSceneDialogHtml(
           border: 1px solid #ddd;
           border-radius: 6px;
           font-size: 13px;
+        }
+        .form-group input[type="text"] {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          font-size: 13px;
+          box-sizing: border-box;
+        }
+        .custom-input-row {
+          margin-bottom: 16px;
         }
 
         /* スタイルグリッド */
@@ -515,20 +540,49 @@ function pv_createEffectSceneDialogHtml(
         </div>
       </div>
 
-      <!-- シーン背景 -->
-      <div class="section-title">■ シーン背景</div>
+      <!-- シーン背景（開始） -->
+      <div class="section-title">■ 背景（開始）</div>
       <div class="scene-row">
         <div class="form-group">
           <label>場所</label>
-          <select id="locationSelect" onchange="updateGenerateButton()">
-            ${locationDropdown}
+          <select id="locationBeforeSelect" onchange="onLocationChange('before')">
+            ${locationBeforeDropdown}
           </select>
         </div>
         <div class="form-group">
           <label>時間帯</label>
-          <select id="timeSelect" onchange="updateGenerateButton()">
-            ${timeDropdown}
+          <select id="timeBeforeSelect" onchange="updateGenerateButton()">
+            ${timeBeforeDropdown}
           </select>
+        </div>
+      </div>
+      <div class="custom-input-row" id="customBeforeRow" style="display:none;">
+        <div class="form-group" style="flex:1;">
+          <label>カスタム背景（開始）</label>
+          <input type="text" id="customBeforeInput" placeholder="例: abandoned warehouse, dusty atmosphere, dim lighting" onchange="updateGenerateButton()" />
+        </div>
+      </div>
+
+      <!-- シーン背景（終了） -->
+      <div class="section-title">■ 背景（終了）</div>
+      <div class="scene-row">
+        <div class="form-group">
+          <label>場所</label>
+          <select id="locationAfterSelect" onchange="onLocationChange('after')">
+            ${locationAfterDropdown}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>時間帯</label>
+          <select id="timeAfterSelect" onchange="updateGenerateButton()">
+            ${timeAfterDropdown}
+          </select>
+        </div>
+      </div>
+      <div class="custom-input-row" id="customAfterRow" style="display:none;">
+        <div class="form-group" style="flex:1;">
+          <label>カスタム背景（終了）</label>
+          <input type="text" id="customAfterInput" placeholder="例: bright open field, blue sky, sunlight" onchange="updateGenerateButton()" />
         </div>
       </div>
 
@@ -694,14 +748,73 @@ function pv_createEffectSceneDialogHtml(
           updateGenerateButton();
         }
 
+        // ===== 場所選択変更時（カスタム表示切替） =====
+        function onLocationChange(type) {
+          const selectId = type === 'before' ? 'locationBeforeSelect' : 'locationAfterSelect';
+          const customRowId = type === 'before' ? 'customBeforeRow' : 'customAfterRow';
+          const selectedValue = document.getElementById(selectId).value;
+
+          if (selectedValue === 'custom') {
+            document.getElementById(customRowId).style.display = 'block';
+          } else {
+            document.getElementById(customRowId).style.display = 'none';
+          }
+          updateGenerateButton();
+        }
+
+        // ===== 背景文字列を取得 =====
+        function getBackgroundString(type) {
+          const locationSelectId = type === 'before' ? 'locationBeforeSelect' : 'locationAfterSelect';
+          const timeSelectId = type === 'before' ? 'timeBeforeSelect' : 'timeAfterSelect';
+          const customInputId = type === 'before' ? 'customBeforeInput' : 'customAfterInput';
+
+          const locationId = document.getElementById(locationSelectId).value;
+          const timeId = document.getElementById(timeSelectId).value;
+
+          if (locationId === 'custom') {
+            const customValue = document.getElementById(customInputId).value.trim();
+            if (customValue) {
+              const time = times.find(t => t.id === timeId);
+              return customValue + (time ? ', ' + time.en : '');
+            }
+            return '';
+          }
+
+          const location = locations.find(l => l.id === locationId);
+          const time = times.find(t => t.id === timeId);
+
+          if (location && time) {
+            return location.en + ', ' + time.en;
+          }
+          return '';
+        }
+
         // ===== 生成ボタン状態更新 =====
         function updateGenerateButton() {
           const hasAction = selectedActionId !== null;
           const hasEffect = selectedEffectId !== null;
-          const hasLocation = document.getElementById('locationSelect').value !== '';
-          const hasTime = document.getElementById('timeSelect').value !== '';
 
-          const canGenerate = hasAction && hasEffect && hasLocation && hasTime;
+          // 開始背景チェック
+          const locationBeforeId = document.getElementById('locationBeforeSelect').value;
+          const timeBeforeId = document.getElementById('timeBeforeSelect').value;
+          let hasBackgroundBefore = false;
+          if (locationBeforeId === 'custom') {
+            hasBackgroundBefore = document.getElementById('customBeforeInput').value.trim() !== '' && timeBeforeId !== '';
+          } else {
+            hasBackgroundBefore = locationBeforeId !== '' && timeBeforeId !== '';
+          }
+
+          // 終了背景チェック
+          const locationAfterId = document.getElementById('locationAfterSelect').value;
+          const timeAfterId = document.getElementById('timeAfterSelect').value;
+          let hasBackgroundAfter = false;
+          if (locationAfterId === 'custom') {
+            hasBackgroundAfter = document.getElementById('customAfterInput').value.trim() !== '' && timeAfterId !== '';
+          } else {
+            hasBackgroundAfter = locationAfterId !== '' && timeAfterId !== '';
+          }
+
+          const canGenerate = hasAction && hasEffect && hasBackgroundBefore && hasBackgroundAfter;
           document.getElementById('generateBtn').disabled = !canGenerate;
         }
 
@@ -709,18 +822,14 @@ function pv_createEffectSceneDialogHtml(
         function generatePrompts() {
           const action = actions.find(a => a.id === selectedActionId);
           const effect = effects.find(e => e.id === selectedEffectId);
-          const locationId = document.getElementById('locationSelect').value;
-          const timeId = document.getElementById('timeSelect').value;
-          const location = locations.find(l => l.id === locationId);
-          const time = times.find(t => t.id === timeId);
 
-          if (!action || !effect || !location || !time) {
+          const backgroundBefore = getBackgroundString('before');
+          const backgroundAfter = getBackgroundString('after');
+
+          if (!action || !effect || !backgroundBefore || !backgroundAfter) {
             showStatus('全ての項目を選択してください', 'error');
             return;
           }
-
-          // 背景文字列を生成
-          const background = location.en + ', ' + time.en;
 
           // サーバー側でプロンプトを取得
           showStatus('プロンプトを生成中...', 'success');
@@ -752,7 +861,7 @@ function pv_createEffectSceneDialogHtml(
             .withFailureHandler(function(error) {
               showStatus('❌ エラー: ' + error.message, 'error');
             })
-            .pv_getEffectPrompts(selectedActionId, selectedEffectId, background);
+            .pv_getEffectPromptsV2(selectedActionId, selectedEffectId, backgroundBefore, backgroundAfter);
         }
 
         // ===== 結果タブ切り替え =====

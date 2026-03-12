@@ -6,9 +6,9 @@
  * 2. 進捗一覧シートの作成・更新
  * 3. 進捗ログの記録（I〜N列）
  *
- * 【ステータス欄の構成（6項目）】
- * 2行目: ヘッダー（現在タスク / タスク保持者 / 状態 / 期限 / 最終更新日 / 全体ステータス）
- * 3行目: 入力欄（ドロップダウン / ドロップダウン / ドロップダウン / 日付 / 自動 / ドロップダウン）
+ * 【ステータス欄の構成（7項目）】
+ * 2行目: ヘッダー（納期 / 現在タスク / タスク保持者 / 状態 / 期限 / 最終更新日 / 全体ステータス）
+ * 3行目: 入力欄（日付 / ドロップダウン / ドロップダウン / ドロップダウン / 日付 / 自動 / ドロップダウン）
  *
  * 【設計思想】
  * - hearingSheetManager.jsの定数（HP_TASKS, HP_TASK_HOLDERS等）を参照
@@ -37,8 +37,9 @@ const HP_PHASE_MAPPING = {
 const HP_STATUS_HEADER_ROW = 2;
 const HP_STATUS_VALUE_ROW = 3;
 
-// ステータス欄の列位置（6項目: B〜G列）
+// ステータス欄の列位置（7項目: A〜G列）
 const HP_STATUS_COLUMNS = {
+  DUE_DATE: 1,      // A列: 納期
   TASK: 2,          // B列: 現在タスク
   HOLDER: 3,        // C列: タスク保持者
   STATE: 4,         // D列: 状態
@@ -93,8 +94,8 @@ function hp_createProgressSheet() {
   // 新規作成
   progressSheet = ss.insertSheet(HP_PROGRESS_SHEET_NAME, 0);
 
-  // ヘッダー設定（8列）
-  const headers = ['企業名', '現在タスク', 'タスク保持者', '状態', '期限', '最終更新日', '全体ステータス', '直近メモ'];
+  // ヘッダー設定（9列）
+  const headers = ['企業名', '納期（あと○日）', '現在タスク', 'タスク保持者', '状態', '期限', '最終更新日', '全体ステータス', '直近メモ'];
   progressSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 
   // ヘッダースタイル
@@ -106,13 +107,14 @@ function hp_createProgressSheet() {
 
   // 列幅調整
   progressSheet.setColumnWidth(1, 150); // 企業名
-  progressSheet.setColumnWidth(2, 150); // 現在タスク
-  progressSheet.setColumnWidth(3, 100); // タスク保持者
-  progressSheet.setColumnWidth(4, 100); // 状態
-  progressSheet.setColumnWidth(5, 80);  // 期限
-  progressSheet.setColumnWidth(6, 80);  // 最終更新日
-  progressSheet.setColumnWidth(7, 100); // 全体ステータス
-  progressSheet.setColumnWidth(8, 250); // 直近メモ
+  progressSheet.setColumnWidth(2, 120); // 納期（あと○日）
+  progressSheet.setColumnWidth(3, 150); // 現在タスク
+  progressSheet.setColumnWidth(4, 100); // タスク保持者
+  progressSheet.setColumnWidth(5, 100); // 状態
+  progressSheet.setColumnWidth(6, 80);  // 期限
+  progressSheet.setColumnWidth(7, 80);  // 最終更新日
+  progressSheet.setColumnWidth(8, 100); // 全体ステータス
+  progressSheet.setColumnWidth(9, 250); // 直近メモ
 
   // 行固定
   progressSheet.setFrozenRows(1);
@@ -156,6 +158,7 @@ function hp_updateProgressSheet() {
     if (statusInfo) {
       progressData.push([
         sheetName,
+        statusInfo.dueDate || '-',
         statusInfo.task || '-',
         statusInfo.holder || '-',
         statusInfo.state || '-',
@@ -176,11 +179,11 @@ function hp_updateProgressSheet() {
   // 既存データをクリア（ヘッダー以外）
   const lastRow = progressSheet.getLastRow();
   if (lastRow > 1) {
-    progressSheet.getRange(2, 1, lastRow - 1, 8).clearContent();
+    progressSheet.getRange(2, 1, lastRow - 1, 9).clearContent();
   }
 
   // データを書き込み
-  progressSheet.getRange(2, 1, progressData.length, 8).setValues(progressData);
+  progressSheet.getRange(2, 1, progressData.length, 9).setValues(progressData);
 
   // 条件付き書式
   hp_applyConditionalFormatting(progressSheet, progressData.length);
@@ -197,8 +200,28 @@ function hp_getStatusFromSheet(sheet) {
 
     // ステータス欄があるかチェック（2行目B列が「現在タスク」かどうか）
     if (String(headerRow[HP_STATUS_COLUMNS.TASK - 1]).includes('現在タスク')) {
+      let dueDate = valueRow[HP_STATUS_COLUMNS.DUE_DATE - 1];
       let deadline = valueRow[HP_STATUS_COLUMNS.DEADLINE - 1];
       let updatedAt = valueRow[HP_STATUS_COLUMNS.UPDATED_AT - 1];
+
+      // 納期フォーマット（あと○日表示）
+      let dueDateDisplay = '-';
+      if (dueDate instanceof Date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const dateStr = Utilities.formatDate(dueDate, 'Asia/Tokyo', 'yyyy/MM/dd');
+        if (diffDays < 0) {
+          dueDateDisplay = dateStr + '（' + Math.abs(diffDays) + '日超過）';
+        } else if (diffDays === 0) {
+          dueDateDisplay = dateStr + '（本日）';
+        } else {
+          dueDateDisplay = dateStr + '（あと' + diffDays + '日）';
+        }
+      } else if (dueDate) {
+        dueDateDisplay = String(dueDate);
+      }
 
       // 日付フォーマット
       if (deadline instanceof Date) {
@@ -212,6 +235,7 @@ function hp_getStatusFromSheet(sheet) {
       const latestMemo = hp_getLatestMemoFromSheet(sheet);
 
       return {
+        dueDate: dueDateDisplay,
         task: valueRow[HP_STATUS_COLUMNS.TASK - 1] || null,
         holder: valueRow[HP_STATUS_COLUMNS.HOLDER - 1] || null,
         state: valueRow[HP_STATUS_COLUMNS.STATE - 1] || null,
@@ -226,6 +250,7 @@ function hp_getStatusFromSheet(sheet) {
     const sheetName = sheet.getName();
     if (sheetName.includes('株式会社') || sheetName.includes('(株)') || sheetName.includes('有限会社')) {
       return {
+        dueDate: '-',
         task: '未設定',
         holder: '未設定',
         state: '-',
@@ -264,11 +289,11 @@ function hp_applyConditionalFormatting(sheet, dataCount) {
   sheet.clearConditionalFormatRules();
 
   const rules = [];
-  const range = sheet.getRange(2, 1, dataCount, 8);
+  const range = sheet.getRange(2, 1, dataCount, 9);
 
   // タスク保持者が「先方」の場合、行全体を薄い黄色に
   const holderRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenFormulaSatisfied('=$C2="先方"')
+    .whenFormulaSatisfied('=$D2="先方"')
     .setBackground('#FFF9C4')
     .setRanges([range])
     .build();
@@ -276,7 +301,7 @@ function hp_applyConditionalFormatting(sheet, dataCount) {
 
   // 状態が「先方確認」の場合、薄い黄色に
   const waitingRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenFormulaSatisfied('=$D2="先方確認"')
+    .whenFormulaSatisfied('=$E2="先方確認"')
     .setBackground('#FFF9C4')
     .setRanges([range])
     .build();
@@ -284,15 +309,31 @@ function hp_applyConditionalFormatting(sheet, dataCount) {
 
   // 期限が過ぎている場合、薄い赤に
   const overdueRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenFormulaSatisfied('=AND($E2<>"", $E2<>"-", $E2<TODAY())')
+    .whenFormulaSatisfied('=AND($F2<>"", $F2<>"-", $F2<TODAY())')
     .setBackground('#FFCDD2')
     .setRanges([range])
     .build();
   rules.push(overdueRule);
 
+  // 納期が近い場合（3日以内）、薄いオレンジに
+  const dueSoonRule = SpreadsheetApp.newConditionalFormatRule()
+    .whenFormulaSatisfied('=AND(ISNUMBER(SEARCH("あと", $B2)), VALUE(REGEXEXTRACT($B2, "あと(\\d+)日"))<=3)')
+    .setBackground('#FFE0B2')
+    .setRanges([range])
+    .build();
+  rules.push(dueSoonRule);
+
+  // 納期超過の場合、薄い赤に
+  const dueDateOverdueRule = SpreadsheetApp.newConditionalFormatRule()
+    .whenFormulaSatisfied('=ISNUMBER(SEARCH("超過", $B2))')
+    .setBackground('#FFCDD2')
+    .setRanges([range])
+    .build();
+  rules.push(dueDateOverdueRule);
+
   // 全体ステータスが「完了」の場合、薄い緑に
   const completedRule = SpreadsheetApp.newConditionalFormatRule()
-    .whenFormulaSatisfied('=$G2="完了"')
+    .whenFormulaSatisfied('=$H2="完了"')
     .setBackground('#C8E6C9')
     .setRanges([range])
     .build();
@@ -378,7 +419,15 @@ function hp_addStatusSection(sheet) {
   // メンバー一覧を取得
   const members = hp_getMembers();
 
-  // === 2行目: ヘッダー（B〜G列） ===
+  // === 2行目: ヘッダー（A〜G列） ===
+  // A列: 納期ヘッダー
+  sheet.getRange(HP_STATUS_HEADER_ROW, HP_STATUS_COLUMNS.DUE_DATE)
+    .setValue('納期（あと○日）')
+    .setBackground('#FFECB3')
+    .setFontWeight('bold')
+    .setFontColor('#000000');
+
+  // B〜G列: その他のヘッダー
   const headers = ['現在タスク', 'タスク保持者', '状態', '期限', '最終更新日', '全体ステータス'];
   headers.forEach((header, i) => {
     sheet.getRange(HP_STATUS_HEADER_ROW, 2 + i)
@@ -388,10 +437,16 @@ function hp_addStatusSection(sheet) {
       .setFontColor('#000000');
   });
 
-  // === 3行目: 入力欄（B〜G列） ===
+  // === 3行目: 入力欄（A〜G列） ===
   const inputBg = '#FFFDE7';
   const taskList = HP_TASKS.map(t => t.no + '.' + t.name);
   const defaultTask = taskList[0];
+
+  // A列: 納期（日付入力）
+  sheet.getRange(HP_STATUS_VALUE_ROW, HP_STATUS_COLUMNS.DUE_DATE)
+    .setBackground('#FFF8E1')
+    .setFontColor('#000000')
+    .setNumberFormat('yyyy年M月d日');
 
   // B列: 現在タスク
   sheet.getRange(HP_STATUS_VALUE_ROW, HP_STATUS_COLUMNS.TASK).setValue(defaultTask).setBackground(inputBg).setFontColor('#000000');
