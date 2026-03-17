@@ -222,7 +222,20 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
             reqDefBtn = '<button class="btn btn-orange" style="font-size:12px; padding:6px 12px;" onclick="event.stopPropagation(); openRequirementDialog(\\'' + t.id + '\\')">\uD83D\uDCDD 要件定義する</button>';
           }
 
+          // 委譲チェーン（依頼者 → 担当者 → ボール）
+          var chainHtml = '';
+          if (t.requester || t.assignee || t.ballHolder) {
+            var chainParts = [];
+            if (t.requester) chainParts.push('<span style="color:#1a73e8;">' + escapeHtml(t.requester) + '</span><span style="color:#999;font-size:11px;">（依頼者）</span>');
+            if (t.assignee) chainParts.push('<span style="color:#34a853;">' + escapeHtml(t.assignee) + '</span><span style="color:#999;font-size:11px;">（担当者）</span>');
+            if (t.ballHolder && t.ballHolder !== t.assignee) chainParts.push('<span style="color:#ea4335;font-weight:600;">' + escapeHtml(t.ballHolder) + '</span><span style="color:#999;font-size:11px;">（ボール）</span>');
+            else if (t.ballHolder) chainParts.push('<span style="color:#ea4335;font-weight:600;">\u25CF ' + escapeHtml(t.ballHolder) + '</span><span style="color:#999;font-size:11px;">（ボール）</span>');
+            chainHtml = '<div class="detail-section" style="background:#f0f4ff;padding:6px 10px;border-radius:4px;margin-bottom:8px;">' +
+              '<span class="detail-label">\uD83D\uDD17 委譲チェーン：</span> ' + chainParts.join(' \u2192 ') + '</div>';
+          }
+
           taskHtml += '<div class="task-detail" id="detail-' + t.id + '">' +
+            chainHtml +
             '<div class="detail-section"><span class="detail-label">状態：</span> ' + escapeHtml(t.status) + '</div>' +
             '<div class="detail-section"><span class="detail-label">期限：</span> ' + escapeHtml(t.deadline || '未設定') + '</div>' +
             (t.doneCriteria ? '<div class="detail-section"><span class="detail-label">完了条件：</span> ' + escapeHtml(t.doneCriteria) + '</div>' : '') +
@@ -231,7 +244,6 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
             (t.approvalNote ? '<div class="detail-section"><span class="detail-label">承認/差し戻し：</span> ' + escapeHtml(t.approvalNote) + '</div>' : '') +
             (t.company ? '<div class="detail-section"><span class="detail-label">企業名：</span> ' + escapeHtml(t.company) + '</div>' : '') +
             (t.taskType ? '<div class="detail-section"><span class="detail-label">種別：</span> ' + escapeHtml(t.taskType) + '</div>' : '') +
-            (t.ballHolder ? '<div class="detail-section"><span class="detail-label">ボール：</span> ' + escapeHtml(t.ballHolder) + '</div>' : '') +
             reqDefHtml +
             '<div class="action-btns">' +
             reqDefBtn +
@@ -319,6 +331,7 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
       var text = '以下のタスクの作業を開始してください。\\n\\n' +
         '【タスク】' + task.title + '\\n' +
         '【担当】' + task.assignee + '\\n' +
+        (task.requester ? '【依頼者】' + task.requester + '\\n' : '') +
         '【期限】' + (task.deadline || '未設定') + '\\n' +
         (task.company ? '【企業名】' + task.company + '\\n' : '') +
         (task.taskType ? '【種別】' + task.taskType + '\\n' : '') +
@@ -700,6 +713,7 @@ function task_createRequirementDialogHtml(task) {
         '【タスクID】' + taskData.id + '\\n' +
         '【タスク】' + taskData.title + '\\n' +
         '【担当】' + (taskData.assignee || '') + '\\n' +
+        (taskData.requester ? '【依頼者】' + taskData.requester + '\\n' : '') +
         '【期限】' + (taskData.deadline || '未設定') + '\\n' +
         (taskData.company ? '【企業名】' + taskData.company + '\\n' : '') +
         (taskData.taskType ? '【種別】' + taskData.taskType + '\\n' : '') +
@@ -725,6 +739,189 @@ function task_createRequirementDialogHtml(task) {
         '■ スコープ: やること（明確に含む作業）/ やらないこと（含まない・やるべきでない作業。暗黙の期待を先回りして潰す）\\n' +
         '■ リスク・確認事項: 期限vs作業量の妥当性、不足情報、依頼者に確認すべき曖昧な点\\n';
 
+      copyToClipboard(text);
+    }
+  <\/script>
+</body>
+</html>`;
+}
+
+// ================================================================================
+// ===== 一括要件定義ダイアログ =====
+// ================================================================================
+
+/**
+ * 一括要件定義ダイアログを表示
+ */
+function task_showBatchRequirementDialog() {
+  var tasks = task_getAllTasks({ status: '未完了' });
+  // 要件定義未完了の大・中タスクのみ
+  var pendingTasks = tasks.filter(function(t) {
+    return (t.size === '大' || t.size === '中') && !t.requirementDef;
+  });
+  var members = task_getMemberNames();
+  var html = HtmlService.createHtmlOutput(task_createBatchRequirementDialogHtml(pendingTasks, members))
+    .setWidth(850)
+    .setHeight(750);
+  SpreadsheetApp.getUi().showModalDialog(html, '\uD83D\uDCDD 一括要件定義');
+}
+
+/**
+ * 一括要件定義ダイアログのHTMLを生成
+ */
+function task_createBatchRequirementDialogHtml(pendingTasks, members) {
+  var tasksJson = JSON.stringify(pendingTasks);
+  var membersJson = JSON.stringify(members);
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  ${TASK_DIALOG_STYLES}
+  <style>
+    .batch-group { margin-bottom: 20px; }
+    .batch-group-header { background: #f0f4ff; padding: 10px 14px; border-radius: 6px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .batch-task { padding: 10px 14px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+    .batch-task:hover { background: #f8f8f8; }
+    .size-large { border-left: 4px solid #ea4335; }
+    .size-medium { border-left: 4px solid #fbbc04; }
+    .batch-task .task-info { flex: 1; }
+    .batch-task .task-title { font-weight: 600; font-size: 14px; }
+    .batch-task .task-meta { font-size: 12px; color: #666; margin-top: 2px; }
+    .batch-actions { display: flex; gap: 6px; }
+    .batch-actions button { font-size: 12px; padding: 4px 10px; }
+    .size-badge-l { background: #ffcdd2; color: #c62828; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .size-badge-m { background: #fff9c4; color: #f57f17; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .summary-stats { display: flex; gap: 16px; margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 8px; }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 24px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: #666; }
+    .ai-progress { display: none; margin-top: 12px; padding: 12px; background: #e8f5e9; border-radius: 6px; }
+    .ai-progress .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #34a853; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <h3>\uD83D\uDCDD 一括要件定義</h3>
+  <p style="color:#666; font-size:13px; margin-bottom:12px;">要件定義が未完了の大・中タスクを担当者別に一覧表示。規模に応じた処理を行えます。</p>
+
+  <div class="summary-stats" id="summaryStats"></div>
+  <div id="batchContent"></div>
+
+  <div id="aiProgress" class="ai-progress">
+    <span class="spinner"></span>
+    <span id="aiProgressText">AIが叩き台を生成中...</span>
+  </div>
+
+  <div class="actions" style="margin-top:16px;">
+    <button class="btn btn-secondary" onclick="google.script.host.close()">閉じる</button>
+  </div>
+
+  <div id="status" class="status"></div>
+  ${TASK_UI_COMPONENTS}
+
+  <script>
+    var allPendingTasks = ${tasksJson};
+    var membersList = ${membersJson};
+
+    (function init() {
+      renderSummary();
+      renderBatchList();
+    })();
+
+    function renderSummary() {
+      var large = allPendingTasks.filter(function(t) { return t.size === '大'; }).length;
+      var medium = allPendingTasks.filter(function(t) { return t.size === '中'; }).length;
+      document.getElementById('summaryStats').innerHTML =
+        '<div class="stat-item"><div class="stat-num">' + allPendingTasks.length + '</div><div class="stat-label">未定義タスク</div></div>' +
+        '<div class="stat-item"><div class="stat-num" style="color:#ea4335;">' + large + '</div><div class="stat-label">\uD83D\uDD34 大（フルアシスト）</div></div>' +
+        '<div class="stat-item"><div class="stat-num" style="color:#f57f17;">' + medium + '</div><div class="stat-label">\uD83D\uDFE1 中（AI叩き台）</div></div>';
+    }
+
+    function renderBatchList() {
+      var container = document.getElementById('batchContent');
+      if (allPendingTasks.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;">\u2705 要件定義が必要なタスクはありません</div>';
+        return;
+      }
+
+      // 担当者別グルーピング
+      var groups = {};
+      allPendingTasks.forEach(function(t) {
+        var key = t.assignee || '未割当';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(t);
+      });
+
+      var html = '';
+      var groupKeys = Object.keys(groups).sort();
+      for (var g = 0; g < groupKeys.length; g++) {
+        var name = groupKeys[g];
+        var tasks = groups[name];
+        var largeCount = tasks.filter(function(t) { return t.size === '大'; }).length;
+        var mediumCount = tasks.filter(function(t) { return t.size === '中'; }).length;
+
+        html += '<div class="batch-group">';
+        html += '<div class="batch-group-header">' +
+          '<span>' + escapeHtml(name) + '（' + tasks.length + '件）</span>' +
+          '<span>' +
+          (largeCount ? '<span class="size-badge-l">\uD83D\uDD34大 ' + largeCount + '</span> ' : '') +
+          (mediumCount ? '<span class="size-badge-m">\uD83D\uDFE1中 ' + mediumCount + '</span>' : '') +
+          '</span></div>';
+
+        for (var i = 0; i < tasks.length; i++) {
+          var t = tasks[i];
+          var sizeClass = t.size === '大' ? 'size-large' : 'size-medium';
+          var sizeBadge = t.size === '大' ? '<span class="size-badge-l">\uD83D\uDD34 大</span>' : '<span class="size-badge-m">\uD83D\uDFE1 中</span>';
+          var chainText = '';
+          if (t.requester) chainText = escapeHtml(t.requester) + ' \u2192 ' + escapeHtml(t.assignee || '?');
+
+          html += '<div class="batch-task ' + sizeClass + '">' +
+            '<div class="task-info">' +
+            '<div class="task-title">' + escapeHtml(t.id) + ' ' + escapeHtml(t.title) + ' ' + sizeBadge + '</div>' +
+            '<div class="task-meta">' +
+            (t.company ? escapeHtml(t.company) + ' | ' : '') +
+            '期限: ' + escapeHtml(t.deadline || '未設定') +
+            (chainText ? ' | \uD83D\uDD17 ' + chainText : '') +
+            '</div></div>' +
+            '<div class="batch-actions">' +
+            (t.size === '大'
+              ? '<button class="btn btn-primary" onclick="openFullAssist(\\'' + t.id + '\\')">\uD83E\uDD16 フルアシスト</button>' +
+                '<button class="btn btn-secondary" onclick="openClaudeCode(\\'' + t.id + '\\')">\uD83D\uDCCB Claude Code</button>'
+              : '<button class="btn btn-primary" onclick="generateAndOpen(\\'' + t.id + '\\')">\uD83E\uDD16 AI叩き台</button>') +
+            '</div></div>';
+        }
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    // 大タスク: フルアシスト（要件定義ダイアログを開く）
+    function openFullAssist(taskId) {
+      google.script.host.close();
+      google.script.run.task_showRequirementDialog(taskId);
+    }
+
+    // 中タスク: AI叩き台を生成して要件定義ダイアログを開く
+    function generateAndOpen(taskId) {
+      google.script.host.close();
+      google.script.run.task_showRequirementDialog(taskId);
+    }
+
+    // Claude Codeコピー
+    function openClaudeCode(taskId) {
+      var task = allPendingTasks.find(function(t) { return t.id === taskId; });
+      if (!task) return;
+      var text = '以下のタスクの要件定義を深掘りしてください。\\n' +
+        '一方的に決めず、私への質問→回答→整理のサイクルを回してください。\\n\\n' +
+        '--- タスク情報 ---\\n' +
+        '【タスクID】' + task.id + '\\n' +
+        '【タスク】' + task.title + '\\n' +
+        '【担当】' + (task.assignee || '') + '\\n' +
+        (task.requester ? '【依頼者】' + task.requester + '\\n' : '') +
+        '【期限】' + (task.deadline || '未設定') + '\\n' +
+        (task.company ? '【企業名】' + task.company + '\\n' : '') +
+        '【完了条件】' + (task.doneCriteria || '') + '\\n' +
+        '【タスク規模】' + (task.size || '') + '\\n';
       copyToClipboard(text);
     }
   <\/script>

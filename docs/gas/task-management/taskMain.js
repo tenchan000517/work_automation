@@ -39,6 +39,7 @@ function onOpen() {
 
   adminMenu
     .addItem('\u2705 完了承認・差し戻し', 'showApprovalDialog')
+    .addItem('\uD83D\uDCDD 一括要件定義', 'showBatchRequirementDialog')
     .addItem('\uD83D\uDCCA AIサマリー', 'showAiSummaryDialog')
     .addSeparator()
     .addItem('\uD83D\uDC64 担当者設定', 'showMemberSettingsDialog')
@@ -75,6 +76,9 @@ function showProgressReportDialog() { task_showProgressReportDialog(); }
 
 // 完了承認（管理者用ビュー）
 function showApprovalDialog() { task_showApprovalDialog(); }
+
+// 一括要件定義
+function showBatchRequirementDialog() { task_showBatchRequirementDialog(); }
 
 // AIサマリー
 function showAiSummaryDialog() {

@@ -50,7 +50,8 @@ function task_registerTasksFromDialog(tasksJson) {
         size: t.size || '',
         company: t.company_name || t.company || '',
         taskType: t.task_type || t.taskType || '',
-        ballHolder: t.ballHolder || ''
+        ballHolder: t.ballHolder || '',
+        requester: t.requester || ''
       });
 
       var calResult = { success: false };
@@ -99,6 +100,7 @@ function task_formatForClaudeCode(taskData) {
   lines.push('');
   lines.push('【タスク】' + (taskData.title || ''));
   lines.push('【担当】' + (taskData.assignee || ''));
+  if (taskData.requester) lines.push('【依頼者】' + taskData.requester);
   lines.push('【期限】' + (taskData.deadline || '未設定'));
   lines.push('【企業名】' + (taskData.company || ''));
   lines.push('【種別】' + (taskData.taskType || ''));
@@ -419,6 +421,14 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
         '<textarea id="req-scopeOut" rows="2" onchange="saveCurrentTask()">' + escapeHtml(t.scope_out || '') + '</textarea></div>' +
         '<div class="form-group"><label>備考</label>' +
         '<input type="text" id="req-notes" value="" onchange="saveCurrentTask()"></div>' +
+        '<div class="form-group"><label>依頼者</label>' +
+        '<select id="req-requester" onchange="saveCurrentTask()">' +
+        '<option value="">選択してください</option>' +
+        membersList.map(function(name) {
+          var sel = (t.requester === name) ? ' selected' : '';
+          return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+        }).join('') +
+        '</select></div>' +
         '<div class="form-group"><label>企業名</label>' +
         '<input type="text" id="req-company" value="' + escapeHtml(t.company_name || t.company || '') + '" onchange="saveCurrentTask()"></div>' +
         '<div class="form-group"><label>種別</label>' +
@@ -453,6 +463,7 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
       t.scope_in = document.getElementById('req-scopeIn').value;
       t.scope_out = document.getElementById('req-scopeOut').value;
       t._notes = document.getElementById('req-notes').value;
+      t.requester = document.getElementById('req-requester') ? document.getElementById('req-requester').value : (t.requester || '');
       t.company_name = document.getElementById('req-company') ? document.getElementById('req-company').value : (t.company_name || '');
       t.task_type = document.getElementById('req-taskType') ? document.getElementById('req-taskType').value : (t.task_type || '');
     }
@@ -493,7 +504,8 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
           size: t.size || '',
           company_name: t.company_name || t.company || '',
           task_type: t.task_type || t.taskType || '',
-          ballHolder: t.ballHolder || ''
+          ballHolder: t.ballHolder || '',
+          requester: t.requester || ''
         };
       });
 
