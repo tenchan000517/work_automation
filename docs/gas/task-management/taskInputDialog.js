@@ -92,6 +92,10 @@ function task_createInputDialogHtml(preselectedMode, members) {
     <div class="form-group">
       <label>テキストを貼り付けてください</label>
       <textarea id="inputText" style="height: 200px;" placeholder="LINE WORKSの会話ログや会議の文字起こし、依頼内容などを貼り付けてください..."></textarea>
+      <div id="textStats" style="display:none; font-size:12px; color:#666; margin-top:4px;">
+        <span id="charCount"></span>
+        <span id="charWarning" style="color:#c62828; display:none;"></span>
+      </div>
     </div>
   </div>
 
@@ -179,6 +183,31 @@ function task_createInputDialogHtml(preselectedMode, members) {
       document.getElementById('normalFields').style.display = isDiscussion ? 'none' : 'block';
       document.getElementById('discussionFields').className = 'discussion-fields' + (isDiscussion ? ' show' : '');
     }
+
+    // テキスト入力時の文字数カウンター（NOTTA向け）
+    document.getElementById('inputText').addEventListener('input', function() {
+      var len = this.value.length;
+      var statsEl = document.getElementById('textStats');
+      var countEl = document.getElementById('charCount');
+      var warnEl = document.getElementById('charWarning');
+
+      if (selectedMode === 'notta' || len > 10000) {
+        statsEl.style.display = 'block';
+        countEl.textContent = len.toLocaleString() + '文字';
+
+        if (len > 50000) {
+          warnEl.style.display = 'inline';
+          warnEl.textContent = ' \u26A0\uFE0F 非常に長いテキストです。会議の前半・後半に分けて解析してください。';
+        } else if (len > 30000) {
+          warnEl.style.display = 'inline';
+          warnEl.textContent = ' \u26A0\uFE0F 長めのテキストです。タイムスタンプは自動除去されますが、処理に時間がかかる場合があります。';
+        } else {
+          warnEl.style.display = 'none';
+        }
+      } else {
+        statsEl.style.display = 'none';
+      }
+    });
 
     // ディスカッション: 説明入力時に質問パターンを表示
     document.getElementById('discussionDesc').addEventListener('blur', function() {

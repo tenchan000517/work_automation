@@ -249,6 +249,28 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
     var selectedTasks = [];
     var currentTaskIndex = 0;
 
+    // ===== コンテンツ安全フィルタ =====
+    function sanitizeText(text) {
+      if (!text) return '';
+      var patterns = [
+        /[バﾊﾞ][カｶ]|ばか|馬鹿/g,
+        /[アｱ][ホｿ]|あほ|阿呆/g,
+        /死ね|しね|死んで/g,
+        /[クｸ][ソｿ]|くそ|糞/g,
+        /ふざけ(?:るな|んな|んじゃ)/g,
+        /うざ[いっ]/g,
+        /[キｷ][モﾓ][いっ]/g,
+        /頭いかれ/g,
+        /馬鹿じゃ/g,
+        /マジで怒/g
+      ];
+      var result = text;
+      for (var i = 0; i < patterns.length; i++) {
+        result = result.replace(patterns[i], '***');
+      }
+      return result;
+    }
+
     // ===== 初期化: 画面2の候補一覧を描画 =====
     (function init() {
       document.getElementById('step2Title').textContent =
@@ -265,7 +287,7 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
 
         var warnings = '';
         if (t.warnings && t.warnings.length > 0) {
-          warnings = '<div class="task-warning">\u26A0\uFE0F ' + escapeHtml(t.warnings.join(' / ')) + '</div>';
+          warnings = '<div class="task-warning">\u26A0\uFE0F ' + escapeHtml(sanitizeText(t.warnings.join(' / '))) + '</div>';
         }
         if (t.ambiguous_expressions && t.ambiguous_expressions.length > 0) {
           for (var j = 0; j < t.ambiguous_expressions.length; j++) {
@@ -302,9 +324,15 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
         var skippedHtml = '';
         for (var k = 0; k < skippedMessages.length; k++) {
           var s = skippedMessages[k];
-          skippedHtml += '<p><strong>' + escapeHtml(s.speaker || '') + '</strong>：' +
-            escapeHtml(s.content_summary || '') +
-            '<br><span style="color:#999;">' + escapeHtml(s.reason || '') + '</span></p>';
+          if (inputMode === 'notta') {
+            // NOTTAモード: content_summaryを非表示（不適切な発言の漏出を防止）
+            skippedHtml += '<p><strong>' + escapeHtml(s.speaker || '') + '</strong>' +
+              '<br><span style="color:#999;">' + escapeHtml(s.reason || '') + '</span></p>';
+          } else {
+            skippedHtml += '<p><strong>' + escapeHtml(s.speaker || '') + '</strong>：' +
+              escapeHtml(sanitizeText(s.content_summary || '')) +
+              '<br><span style="color:#999;">' + escapeHtml(s.reason || '') + '</span></p>';
+          }
         }
         document.getElementById('skippedList').innerHTML = skippedHtml;
       }
@@ -364,7 +392,7 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
 
       var detailHtml = '';
       if (t.detail) {
-        detailHtml = '<div class="info-box"><strong>AIが整理した内容：</strong><br>' + escapeHtml(t.detail) + '</div>';
+        detailHtml = '<div class="info-box"><strong>AIが整理した内容：</strong><br>' + escapeHtml(sanitizeText(t.detail)) + '</div>';
       }
 
       var form = '<h3>\uD83D\uDCCB 要件確認</h3>' + detailHtml +

@@ -102,6 +102,31 @@ const TASK_EXTRACTION_PROMPT = `あなたはタスク管理アシスタントで
   ]
 }`;
 
+const NOTTA_SUPPLEMENT_PROMPT = `
+【NOTTA音声認識文字起こし固有の注意】
+
+このテキストはNOTTA（音声認識AI）による会議文字起こしです。以下を前提に処理してください。
+
+■ 音声認識エラーへの対応
+- 同音異義語の誤認識が頻繁に発生します（例: 「下見」→「したみ」、「構成」→「校正」→「厚生」）
+- 固有名詞（社名・人名・サービス名）は特に誤認識が多い。文脈から推定して正しい表記を使うこと
+- 発言者名の表記揺れを統合すること（例: 「しみず」「清水」「清水駿之介」は同一人物と推定）
+
+■ ノイズの除去
+- 会議の大半は雑談・脱線・冗談・口論・あいづち等のノイズです。タスクに関係ない発言は全て無視すること
+- 笑い声、あいづち（「うん」「はい」「なるほど」）、フィラー（「えーと」「あの」）は無視
+- 意味が取れない誤認識テキストは推測せずスキップすること。無理にタスクを読み取らない
+
+■ 出力の言語規範（最重要）
+- 原文に怒り・侮辱・暴言・攻撃的な表現が含まれる場合がある
+- 出力の全フィールド（title, detail, warnings, content_summary 等すべて）に
+  不適切・攻撃的な表現を絶対に引用・再現しないこと
+- すべての出力は中立的・専門的な業務用語で書くこと
+- skipped_messagesのcontent_summaryは「雑談」「私的会話」「業務外の議論」等の
+  簡潔なカテゴリ名のみ記載し、発言内容を要約・引用しないこと
+- skipped_messagesは件数が多くなりすぎる場合、同一カテゴリをまとめて1件にしてよい
+  （例: 雑談が20件 → 「複数の発言者: 雑談（20件程度）」として1件にまとめる）`;
+
 const TASK_REQUIREMENTS_PROMPT = `あなたは要件定義アシスタントです。
 
 以下のタスクについて、ユーザーの回答を受け取り、要件として整理してください。
@@ -302,6 +327,36 @@ function task_parseJsonFromAiOutput(text) {
 }
 
 // ================================================================================
+// ===== NOTTA前処理 =====
+// ================================================================================
+
+/**
+ * NOTTA文字起こしテキストの前処理
+ * - タイムスタンプパターンを除去してトークン数を削減
+ * - 発言者ラベルは保持
+ * @param {string} text - NOTTA原文
+ * @returns {{processed: string, originalLength: number, processedLength: number}}
+ */
+function task_preprocessNottaText(text) {
+  var originalLength = text.length;
+
+  // Pattern 1: "発言者名 HH:MM" or "発言者名 HH:MM:SS" -> "発言者名："
+  var processed = text.replace(/^(.+?)\s+(\d{1,2}:\d{2}(?::\d{2})?)\s*$/gm, '$1：');
+
+  // Pattern 2: Standalone timestamps "(01:22:57)" or "[01:22:57]"
+  processed = processed.replace(/[\(（\[]\d{1,2}:\d{2}(?::\d{2})?[\)）\]]/g, '');
+
+  // Pattern 3: Remove excessive blank lines (3+ consecutive -> 1)
+  processed = processed.replace(/\n{3,}/g, '\n\n');
+
+  return {
+    processed: processed.trim(),
+    originalLength: originalLength,
+    processedLength: processed.trim().length
+  };
+}
+
+// ================================================================================
 // ===== タスク抽出（1回目AI呼び出し） =====
 // ================================================================================
 
@@ -316,10 +371,29 @@ function task_extractTasks(inputText, mode) {
     return { success: false, error: 'テキストが入力されていません' };
   }
 
+  // NOTTA前処理: タイムスタンプ除去でトークン削減
+  var processedText = inputText;
+  if (mode === 'notta') {
+    var preprocessResult = task_preprocessNottaText(inputText);
+    processedText = preprocessResult.processed;
+  }
+
+  // テキスト長チェック（前処理後でも長すぎる場合はエラー）
+  if (processedText.length > 50000) {
+    return {
+      success: false,
+      error: 'テキストが長すぎます（' + processedText.length.toLocaleString() + '文字）。\n30,000文字以下に分割して再度お試しください。\n\nヒント: 会議の前半・後半で分けて解析すると精度も上がります。'
+    };
+  }
+
   var memberNames = task_getMemberNames();
-  var memberInfo = memberNames.length > 0
-    ? '\n\n【チームメンバー一覧（担当者の推定に使ってください）】\n' + memberNames.join('、')
-    : '';
+  var memberInfo = '';
+  if (memberNames.length > 0) {
+    memberInfo = '\n\n【チームメンバー一覧（担当者の推定に使ってください）】\n' + memberNames.join('、');
+    if (mode === 'notta') {
+      memberInfo += '\n※NOTTAの音声認識では、メンバー名がひらがな・カタカナ・漢字・フルネーム等で表記揺れします。上記メンバーと同一人物と推定される発言者名は統合してください。';
+    }
+  }
 
   var modeLabel = {
     'works_bulk': 'LINE WORKS会話ログ（複数メッセージ）',
@@ -333,9 +407,15 @@ function task_extractTasks(inputText, mode) {
   var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
   var dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][new Date().getDay()];
   var dateInfo = '\n\n【今日の日付】' + today + '（' + dayOfWeek + '曜日）\n※「水曜まで」「来週月曜」等の相対的な期限は、この日付を基準にYYYY-MM-DD形式に変換してください。';
-  var userPrompt = '【入力モード】' + modeDesc + memberInfo + dateInfo + '\n\n【入力テキスト】\n' + inputText;
+  var userPrompt = '【入力モード】' + modeDesc + memberInfo + dateInfo + '\n\n【入力テキスト】\n' + processedText;
 
-  var result = task_callGeminiApi(userPrompt, TASK_EXTRACTION_PROMPT, { jsonMode: true });
+  // NOTTAモードではサプリメントプロンプトを追加
+  var systemPrompt = TASK_EXTRACTION_PROMPT;
+  if (mode === 'notta') {
+    systemPrompt += '\n\n' + NOTTA_SUPPLEMENT_PROMPT;
+  }
+
+  var result = task_callGeminiApi(userPrompt, systemPrompt, { jsonMode: true });
   if (!result.success) {
     return { success: false, error: result.error };
   }

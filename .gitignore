@@ -45,6 +45,7 @@ next-env.d.ts
 *.secret
 secrets/
 credentials/
+docs/confidential/
 
 # local development notes
 *.local.md
