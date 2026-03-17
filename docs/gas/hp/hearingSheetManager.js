@@ -65,7 +65,8 @@ const HP_EXCLUDED_SHEETS = [
   '設定',
   'プロンプト',
   '進捗一覧',
-  '企業情報一覧'
+  '企業情報一覧',
+  '_HP履歴'
 ];
 
 // ===== フォーム回答 → ヒアリングシート マッピング =====
@@ -203,6 +204,8 @@ function onOpen() {
     .addSeparator()
     .addItem('🎨 カンプ分析プロンプト生成', 'hp_showKanpuAnalysisDialog')
     .addItem('🖼️ カンプ版 Claude Code指示文', 'hp_showKanpuClaudeCodeDialog')
+    .addSeparator()
+    .addItem('📄 LP構成案プロンプト生成', 'lp_showCompositionDialog')
     .addSeparator()
     .addItem('✏️ ステータス更新', 'hp_showStatusUpdateDialog')
   );
