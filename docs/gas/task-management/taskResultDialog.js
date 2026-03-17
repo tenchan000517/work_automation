@@ -47,7 +47,10 @@ function task_registerTasksFromDialog(tasksJson) {
         doneCriteria: t.doneCriteria,
         inputMode: t.inputMode || '',
         notes: t.notes || '',
-        size: t.size || ''
+        size: t.size || '',
+        company: t.company_name || t.company || '',
+        taskType: t.task_type || t.taskType || '',
+        ballHolder: t.ballHolder || ''
       });
 
       var calResult = { success: false };
@@ -70,6 +73,9 @@ function task_registerTasksFromDialog(tasksJson) {
         assignee: t.assignee,
         deadline: t.deadline,
         size: t.size || '',
+        company: t.company_name || t.company || '',
+        taskType: t.task_type || t.taskType || '',
+        ballHolder: t.ballHolder || '',
         success: regResult.success,
         calendarCreated: calResult.success,
         error: regResult.error || ''
@@ -94,6 +100,8 @@ function task_formatForClaudeCode(taskData) {
   lines.push('【タスク】' + (taskData.title || ''));
   lines.push('【担当】' + (taskData.assignee || ''));
   lines.push('【期限】' + (taskData.deadline || '未設定'));
+  lines.push('【企業名】' + (taskData.company || ''));
+  lines.push('【種別】' + (taskData.taskType || ''));
   lines.push('【完了条件】' + (taskData.doneCriteria || ''));
 
   if (taskData.scopeIn) {
@@ -380,6 +388,8 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
       document.getElementById('prevBtn').disabled = currentTaskIndex === 0;
       document.getElementById('nextBtn').disabled = currentTaskIndex >= selectedTasks.length - 1;
 
+      var taskTypeVal = t.task_type || t.taskType || '';
+
       // 担当者ドロップダウン
       var assigneeOptions = '<option value="">選択してください</option>';
       for (var i = 0; i < membersList.length; i++) {
@@ -408,7 +418,29 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
         '<div class="form-group"><label>やらないこと</label>' +
         '<textarea id="req-scopeOut" rows="2" onchange="saveCurrentTask()">' + escapeHtml(t.scope_out || '') + '</textarea></div>' +
         '<div class="form-group"><label>備考</label>' +
-        '<input type="text" id="req-notes" value="" onchange="saveCurrentTask()"></div>';
+        '<input type="text" id="req-notes" value="" onchange="saveCurrentTask()"></div>' +
+        '<div class="form-group"><label>企業名</label>' +
+        '<input type="text" id="req-company" value="' + escapeHtml(t.company_name || t.company || '') + '" onchange="saveCurrentTask()"></div>' +
+        '<div class="form-group"><label>種別</label>' +
+        '<select id="req-taskType" onchange="saveCurrentTask()">' +
+        '<option value="">選択してください</option>' +
+        '<option value="HP"' + (taskTypeVal === 'HP' ? ' selected' : '') + '>HP</option>' +
+        '<option value="LP"' + (taskTypeVal === 'LP' ? ' selected' : '') + '>LP</option>' +
+        '<option value="パンフレット・カタログ"' + (taskTypeVal === 'パンフレット・カタログ' ? ' selected' : '') + '>パンフレット・カタログ</option>' +
+        '<option value="月刊Sing"' + (taskTypeVal === '月刊Sing' ? ' selected' : '') + '>月刊Sing</option>' +
+        '<option value="ゆめマガ"' + (taskTypeVal === 'ゆめマガ' ? ' selected' : '') + '>ゆめマガ</option>' +
+        '<option value="動画"' + (taskTypeVal === '動画' ? ' selected' : '') + '>動画</option>' +
+        '<option value="動画撮影"' + (taskTypeVal === '動画撮影' ? ' selected' : '') + '>動画撮影</option>' +
+        '<option value="SNS関連"' + (taskTypeVal === 'SNS関連' ? ' selected' : '') + '>SNS関連</option>' +
+        '<option value="FB"' + (taskTypeVal === 'FB' ? ' selected' : '') + '>FB</option>' +
+        '<option value="FB資料作成"' + (taskTypeVal === 'FB資料作成' ? ' selected' : '') + '>FB資料作成</option>' +
+        '<option value="営業支援"' + (taskTypeVal === '営業支援' ? ' selected' : '') + '>営業支援</option>' +
+        '<option value="採用原稿関連"' + (taskTypeVal === '採用原稿関連' ? ' selected' : '') + '>採用原稿関連</option>' +
+        '<option value="応募者対応"' + (taskTypeVal === '応募者対応' ? ' selected' : '') + '>応募者対応</option>' +
+        '<option value="名刺"' + (taskTypeVal === '名刺' ? ' selected' : '') + '>名刺</option>' +
+        '<option value="ロゴ"' + (taskTypeVal === 'ロゴ' ? ' selected' : '') + '>ロゴ</option>' +
+        '<option value="原稿"' + (taskTypeVal === '原稿' ? ' selected' : '') + '>原稿</option>' +
+        '</select></div>';
 
       document.getElementById('requirementsForm').innerHTML = form;
     }
@@ -421,6 +453,8 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
       t.scope_in = document.getElementById('req-scopeIn').value;
       t.scope_out = document.getElementById('req-scopeOut').value;
       t._notes = document.getElementById('req-notes').value;
+      t.company_name = document.getElementById('req-company') ? document.getElementById('req-company').value : (t.company_name || '');
+      t.task_type = document.getElementById('req-taskType') ? document.getElementById('req-taskType').value : (t.task_type || '');
     }
 
     function nextTask() {
@@ -456,7 +490,10 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
           notes: t._notes || '',
           scopeIn: t.scope_in || '',
           scopeOut: t.scope_out || '',
-          size: t.size || ''
+          size: t.size || '',
+          company_name: t.company_name || t.company || '',
+          task_type: t.task_type || t.taskType || '',
+          ballHolder: t.ballHolder || ''
         };
       });
 
@@ -500,6 +537,8 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
           '<span class="result-icon">' + icon + '</span>' +
           '<div style="flex:1;">' +
           '<strong>' + escapeHtml(r.taskId) + '</strong> ' + escapeHtml(r.title) + sizeBadge +
+          (r.company ? '<br><span style="font-size:12px; color:#555;">企業：' + escapeHtml(r.company) + '</span>' : '') +
+          (r.taskType ? '<br><span style="font-size:12px; color:#555;">種別：' + escapeHtml(r.taskType) + '</span>' : '') +
           '（' + escapeHtml(r.assignee || '未定') + '・' + escapeHtml(r.deadline || '期限なし') + '）' +
           (calIcon ? '<br><span style="font-size:12px; color:#1a73e8;">' + calIcon + '</span>' : '') +
           (r.error ? '<br><span style="font-size:12px; color:#c62828;">' + escapeHtml(r.error) + '</span>' : '') +
@@ -522,6 +561,8 @@ function task_createResultDialogHtml(aiResult, members, inputMode, originalText)
         '【タスク】' + (r.title || '') + '\\n' +
         '【担当】' + (r.assignee || '') + '\\n' +
         '【期限】' + (r.deadline || '未設定') + '\\n' +
+        '【企業名】' + (r.company || t.company_name || '') + '\\n' +
+        '【種別】' + (r.taskType || t.task_type || '') + '\\n' +
         '【完了条件】' + (t.done_criteria || '') + '\\n';
 
       if (t.scope_in) {

@@ -29,6 +29,7 @@ function onOpen() {
     .addSubMenu(registerSub)
     .addItem('\uD83D\uDCCA タスク一覧', 'showTaskListDialog')
     .addItem('\uD83D\uDCDD 完了報告', 'showCompletionReportDialog')
+    .addItem('\uD83D\uDCCA 進捗報告', 'showProgressReportDialog')
     .addSeparator()
     .addItem('\u2753 使い方', 'showHelpDialog')
     .addToUi();
@@ -68,6 +69,9 @@ function showTaskListDialog() { task_showTaskListDialog(); }
 
 // 完了報告（タスク一覧の完了報告済みフィルタ表示）
 function showCompletionReportDialog() { task_showTaskListDialog(); }
+
+// 進捗報告
+function showProgressReportDialog() { task_showProgressReportDialog(); }
 
 // 完了承認（管理者用ビュー）
 function showApprovalDialog() { task_showApprovalDialog(); }

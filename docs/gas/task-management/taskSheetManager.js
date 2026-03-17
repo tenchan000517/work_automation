@@ -14,26 +14,37 @@
 const TASK_SHEET_NAMES = {
   TASK_LIST: 'タスク一覧',
   SETTINGS: '設定',
-  LOG: 'ログ'
+  LOG: 'ログ',
+  DONE_LOG: '完了ログ'
 };
 
 const TASK_COLUMNS = {
-  ID: 1,        // A
-  STATUS: 2,    // B
-  ASSIGNEE: 3,  // C
-  TITLE: 4,     // D
-  DEADLINE: 5,  // E
-  DONE_CRITERIA: 6, // F
-  REG_DATE: 7,  // G
-  INPUT_MODE: 8,    // H
-  COMPLETION_COMMENT: 9,  // I
-  APPROVAL_NOTE: 10,      // J
-  NOTES: 11,    // K
-  SIZE: 12,     // L: タスク規模（大/中/小）
-  REQUIREMENT_DEF: 13  // M: 要件定義（JSON文字列）
+  // --- 一目で見える主要列（左側に集約） ---
+  ID: 1,              // A: タスクID
+  STATUS: 2,          // B: 状態
+  COMPANY: 3,         // C: 企業名
+  TITLE: 4,           // D: タスク名
+  TASK_TYPE: 5,       // E: 種別
+  ASSIGNEE: 6,        // F: 担当者
+  BALL_HOLDER: 7,     // G: ボール（誰で止まってるか）
+  DEADLINE: 8,        // H: 期限
+  SIZE: 9,            // I: タスク規模（大/中/小）
+  // --- 詳細・運用列（右側） ---
+  DONE_CRITERIA: 10,  // J: 完了条件
+  NOTES: 11,          // K: 備考
+  REG_DATE: 12,       // L: 登録日
+  INPUT_MODE: 13,     // M: 入力モード
+  COMPLETION_COMMENT: 14, // N: 完了報告コメント
+  APPROVAL_NOTE: 15,  // O: 承認者/差し戻し理由
+  REQUIREMENT_DEF: 16, // P: 要件定義（JSON文字列）
+  PARENT_ID: 17        // Q: 親タスクID（空=独立タスク）
 };
 
+const TASK_COL_COUNT = 17;
+
 const TASK_SIZES = ['大', '中', '小'];
+
+const TASK_TYPES = ['HP', 'LP', 'パンフレット・カタログ', '月刊Sing', 'ゆめマガ', '動画', '動画撮影', 'SNS関連', 'FB', 'FB資料作成', '営業支援', '採用原稿関連', '応募者対応', '名刺', 'ロゴ', '原稿'];
 
 const TASK_STATUSES = ['未着手', '進行中', '完了報告済み', '完了', '差し戻し', '保留'];
 
@@ -202,17 +213,21 @@ function task_registerTask(taskData) {
     var row = [
       taskId,                                    // A: ID
       '未着手',                                  // B: 状態
-      taskData.assignee || '',                   // C: 担当者
+      taskData.company || '',                    // C: 企業名
       taskData.title || '',                      // D: タスク名
-      taskData.deadline || '',                   // E: 期限
-      taskData.doneCriteria || '',               // F: 完了条件
-      now,                                       // G: 登録日
-      taskData.inputMode || '',                  // H: 入力モード
-      '',                                        // I: 完了報告コメント
-      '',                                        // J: 承認者/差し戻し理由
+      taskData.taskType || '',                   // E: 種別
+      taskData.assignee || '',                   // F: 担当者
+      taskData.ballHolder || '',                 // G: ボール
+      taskData.deadline || '',                   // H: 期限
+      taskData.size || '',                       // I: タスク規模
+      taskData.doneCriteria || '',               // J: 完了条件
       taskData.notes || '',                      // K: 備考
-      taskData.size || '',                       // L: タスク規模
-      ''                                         // M: 要件定義
+      now,                                       // L: 登録日
+      taskData.inputMode || '',                  // M: 入力モード
+      '',                                        // N: 完了報告コメント
+      '',                                        // O: 承認者/差し戻し理由
+      '',                                        // P: 要件定義
+      taskData.parentId || ''                    // Q: 親タスクID
     ];
 
     sheet.appendRow(row);
@@ -259,23 +274,27 @@ function task_registerMultipleTasks(tasksArray) {
       rows.push([
         taskId,
         '未着手',
-        taskData.assignee || '',
+        taskData.company || '',
         taskData.title || '',
+        taskData.taskType || '',
+        taskData.assignee || '',
+        taskData.ballHolder || '',
         taskData.deadline || '',
+        taskData.size || '',
         taskData.doneCriteria || '',
+        taskData.notes || '',
         now,
         taskData.inputMode || '',
         '',
         '',
-        taskData.notes || '',
-        taskData.size || '',
-        ''
+        '',
+        taskData.parentId || ''
       ]);
     }
 
     if (rows.length > 0) {
       var lastRow = sheet.getLastRow();
-      sheet.getRange(lastRow + 1, 1, rows.length, 13).setValues(rows);
+      sheet.getRange(lastRow + 1, 1, rows.length, TASK_COL_COUNT).setValues(rows);
     }
 
     return { success: true, taskIds: taskIds };
@@ -299,19 +318,20 @@ function task_getAllTasks(filterOptions) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
 
-  var data = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
+  var data = sheet.getRange(2, 1, lastRow - 1, TASK_COL_COUNT).getValues();
   var filter = filterOptions || {};
   var today = new Date();
   today.setHours(0, 0, 0, 0);
 
   var tasks = [];
   for (var i = 0; i < data.length; i++) {
-    var id = String(data[i][0] || '').trim();
+    var id = String(data[i][0] || '').trim();       // A: ID
     if (!id) continue;
 
-    var status = String(data[i][1] || '').trim();
-    var assignee = String(data[i][2] || '').trim();
-    var deadline = data[i][4];
+    var status = String(data[i][1] || '').trim();    // B: 状態
+    var company = String(data[i][2] || '').trim();   // C: 企業名
+    var assignee = String(data[i][5] || '').trim();  // F: 担当者
+    var deadline = data[i][7];                        // H: 期限
     var deadlineDate = deadline instanceof Date ? deadline : (deadline ? new Date(deadline) : null);
 
     // フィルタ適用
@@ -331,27 +351,34 @@ function task_getAllTasks(filterOptions) {
     }
     if (status === '完了報告済み') urgency = 'reported';
 
-    var size = String(data[i][11] || '').trim();
-    var requirementDefStr = String(data[i][12] || '').trim();
+    var taskType = String(data[i][4] || '').trim();    // E: 種別
+    var ballHolder = String(data[i][6] || '').trim();  // G: ボール
+    var size = String(data[i][8] || '').trim();         // I: タスク規模
+    var requirementDefStr = String(data[i][15] || '').trim(); // P: 要件定義
     var requirementDef = null;
     if (requirementDefStr) {
       try { requirementDef = JSON.parse(requirementDefStr); } catch (e) { /* ignore */ }
     }
+    var parentId = String(data[i][16] || '').trim();          // Q: 親タスクID
 
     tasks.push({
       id: id,
       status: status,
+      company: company,
+      title: String(data[i][3] || '').trim(),       // D: タスク名
+      taskType: taskType,
       assignee: assignee,
-      title: String(data[i][3] || '').trim(),
+      ballHolder: ballHolder,
       deadline: deadlineDate ? Utilities.formatDate(deadlineDate, Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
-      doneCriteria: String(data[i][5] || '').trim(),
-      regDate: data[i][6] instanceof Date ? Utilities.formatDate(data[i][6], Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
-      inputMode: String(data[i][7] || '').trim(),
-      completionComment: String(data[i][8] || '').trim(),
-      approvalNote: String(data[i][9] || '').trim(),
-      notes: String(data[i][10] || '').trim(),
       size: size,
+      doneCriteria: String(data[i][9] || '').trim(),  // J: 完了条件
+      notes: String(data[i][10] || '').trim(),         // K: 備考
+      regDate: data[i][11] instanceof Date ? Utilities.formatDate(data[i][11], Session.getScriptTimeZone(), 'yyyy-MM-dd') : '', // L: 登録日
+      inputMode: String(data[i][12] || '').trim(),     // M: 入力モード
+      completionComment: String(data[i][13] || '').trim(), // N: 完了報告コメント
+      approvalNote: String(data[i][14] || '').trim(),  // O: 承認者/差し戻し理由
       requirementDef: requirementDef,
+      parentId: parentId,
       urgency: urgency,
       rowIndex: i + 2
     });
@@ -399,7 +426,6 @@ function task_updateTaskStatus(taskId, newStatus, comment) {
     for (var i = 0; i < ids.length; i++) {
       if (String(ids[i][0]).trim() === taskId) {
         var row = i + 2;
-        sheet.getRange(row, TASK_COLUMNS.STATUS).setValue(newStatus);
 
         if (comment) {
           if (newStatus === '完了報告済み') {
@@ -408,6 +434,26 @@ function task_updateTaskStatus(taskId, newStatus, comment) {
             sheet.getRange(row, TASK_COLUMNS.APPROVAL_NOTE).setValue(comment);
           }
         }
+
+        // 完了承認 → 完了ログへ移行して行を削除
+        if (newStatus === '完了') {
+          sheet.getRange(row, TASK_COLUMNS.STATUS).setValue('完了');
+          SpreadsheetApp.flush(); // コメント書き込みを確定
+
+          var rowData = sheet.getRange(row, 1, 1, TASK_COL_COUNT).getValues()[0];
+          var doneLogSheet = ss.getSheetByName(TASK_SHEET_NAMES.DONE_LOG);
+          if (doneLogSheet) {
+            var doneRow = Array.prototype.slice.call(rowData);
+            doneRow.push(new Date()); // 最終列に完了日時を追加
+            doneLogSheet.appendRow(doneRow);
+            var newLogRow = doneLogSheet.getLastRow();
+            doneLogSheet.setRowHeight(newLogRow, 21);
+          }
+          sheet.deleteRow(row);
+        } else {
+          sheet.getRange(row, TASK_COLUMNS.STATUS).setValue(newStatus);
+        }
+
         return { success: true };
       }
     }
@@ -586,8 +632,54 @@ function task_initializeTemplate() {
       taskSheet = ss.insertSheet(TASK_SHEET_NAMES.TASK_LIST);
     }
 
-    // ヘッダー
-    var headers = ['ID', '状態', '担当者', 'タスク名', '期限', '完了条件', '登録日', '入力モード', '完了報告コメント', '承認者/差し戻し理由', '備考', 'タスク規模', '要件定義'];
+    // ヘッダー定義
+    var headers = ['ID', '状態', '企業名', 'タスク名', '種別', '担当者', 'ボール', '期限', 'タスク規模', '完了条件', '備考', '登録日', '入力モード', '完了報告コメント', '承認者/差し戻し理由', '要件定義', '親タスクID'];
+
+    // 既存データのマイグレーション（列追加・列順変更に安全に対応）
+    var lastRow = taskSheet.getLastRow();
+    if (lastRow >= 1) {
+      var oldHeaderCount = taskSheet.getLastColumn();
+      if (oldHeaderCount > 0) {
+        var oldHeaders = taskSheet.getRange(1, 1, 1, oldHeaderCount).getValues()[0].map(String);
+        var oldHeadersStr = oldHeaders.join(',');
+        var newHeadersStr = headers.join(',');
+
+        // ヘッダーが異なる場合のみマイグレーション実行
+        if (oldHeadersStr !== newHeadersStr && lastRow >= 2) {
+          // 既存データを読み取り
+          var oldData = taskSheet.getRange(2, 1, lastRow - 1, oldHeaderCount).getValues();
+
+          // 旧ヘッダー名 → 旧列インデックスのマップ
+          var oldColMap = {};
+          for (var h = 0; h < oldHeaders.length; h++) {
+            if (oldHeaders[h]) oldColMap[oldHeaders[h]] = h;
+          }
+
+          // 新列順にデータを並べ替え
+          var newData = [];
+          for (var r = 0; r < oldData.length; r++) {
+            var newRow = [];
+            for (var c = 0; c < headers.length; c++) {
+              var headerName = headers[c];
+              if (headerName in oldColMap) {
+                newRow.push(oldData[r][oldColMap[headerName]]);
+              } else {
+                newRow.push(''); // 新規列は空
+              }
+            }
+            newData.push(newRow);
+          }
+
+          // データエリアをクリアして新データを書き込み
+          taskSheet.getRange(2, 1, lastRow - 1, oldHeaderCount).clear();
+          if (newData.length > 0) {
+            taskSheet.getRange(2, 1, newData.length, headers.length).setValues(newData);
+          }
+        }
+      }
+    }
+
+    // ヘッダー書き込み（常に最新に更新）
     taskSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     taskSheet.getRange(1, 1, 1, headers.length)
       .setBackground('#1a73e8')
@@ -595,22 +687,32 @@ function task_initializeTemplate() {
       .setFontWeight('bold');
 
     // 列幅設定
-    taskSheet.setColumnWidth(1, 70);   // ID
-    taskSheet.setColumnWidth(2, 100);  // 状態
-    taskSheet.setColumnWidth(3, 80);   // 担当者
-    taskSheet.setColumnWidth(4, 250);  // タスク名
-    taskSheet.setColumnWidth(5, 100);  // 期限
-    taskSheet.setColumnWidth(6, 200);  // 完了条件
-    taskSheet.setColumnWidth(7, 100);  // 登録日
-    taskSheet.setColumnWidth(8, 100);  // 入力モード
-    taskSheet.setColumnWidth(9, 200);  // 完了報告コメント
-    taskSheet.setColumnWidth(10, 200); // 承認者/差し戻し理由
-    taskSheet.setColumnWidth(11, 200); // 備考
-    taskSheet.setColumnWidth(12, 80);  // タスク規模
-    taskSheet.setColumnWidth(13, 300); // 要件定義
+    // --- 主要列（一目で見える左側） ---
+    taskSheet.setColumnWidth(1, 70);   // A: ID
+    taskSheet.setColumnWidth(2, 100);  // B: 状態
+    taskSheet.setColumnWidth(3, 150);  // C: 企業名
+    taskSheet.setColumnWidth(4, 250);  // D: タスク名
+    taskSheet.setColumnWidth(5, 120);  // E: 種別
+    taskSheet.setColumnWidth(6, 80);   // F: 担当者
+    taskSheet.setColumnWidth(7, 100);  // G: ボール
+    taskSheet.setColumnWidth(8, 100);  // H: 期限
+    taskSheet.setColumnWidth(9, 80);   // I: タスク規模
+    // --- 詳細・運用列（右側） ---
+    taskSheet.setColumnWidth(10, 200); // J: 完了条件
+    taskSheet.setColumnWidth(11, 200); // K: 備考
+    taskSheet.setColumnWidth(12, 100); // L: 登録日
+    taskSheet.setColumnWidth(13, 100); // M: 入力モード
+    taskSheet.setColumnWidth(14, 200); // N: 完了報告コメント
+    taskSheet.setColumnWidth(15, 200); // O: 承認者/差し戻し理由
+    taskSheet.setColumnWidth(16, 300); // P: 要件定義
+    taskSheet.setColumnWidth(17, 80);  // Q: 親タスクID
 
     // 行固定
     taskSheet.setFrozenRows(1);
+
+    // 旧ドロップダウンをクリア（列順変更時の残骸対策）
+    var maxRow = Math.max(taskSheet.getMaxRows(), 502);
+    taskSheet.getRange(2, 1, maxRow - 1, TASK_COL_COUNT).setDataValidation(null);
 
     // ドロップダウン: 状態（B列）
     var statusRule = SpreadsheetApp.newDataValidation()
@@ -626,6 +728,25 @@ function task_initializeTemplate() {
       .build();
     taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1).setDataValidation(sizeRule);
 
+    // ドロップダウン: 種別（O列）
+    var taskTypeRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(TASK_TYPES, true)
+      .setAllowInvalid(true)
+      .build();
+    taskSheet.getRange(2, TASK_COLUMNS.TASK_TYPE, 500, 1).setDataValidation(taskTypeRule);
+
+    // ドロップダウン: ボール（P列）- 担当者リスト + 企業 + 外部
+    var memberNames = [];
+    try { memberNames = task_getMemberNames(); } catch (e) { /* 初回は設定シート未作成 */ }
+    var ballHolderOptions = memberNames.concat(['企業', '外部']);
+    if (ballHolderOptions.length > 0) {
+      var ballHolderRule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(ballHolderOptions, true)
+        .setAllowInvalid(true)
+        .build();
+      taskSheet.getRange(2, TASK_COLUMNS.BALL_HOLDER, 500, 1).setDataValidation(ballHolderRule);
+    }
+
     // 条件付き書式
     var rules = [];
 
@@ -634,26 +755,26 @@ function task_initializeTemplate() {
       .whenFormulaSatisfied('=$B2="完了"')
       .setBackground('#f5f5f5')
       .setFontColor('#9e9e9e')
-      .setRanges([taskSheet.getRange(2, 1, 500, 13)])
+      .setRanges([taskSheet.getRange(2, 1, 500, TASK_COL_COUNT)])
       .build());
 
-    // タスク規模「大」+ 要件定義未完了 → L列を赤背景
+    // タスク規模「大」+ 要件定義未完了 → I列を赤背景
     rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($L2="大", $M2="")')
+      .whenFormulaSatisfied('=AND($I2="大", $P2="")')
       .setBackground('#ffcdd2')
       .setRanges([taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1)])
       .build());
 
-    // タスク規模「中」+ 要件定義未完了 → L列を黄背景
+    // タスク規模「中」+ 要件定義未完了 → I列を黄背景
     rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($L2="中", $M2="")')
+      .whenFormulaSatisfied('=AND($I2="中", $P2="")')
       .setBackground('#fff9c4')
       .setRanges([taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1)])
       .build());
 
-    // タスク規模「大」or「中」+ 要件定義完了 → L列を緑背景
+    // タスク規模「大」or「中」+ 要件定義完了 → I列を緑背景
     rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND(OR($L2="大", $L2="中"), $M2<>"")')
+      .whenFormulaSatisfied('=AND(OR($I2="大", $I2="中"), $P2<>"")')
       .setBackground('#c8e6c9')
       .setRanges([taskSheet.getRange(2, TASK_COLUMNS.SIZE, 500, 1)])
       .build());
@@ -672,16 +793,16 @@ function task_initializeTemplate() {
       .setRanges([taskSheet.getRange(2, TASK_COLUMNS.STATUS, 500, 1)])
       .build());
 
-    // 期限が今日以前 & 未完了 → 期限セルを赤背景
+    // 期限が今日以前 & 未完了 → 期限セル(H列)を赤背景
     rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($E2<>"", $E2<=TODAY(), $B2<>"完了", $B2<>"保留")')
+      .whenFormulaSatisfied('=AND($H2<>"", $H2<=TODAY(), $B2<>"完了", $B2<>"保留")')
       .setBackground('#ffcdd2')
       .setRanges([taskSheet.getRange(2, TASK_COLUMNS.DEADLINE, 500, 1)])
       .build());
 
-    // 期限が明日 → 期限セルを黄背景
+    // 期限が明日 → 期限セル(H列)を黄背景
     rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($E2<>"", $E2=TODAY()+1, $B2<>"完了", $B2<>"保留")')
+      .whenFormulaSatisfied('=AND($H2<>"", $H2=TODAY()+1, $B2<>"完了", $B2<>"保留")')
       .setBackground('#fff9c4')
       .setRanges([taskSheet.getRange(2, TASK_COLUMNS.DEADLINE, 500, 1)])
       .build());
@@ -690,18 +811,19 @@ function task_initializeTemplate() {
 
     // ===== 2. 設定シート =====
     var settingSheet = ss.getSheetByName(TASK_SHEET_NAMES.SETTINGS);
+    var isNewSettingSheet = !settingSheet;
     if (!settingSheet) {
       settingSheet = ss.insertSheet(TASK_SHEET_NAMES.SETTINGS);
     }
 
-    // エリア1: 担当者設定ヘッダー（A〜D列）
+    // エリア1: 担当者設定ヘッダー（A〜D列）- ヘッダーのみ上書き、データは保護
     settingSheet.getRange(1, 1, 1, 4).setValues([['担当者名', 'メールアドレス', 'カレンダーID', '役割']]);
     settingSheet.getRange(1, 1, 1, 4)
       .setBackground('#1a73e8')
       .setFontColor('#ffffff')
       .setFontWeight('bold');
 
-    // 役割ドロップダウン（D列）
+    // 役割ドロップダウン（D列）- 既存データを消さずにドロップダウンだけ再設定
     var roleRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(['管理者', '担当者'], true)
       .setAllowInvalid(false)
@@ -715,18 +837,20 @@ function task_initializeTemplate() {
       .setFontColor('#ffffff')
       .setFontWeight('bold');
 
-    // デフォルト設定値
-    var defaultSettings = [
-      ['AIモデル', 'gemini-2.0-flash'],
-      ['リマインド時間1', '09:00'],
-      ['リマインド時間2', ''],
-      ['リマインド時間3', ''],
-      ['カレンダーリマインド1', '前日 09:00'],
-      ['カレンダーリマインド2', '当日 09:00'],
-      ['棚卸し曜日', '月曜'],
-      ['棚卸し時間', '08:30']
-    ];
-    settingSheet.getRange(2, TASK_SETTING_KEY_COL, defaultSettings.length, 2).setValues(defaultSettings);
+    // デフォルト設定値 - 新規シートの場合のみ書き込み
+    if (isNewSettingSheet) {
+      var defaultSettings = [
+        ['AIモデル', 'gemini-2.0-flash'],
+        ['リマインド時間1', '09:00'],
+        ['リマインド時間2', ''],
+        ['リマインド時間3', ''],
+        ['カレンダーリマインド1', '前日 09:00'],
+        ['カレンダーリマインド2', '当日 09:00'],
+        ['棚卸し曜日', '月曜'],
+        ['棚卸し時間', '08:30']
+      ];
+      settingSheet.getRange(2, TASK_SETTING_KEY_COL, defaultSettings.length, 2).setValues(defaultSettings);
+    }
 
     // 列幅
     settingSheet.setColumnWidth(1, 100);
@@ -755,7 +879,35 @@ function task_initializeTemplate() {
     logSheet.setColumnWidth(4, 300);
     logSheet.setColumnWidth(5, 150);
 
-    return { success: true, message: '初期設定が完了しました。3つのシートを作成しました。' };
+    // ===== 4. 完了ログシート =====
+    var doneLogSheet = ss.getSheetByName(TASK_SHEET_NAMES.DONE_LOG);
+    if (!doneLogSheet) {
+      doneLogSheet = ss.insertSheet(TASK_SHEET_NAMES.DONE_LOG);
+    }
+
+    // タスク一覧と同じヘッダー + 完了日時
+    var doneHeaders = headers.concat(['完了日時']);
+    doneLogSheet.getRange(1, 1, 1, doneHeaders.length).setValues([doneHeaders]);
+    doneLogSheet.getRange(1, 1, 1, doneHeaders.length)
+      .setBackground('#388e3c')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+
+    // 主要列の幅（タスク一覧と同じ）
+    doneLogSheet.setColumnWidth(1, 70);   // ID
+    doneLogSheet.setColumnWidth(2, 100);  // 状態
+    doneLogSheet.setColumnWidth(3, 150);  // 企業名
+    doneLogSheet.setColumnWidth(4, 250);  // タスク名
+    doneLogSheet.setColumnWidth(5, 120);  // 種別
+    doneLogSheet.setColumnWidth(6, 80);   // 担当者
+    doneLogSheet.setColumnWidth(7, 100);  // ボール
+    doneLogSheet.setColumnWidth(8, 100);  // 期限
+    doneLogSheet.setColumnWidth(9, 80);   // タスク規模
+    doneLogSheet.setColumnWidth(18, 150); // 完了日時
+
+    doneLogSheet.setFrozenRows(1);
+
+    return { success: true, message: '初期設定が完了しました。4つのシートを作成しました。' };
   } catch (e) {
     return { success: false, error: e.message };
   }

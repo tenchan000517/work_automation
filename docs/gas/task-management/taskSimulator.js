@@ -153,17 +153,21 @@ function sim_insertTask(simId, data) {
   var row = [
     taskId,
     data.status || '未着手',
-    data.assignee || '',
+    data.company || '',
     data.title || 'SIMテストタスク',
+    data.taskType || '',
+    data.assignee || '',
+    data.ballHolder || '',
     data.deadline || '',
+    data.size || '',
     data.doneCriteria || '',
+    data.notes || '',
     data.regDate || new Date(),
     data.inputMode || 'simulator',
     data.completionComment || '',
     data.approvalNote || '',
-    data.notes || '',
-    data.size || '',
-    data.requirementDef || ''
+    data.requirementDef || '',
+    data.parentId || ''
   ];
   sheet.appendRow(row);
   SpreadsheetApp.flush();
@@ -253,10 +257,14 @@ function sim_testA_SheetInit() {
 
     // 3. ヘッダー行確認
     if (taskSheet) {
-      var headers = taskSheet.getRange(1, 1, 1, 11).getValues()[0];
+      var headers = taskSheet.getRange(1, 1, 1, TASK_COL_COUNT).getValues()[0];
       sim_assertEqual(category + ' - 3a. タスク一覧ヘッダーA列', String(headers[0]), 'ID');
       sim_assertEqual(category + ' - 3b. タスク一覧ヘッダーB列', String(headers[1]), '状態');
       sim_assertEqual(category + ' - 3c. タスク一覧ヘッダーD列', String(headers[3]), 'タスク名');
+      sim_assertEqual(category + ' - 3f. タスク一覧ヘッダーC列(企業名)', String(headers[2]), '企業名');
+      sim_assertEqual(category + ' - 3g. タスク一覧ヘッダーE列(種別)', String(headers[4]), '種別');
+      sim_assertEqual(category + ' - 3h. タスク一覧ヘッダーG列(ボール)', String(headers[6]), 'ボール');
+      sim_assertEqual(category + ' - 3i. タスク一覧ヘッダーQ列(親タスクID)', String(headers[16]), '親タスクID');
     }
 
     if (settingSheet) {
@@ -472,7 +480,10 @@ function sim_testD_TaskRegistration() {
       deadline: '2026-04-15',
       doneCriteria: 'テスト完了条件',
       inputMode: 'free_text',
-      notes: 'テスト備考フル'
+      notes: 'テスト備考フル',
+      company: '株式会社テスト',
+      taskType: 'HP制作',
+      ballHolder: '田中太郎'
     });
     var task8 = task_getTaskById(id8);
     sim_assert(category + ' - 8a. フル登録: タスク存在', task8 !== null);
@@ -480,6 +491,9 @@ function sim_testD_TaskRegistration() {
       sim_assertEqual(category + ' - 8b. フル登録: 担当者', task8.assignee, '田中太郎');
       sim_assertEqual(category + ' - 8c. フル登録: 完了条件', task8.doneCriteria, 'テスト完了条件');
       sim_assertEqual(category + ' - 8d. フル登録: 備考', task8.notes, 'テスト備考フル');
+      sim_assertEqual(category + ' - 8e. フル登録: 企業名', task8.company, '株式会社テスト');
+      sim_assertEqual(category + ' - 8f. フル登録: 種別', task8.taskType, 'HP制作');
+      sim_assertEqual(category + ' - 8g. フル登録: ボール', task8.ballHolder, '田中太郎');
     }
 
     // 9. 最低限項目のみ登録
@@ -1098,12 +1112,17 @@ function sim_testO_RequirementDef() {
     sim_setupMembers();
 
     // 1. TASK_COLUMNS に SIZE と REQUIREMENT_DEF が存在する
-    sim_assertEqual(category + ' - 1. SIZE列番号', TASK_COLUMNS.SIZE, 12);
-    sim_assertEqual(category + ' - 1b. REQUIREMENT_DEF列番号', TASK_COLUMNS.REQUIREMENT_DEF, 13);
+    sim_assertEqual(category + ' - 1. SIZE列番号', TASK_COLUMNS.SIZE, 9);
+    sim_assertEqual(category + ' - 1b. REQUIREMENT_DEF列番号', TASK_COLUMNS.REQUIREMENT_DEF, 16);
+    sim_assertEqual(category + ' - COMPANY列番号', TASK_COLUMNS.COMPANY, 3);
+    sim_assertEqual(category + ' - TASK_TYPE列番号', TASK_COLUMNS.TASK_TYPE, 5);
+    sim_assertEqual(category + ' - BALL_HOLDER列番号', TASK_COLUMNS.BALL_HOLDER, 7);
+    sim_assertEqual(category + ' - PARENT_ID列番号', TASK_COLUMNS.PARENT_ID, 17);
 
     // 2. TASK_SIZES 定数が存在する
     sim_assert(category + ' - 2. TASK_SIZES定数', TASK_SIZES && TASK_SIZES.length === 3);
     sim_assertEqual(category + ' - 2b. TASK_SIZES内容', TASK_SIZES, ['大', '中', '小']);
+    sim_assert(category + ' - TASK_TYPES定数', TASK_TYPES && TASK_TYPES.length === 16);
 
     // 3. タスク登録時にsizeが保存される
     var r3 = task_registerTask({

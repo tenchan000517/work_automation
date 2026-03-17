@@ -128,20 +128,33 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
 
       // サマリー
       var overdue = 0, today = 0, normal = 0, reported = 0, reqPending = 0;
+      var ballHolders = {};
       filteredTasks.forEach(function(t) {
         if (t.urgency === 'overdue') overdue++;
         else if (t.urgency === 'today') today++;
         else if (t.urgency === 'reported') reported++;
         else normal++;
         if ((t.size === '大' || t.size === '中') && !t.requirementDef) reqPending++;
+        if (t.ballHolder) {
+          ballHolders[t.ballHolder] = (ballHolders[t.ballHolder] || 0) + 1;
+        }
       });
+      var ballSummary = '';
+      var ballKeys = Object.keys(ballHolders).sort();
+      if (ballKeys.length > 0) {
+        ballSummary = ' \uD83C\uDFB3ボール：';
+        ballKeys.forEach(function(k) {
+          ballSummary += k + '(' + ballHolders[k] + ') ';
+        });
+      }
       document.getElementById('summaryBar').innerHTML =
         '合計：<span class="summary-count">' + filteredTasks.length + '件</span>' +
         (overdue ? ' \uD83D\uDD34超過' + overdue : '') +
         (today ? ' \uD83D\uDFE1本日' + today : '') +
         (reported ? ' \uD83D\uDD35報告済' + reported : '') +
         ' \u2B1C通常' + normal +
-        (reqPending ? ' \uD83D\uDCDD要件定義待ち' + reqPending : '');
+        (reqPending ? ' \uD83D\uDCDD要件定義待ち' + reqPending : '') +
+        ballSummary;
 
       // 担当者別グルーピング
       var groups = {};
@@ -186,6 +199,7 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
             '<span class="status-icon-' + t.urgency + '">' + icon + '</span>' +
             '<strong>' + escapeHtml(t.id) + '</strong> ' +
             escapeHtml(t.title) + sizeBadge +
+            (t.company ? ' <span style="color:#666;font-size:12px;">[' + escapeHtml(t.company) + ']</span>' : '') +
             '<span style="margin-left:auto; font-size:12px; color:#666;">（期限：' + escapeHtml(deadlineText) + '）</span>' +
             '</div>';
 
@@ -215,6 +229,9 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
             (t.notes ? '<div class="detail-section"><span class="detail-label">備考：</span> ' + escapeHtml(t.notes) + '</div>' : '') +
             (t.completionComment ? '<div class="detail-section"><span class="detail-label">完了報告：</span> ' + escapeHtml(t.completionComment) + '</div>' : '') +
             (t.approvalNote ? '<div class="detail-section"><span class="detail-label">承認/差し戻し：</span> ' + escapeHtml(t.approvalNote) + '</div>' : '') +
+            (t.company ? '<div class="detail-section"><span class="detail-label">企業名：</span> ' + escapeHtml(t.company) + '</div>' : '') +
+            (t.taskType ? '<div class="detail-section"><span class="detail-label">種別：</span> ' + escapeHtml(t.taskType) + '</div>' : '') +
+            (t.ballHolder ? '<div class="detail-section"><span class="detail-label">ボール：</span> ' + escapeHtml(t.ballHolder) + '</div>' : '') +
             reqDefHtml +
             '<div class="action-btns">' +
             reqDefBtn +
@@ -303,6 +320,8 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
         '【タスク】' + task.title + '\\n' +
         '【担当】' + task.assignee + '\\n' +
         '【期限】' + (task.deadline || '未設定') + '\\n' +
+        (task.company ? '【企業名】' + task.company + '\\n' : '') +
+        (task.taskType ? '【種別】' + task.taskType + '\\n' : '') +
         '【完了条件】' + (task.doneCriteria || '');
 
       // 要件定義情報
@@ -314,7 +333,26 @@ function task_createTaskListDialogHtml(tasks, members, viewMode) {
         if (rd.scope_in) text += '\\n【スコープ: やること】' + rd.scope_in;
         if (rd.scope_out) text += '\\n【スコープ: やらないこと】' + rd.scope_out;
       } else if (task.size === '大' || task.size === '中') {
-        text += '\\n\\n⚠️ まず /define-task ' + taskId + ' で要件定義を行ってください';
+        text += '\\n\\n⚠️ このタスクは要件定義が未完了です。以下の指示に従って要件定義を行ってください。';
+        text += '\\n\\n--- 要件定義の指示 ---';
+        text += '\\nこのタスクについて、以下の4項目を深掘りしてください。一方的に決めず、私への質問→回答→整理のサイクルを回してください。';
+        text += '\\n';
+        text += '\\n■ KGI（本当のゴール）';
+        text += '\\n依頼者が本当に望んでいることは何か。表面的な指示の裏にある目的を言語化する。';
+        text += '\\n';
+        text += '\\n■ 手離れの定義';
+        text += '\\n何がどうなっていれば、このタスクから完全に手を離せるか。成果物の完成だけでなく「誰に渡すか」「どこに格納するか」「報告は必要か」まで含める。';
+        text += '\\n';
+        text += '\\n■ スコープ';
+        text += '\\n・やること: 明確に含まれる作業を列挙';
+        text += '\\n・やらないこと: 含まれない・やるべきでない作業を明示（暗黙の期待を先回りして潰す）';
+        text += '\\n';
+        text += '\\n■ リスク・確認事項';
+        text += '\\n・期限に対して作業量は妥当か';
+        text += '\\n・不足している情報・素材はないか';
+        text += '\\n・依頼者に確認すべき曖昧な点はないか';
+        text += '\\n';
+        text += '\\n「いい感じに」「前と同じ」などの曖昧表現は必ず具体化してください。';
       }
 
       copyToClipboard(text);
@@ -655,10 +693,16 @@ function task_createRequirementDialogHtml(task) {
     }
 
     function copyForDefineTask() {
-      var text = '/define-task ' + taskData.id + '\\n\\n' +
+      var text = '以下のタスクの要件定義を深掘りしてください。\\n' +
+        '一方的に決めず、私への質問→回答→整理のサイクルを回してください。\\n' +
+        '「いい感じに」「前と同じ」などの曖昧表現は必ず具体化してください。\\n\\n' +
+        '--- タスク情報 ---\\n' +
+        '【タスクID】' + taskData.id + '\\n' +
         '【タスク】' + taskData.title + '\\n' +
         '【担当】' + (taskData.assignee || '') + '\\n' +
         '【期限】' + (taskData.deadline || '未設定') + '\\n' +
+        (taskData.company ? '【企業名】' + taskData.company + '\\n' : '') +
+        (taskData.taskType ? '【種別】' + taskData.taskType + '\\n' : '') +
         '【完了条件】' + (taskData.doneCriteria || '') + '\\n' +
         '【タスク規模】' + (taskData.size || '') + '\\n';
 
@@ -667,10 +711,19 @@ function task_createRequirementDialogHtml(task) {
       var scopeIn = document.getElementById('scopeIn').value;
       var scopeOut = document.getElementById('scopeOut').value;
 
-      if (kgi) text += '【KGI】' + kgi + '\\n';
-      if (handoff) text += '【手離れ定義】' + handoff + '\\n';
-      if (scopeIn) text += '【やること】' + scopeIn + '\\n';
-      if (scopeOut) text += '【やらないこと】' + scopeOut + '\\n';
+      if (kgi || handoff || scopeIn || scopeOut) {
+        text += '\\n--- 現在の要件定義（叩き台） ---\\n';
+        if (kgi) text += '【KGI】' + kgi + '\\n';
+        if (handoff) text += '【手離れ定義】' + handoff + '\\n';
+        if (scopeIn) text += '【やること】' + scopeIn + '\\n';
+        if (scopeOut) text += '【やらないこと】' + scopeOut + '\\n';
+      }
+
+      text += '\\n--- 深掘りしてほしい項目 ---\\n' +
+        '■ KGI（本当のゴール）: 依頼者が本当に望んでいることは何か。表面的な指示の裏にある目的を言語化。\\n' +
+        '■ 手離れの定義: 何がどうなれば完全に手を離せるか。「誰に渡すか」「どこに格納するか」「報告は必要か」まで含める。\\n' +
+        '■ スコープ: やること（明確に含む作業）/ やらないこと（含まない・やるべきでない作業。暗黙の期待を先回りして潰す）\\n' +
+        '■ リスク・確認事項: 期限vs作業量の妥当性、不足情報、依頼者に確認すべき曖昧な点\\n';
 
       copyToClipboard(text);
     }
