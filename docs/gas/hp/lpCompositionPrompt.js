@@ -399,6 +399,7 @@ mkdir -p doc/wireframe
 4. **src/components/sections/** のセクションコンポーネントを構成案に合わせて編集
 5. globals.css のブランドカラー変数を差し替え
 6. レスポンシブ対応（SP/PC）を確認
+7. **public/sitemap.xml** の \`<loc>\` を本番URLに、\`<lastmod>\` を今日の日付に更新
 
 ファイル作成を開始してください。
 `;
